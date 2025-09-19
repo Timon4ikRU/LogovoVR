@@ -1,0 +1,36 @@
+.phone {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.phone-icon {
+    font-size: 2rem;
+}
+
+.phone-number {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #00ff88;
+}
+
+@media (max-width: 768px) {
+    .phone {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .phone-number {
+        font-size: 1.2rem;
+    }
+}
