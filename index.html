@@ -48,6 +48,9 @@
             letter-spacing: 5px;
             color: #00ff88;
             text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
         
         .description {
@@ -57,6 +60,9 @@
             margin-left: auto;
             margin-right: auto;
             line-height: 1.6;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
         
         .links {
@@ -77,6 +83,8 @@
             transition: all 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.2);
             min-width: 200px;
+            opacity: 0;
+            transform: translateY(20px);
         }
         
         .link-card:hover {
@@ -92,6 +100,22 @@
         
         .link-text {
             font-weight: 500;
+        }
+        
+        .address {
+            margin-top: 3rem;
+            font-size: 1.1rem;
+            background: rgba(0, 255, 136, 0.2);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
         
         @media (max-width: 768px) {
@@ -112,6 +136,11 @@
                 width: 100%;
                 max-width: 300px;
             }
+            
+            .address {
+                font-size: 1rem;
+                padding: 1rem;
+            }
         }
     </style>
 </head>
@@ -123,6 +152,10 @@
             Погрузись в виртуальную реальность с нами! Самые крутые VR-приключения, 
             современное оборудование и незабываемые эмоции ждут тебя в нашем клубе.
         </div>
+         <div class="address">
+            Работаем ежедневно с 12:00 до 22:00
+        </div>
+        
         
         <div class="links">
             <a href="https://2gis.ru/nizhnevartovsk/firm/70000001096090174?m=76.594511%2C60.952654%2F16" class="link-card" target="_blank">
@@ -145,11 +178,17 @@
                 <div class="link-text">Instagram</div>
             </a>
         </div>
+        
+        <div class="address">
+            Современное оборудование, сотни игр на любой вкус и добрая администрация! 
+            Всё это ждёт Вас по адресу ул. Северная 54а строение 1
+            Уже ждём вас :)
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll('.logo, .description, .link-card');
+            const elements = document.querySelectorAll('.logo, .description, .link-card, .address');
             
             elements.forEach((element, index) => {
                 setTimeout(() => {
