@@ -180,7 +180,7 @@
         </div>
         
         <div class="address">
-            Современное оборудование, сотни игр на любой вкус и добрая администрация! 
+            Современное оборудование, 180 игр на любой вкус и добрая администрация! 
             Всё это ждёт Вас по адресу ул. Северная 54а строение 1
             <br>Уже ждём вас :)
         </div>
@@ -191,6 +191,25 @@
             const elements = document.querySelectorAll('.logo, .description, .link-card, .address');
             
             elements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+        <!-- Добавляем блок с телефоном -->
+        <div class="phone">
+            <div class="phone-icon">📞</div>
+            <div class="phone-number">+7 (3466) 49-00-70</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.logo, .description, .link-card, .address, .phone');
+            
+            elements.forEach((element, index) {
                 setTimeout(() => {
                     element.style.opacity = '1';
                     element.style.transform = 'translateY(0)';
