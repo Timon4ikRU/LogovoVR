@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logovo VR</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Google Sans Code', monospace;
+        }
+        
+        body {
+            background: url('https://avatars.mds.yandex.net/i?id=c8f05d7d1399636c51ef06713a47e56a_l-11846045-images-thumbs&n=13') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 2rem 0;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        .description {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+        
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+        }
+        
+        .link-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 200px;
+        }
+        
+        .link-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .link-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .link-text {
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .description {
+                font-size: 1rem;
+            }
+            
+            .links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .link-card {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">Logovo VR</div>
+        
+        <div class="description">
+            Погрузись в виртуальную реальность с нами! Самые крутые VR-приключения, 
+            современное оборудование и незабываемые эмоции ждут тебя в нашем клубе.
+        </div>
+        
+        <div class="links">
+            <a href="https://2gis.ru/nizhnevartovsk/firm/70000001096090174?m=76.594511%2C60.952654%2F16" class="link-card" target="_blank">
+                <div class="link-icon">🗺️</div>
+                <div class="link-text">2ГИС</div>
+            </a>
+            
+            <a href="https://yandex.ru/maps/1091/nizhnevartovsk/house/severnaya_ulitsa_54as1/Y08Ycw5kT0YAQFhqfXV0c3VjZw==/?ll=76.594628%2C60.952689&z=19.33" class="link-card" target="_blank">
+                <div class="link-icon">📍</div>
+                <div class="link-text">Яндекс.Карты</div>
+            </a>
+            
+            <a href="https://vk.com/logovo_vr" class="link-card" target="_blank">
+                <div class="link-icon">👥</div>
+                <div class="link-text">ВКонтакте</div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.logo, .description, .link-card');
+            
+            elements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>
