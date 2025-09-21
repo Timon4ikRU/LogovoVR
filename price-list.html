@@ -17,11 +17,11 @@
         }
         
         body {
-            background: url('https://avatars.mds.yandex.net/i?id=c8f05d7d1399636c51ef06713a47e56a_l-11846045-images-thumbs&n=13') no-repeat center center fixed;
-            background-size: cover;
+            background: #000;
             color: white;
             min-height: 100vh;
             position: relative;
+            transition: background-image 1s ease-in-out;
         }
         
         body::before {
@@ -103,6 +103,8 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             text-align: center;
             transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
         }
         
         .price-card:hover {
@@ -155,6 +157,8 @@
             margin: 0 1rem;
             box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
             transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
         }
         
         .cta-button:hover {
@@ -216,6 +220,47 @@
             }
         }
     </style>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Генерация случайного фона из папки background/
+            const randomBgNumber = Math.floor(Math.random() * 10) + 1;
+            const bgImageUrl = `background/background${randomBgNumber}.jpg`;
+            
+            const preloadImage = new Image();
+            preloadImage.src = bgImageUrl;
+            
+            preloadImage.onload = function() {
+                document.body.style.backgroundImage = `url('${bgImageUrl}')`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center center';
+                document.body.style.backgroundAttachment = 'fixed';
+                
+                // Запускаем анимацию после загрузки фона
+                animateElements();
+            };
+            
+            preloadImage.onerror = function() {
+                document.body.style.background = '#000';
+                // Все равно запускаем анимацию
+                animateElements();
+            };
+            
+            function animateElements() {
+                const elements = document.querySelectorAll(
+                    '.back-button, .page-title, .price-section, .price-card, .cta-bottom, .cta-button'
+                );
+                
+                elements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                        element.style.transform = 'translateX(0)';
+                    }, index * 150);
+                });
+            }
+        });
+    </script>
 </head>
 <body>
     <a href="index.html" class="back-button">← Назад</a>
@@ -244,7 +289,7 @@
                     <div class="service-name">VR Премиум</div>
                     <div class="service-duration">60 минут</div>
                     <div class="service-price">1000 ₽</div>
-                    <div class="service-description">Описания пока нет. </div>
+                    <div class="service-description">Описания пока нет.</div>
                 </div>
             </div>
         </div>
@@ -256,7 +301,7 @@
                     <div class="service-name">PS5 Lounge</div>
                     <div class="service-duration">60 минут</div>
                     <div class="service-price">450 ₽</div>
-                    <div class="service-description">Наслаждение играми на большом экране</div>
+                    <div class="service-description">Описания пока нет.</div>
                 </div>
             </div>
         </div>
@@ -268,7 +313,7 @@
                     <div class="service-name">День рождения</div>
                     <div class="service-duration">"Праздник"</div>
                     <div class="service-price">14 000 ₽</div>
-                    <div class="service-description">Описания пока нет. </div>
+                    <div class="service-description">Описания пока нет.</div>
                 </div>
                 
                 <div class="price-card">
@@ -305,21 +350,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll(
-                '.back-button, .page-title, .price-section, .cta-bottom'
-            );
-            
-            elements.forEach((element, index) => {
-                setTimeout(() => {
-                    element.style.opacity = '1';
-                    element.style.transform = 'translateY(0)';
-                    element.style.transform = 'translateX(0)';
-                }, index * 200);
-            });
-        });
-    </script>
 </body>
 </html>
