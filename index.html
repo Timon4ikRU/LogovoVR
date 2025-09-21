@@ -17,7 +17,7 @@
         }
         
         body {
-            background: url('background.jpg') no-repeat center center fixed;
+            background: url('https://avatars.mds.yandex.net/i?id=c8f05d7d1399636c51ef06713a47e56a_l-11846045-images-thumbs&n=13') no-repeat center center fixed;
             background-size: cover;
             color: white;
             min-height: 100vh;
@@ -81,7 +81,7 @@
         
         .description {
             font-size: 1.2rem;
-            margin-bottom: 3rem;
+            margin-bottom: 1rem;
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
@@ -129,7 +129,7 @@
         }
         
         .address {
-            margin-top: 3rem;
+            margin-top: 2rem;
             font-size: 1.1rem;
             background: rgba(0, 255, 136, 0.2);
             padding: 1.5rem;
@@ -281,9 +281,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll('.logo, .description, .link-card, .address, .phone-top, .cta-button');
+            // Добавил ВСЕ элементы, которые должны анимироваться
+            const elements = document.querySelectorAll(
+                '.phone-top, .logo, .description, .cta-button, .address, .link-card'
+            );
             
-            elements.forEach((element, index) {
+            elements.forEach((element, index) => {
                 setTimeout(() => {
                     element.style.opacity = '1';
                     element.style.transform = 'translateY(0)';
