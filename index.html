@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logovo VR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&display=swap');
         
@@ -15,7 +17,7 @@
         }
         
         body {
-            background: url('https://avatars.mds.yandex.net/i?id=c8f05d7d1399636c51ef06713a47e56a_l-11846045-images-thumbs&n=13') no-repeat center center fixed;
+            background: url('background.jpg') no-repeat center center fixed;
             background-size: cover;
             color: white;
             min-height: 100vh;
@@ -38,6 +40,30 @@
             margin: 0 auto;
             padding: 20px;
             text-align: center;
+        }
+        
+        /* Стиль для номера телефона вверху */
+        .phone-top {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(0, 255, 136, 0.2);
+            padding: 10px 15px;
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        
+        .phone-top:hover {
+            background: rgba(0, 255, 136, 0.3);
+            transform: translateY(-23px);
         }
         
         .logo {
@@ -118,6 +144,46 @@
             transition: opacity 0.8s ease, transform 0.8s ease;
         }
         
+        /* Стиль для кнопок CTA */
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #00ff88, #00ffcc);
+            color: #000;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.6);
+        }
+        
+        .cta-button.secondary {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
         @media (max-width: 768px) {
             .logo {
                 font-size: 2rem;
@@ -141,42 +207,62 @@
                 font-size: 1rem;
                 padding: 1rem;
             }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .phone-top {
+                position: relative;
+                top: 0;
+                right: 0;
+                display: inline-block;
+                margin-bottom: 1rem;
+            }
         }
     </style>
 </head>
 <body>
+    <a href="tel:+73466490070" class="phone-top">📞 +7 (3466) 49-00-70</a>
+    
     <div class="container">
-        <div class="logo">Logovo VR</div>
+        <h1 class="logo">Logovo VR</h1>
         
-        <div class="description">
+        <p class="description">
             Погрузись в виртуальную реальность с нами! Самые крутые VR-приключения, 
             современное оборудование и незабываемые эмоции ждут тебя в нашем клубе.
+        </p>
+        
+        <div class="cta-buttons">
+            <a href="tel:+73466490070" class="cta-button">Забронировать сеанс!</a>
+            <a href="https://timon4ikru.github.io/LogovoVR/price-list.html" class="cta-button secondary">Прайс-лист</a>
         </div>
-         <div class="address">
+        
+        <div class="address">
             Работаем ежедневно с 12:00 до 22:00
             <br>Наше сообщество может организовать незабываемый день рождения, свидание, 
             <br>корпоратив или выездное мероприятие. 
             <br>Ждём по адресу ул. Северная 54а, строение 1.
         </div>
         
-        
         <div class="links">
-            <a href="https://2gis.ru/nizhnevartovsk/firm/70000001096090174?m=76.594511%2C60.952654%2F16" class="link-card" target="_blank">
+            <a href="https://2gis.ru/nizhnevartovsk/firm/70000001096090174?m=76.594511%2C60.952654%2F16" class="link-card" target="_blank" aria-label="Мы на 2GIS">
                 <div class="link-icon">🗺️</div>
                 <div class="link-text">2ГИС</div>
             </a>
             
-            <a href="https://yandex.ru/maps/1091/nizhnevartovsk/house/severnaya_ulitsa_54as1/Y08Ycw5kT0YAQFhqfXV0c3VjZw==/?ll=76.594628%2C60.952689&z=19.33" class="link-card" target="_blank">
+            <a href="https://yandex.ru/maps/1091/nizhnevartovsk/house/severnaya_ulitsa_54as1/Y08Ycw5kT0YAQFhqfXV0c3VjZw==/?ll=76.594628%2C60.952689&z=19.33" class="link-card" target="_blank" aria-label="Мы на Яндекс Картах">
                 <div class="link-icon">📍</div>
                 <div class="link-text">Яндекс.Карты</div>
             </a>
             
-            <a href="https://vk.com/logovo_vr" class="link-card" target="_blank">
+            <a href="https://vk.com/logovo_vr" class="link-card" target="_blank" aria-label="Мы ВКонтакте">
                 <div class="link-icon">👥</div>
                 <div class="link-text">ВКонтакте</div>
             </a>
             
-            <a href="https://www.instagram.com/logovovr" class="link-card" target="_blank">
+            <a href="https://www.instagram.com/logovovr" class="link-card" target="_blank" aria-label="Мы в Instagram">
                 <div class="link-icon">📸</div>
                 <div class="link-text">Instagram*</div>
             </a>
@@ -187,32 +273,15 @@
             <br>А ещё крутая приватная VIP - зона с PS5 и TV85 и ежемесячные турниры с розыгрышами призов.
             <br>Всё это ждёт именно Вас в нашем VR-клубе
         </div>
-        <div class="description">
+        
+        <p class="description">
             *Инстаграм является продукцией компании Meta и запрещён в РФ.
-        </div>
+        </p>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll('.logo, .description, .link-card, .address');
-            
-            elements.forEach((element, index) => {
-                setTimeout(() => {
-                    element.style.opacity = '1';
-                    element.style.transform = 'translateY(0)';
-                }, index * 200);
-            });
-        });
-    </script>
-        <div class="phone">
-            <div class="phone-icon">📞</div>
-            <div class="phone-number">+7 (3466) 49-00-70</div>
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll('.logo, .description, .link-card, .address, .phone');
+            const elements = document.querySelectorAll('.logo, .description, .link-card, .address, .phone-top, .cta-button');
             
             elements.forEach((element, index) {
                 setTimeout(() => {
