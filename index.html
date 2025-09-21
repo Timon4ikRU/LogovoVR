@@ -281,9 +281,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Генерация случайного фона
+            // Генерация случайного фона из папки background/
             const randomBgNumber = Math.floor(Math.random() * 10) + 1; // от 1 до 10
-            const bgImageUrl = `background${randomBgNumber}.jpg`;
+            const bgImageUrl = `background/background${randomBgNumber}.jpg`;
             
             // Создаем изображение для предзагрузки
             const preloadImage = new Image();
