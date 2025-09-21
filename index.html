@@ -17,11 +17,11 @@
         }
         
         body {
-            background: url('https://avatars.mds.yandex.net/i?id=c8f05d7d1399636c51ef06713a47e56a_l-11846045-images-thumbs&n=13') no-repeat center center fixed;
-            background-size: cover;
+            background: #000; /* Чёрный фон на время загрузки */
             color: white;
             min-height: 100vh;
             position: relative;
+            transition: background-image 1s ease-in-out;
         }
         
         body::before {
@@ -236,7 +236,7 @@
         
         <div class="cta-buttons">
             <a href="tel:+73466490070" class="cta-button">Забронировать сеанс!</a>
-            <a href="https://timon4ikru.github.io/LogovoVR/price-list.html" class="cta-button secondary">Прайс-лист</a>
+            <a href="price-list.html" class="cta-button secondary">Прайс-лист</a>
         </div>
         
         <div class="address">
@@ -281,17 +281,50 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Добавил ВСЕ элементы, которые должны анимироваться
-            const elements = document.querySelectorAll(
-                '.phone-top, .logo, .description, .cta-button, .address, .link-card'
-            );
+            // Генерация случайного фона
+            const randomBgNumber = Math.floor(Math.random() * 10) + 1; // от 1 до 10
+            const bgImageUrl = `background${randomBgNumber}.jpg`;
             
-            elements.forEach((element, index) => {
-                setTimeout(() => {
-                    element.style.opacity = '1';
-                    element.style.transform = 'translateY(0)';
-                }, index * 200);
-            });
+            // Создаем изображение для предзагрузки
+            const preloadImage = new Image();
+            preloadImage.src = bgImageUrl;
+            
+            preloadImage.onload = function() {
+                // Когда изображение загрузилось, применяем его как фон
+                document.body.style.backgroundImage = `url('${bgImageUrl}')`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center center';
+                document.body.style.backgroundAttachment = 'fixed';
+                
+                // Запускаем анимацию элементов
+                const elements = document.querySelectorAll(
+                    '.phone-top, .logo, .description, .cta-button, .address, .link-card'
+                );
+                
+                elements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                    }, index * 200);
+                });
+            };
+            
+            // Если изображение не загрузилось, используем fallback
+            preloadImage.onerror = function() {
+                document.body.style.background = '#000'; // Просто чёрный фон
+                
+                // Все равно запускаем анимацию
+                const elements = document.querySelectorAll(
+                    '.phone-top, .logo, .description, .cta-button, .address, .link-card'
+                );
+                
+                elements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                    }, index * 200);
+                });
+            };
         });
     </script>
 </body>
