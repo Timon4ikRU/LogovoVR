@@ -220,47 +220,6 @@
             }
         }
     </style>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Генерация случайного фона из папки background/
-            const randomBgNumber = Math.floor(Math.random() * 10) + 1;
-            const bgImageUrl = `background/background${randomBgNumber}.jpg`;
-            
-            const preloadImage = new Image();
-            preloadImage.src = bgImageUrl;
-            
-            preloadImage.onload = function() {
-                document.body.style.backgroundImage = `url('${bgImageUrl}')`;
-                document.body.style.backgroundSize = 'cover';
-                document.body.style.backgroundPosition = 'center center';
-                document.body.style.backgroundAttachment = 'fixed';
-                
-                // Запускаем анимацию после загрузки фона
-                animateElements();
-            };
-            
-            preloadImage.onerror = function() {
-                document.body.style.background = '#000';
-                // Все равно запускаем анимацию
-                animateElements();
-            };
-            
-            function animateElements() {
-                const elements = document.querySelectorAll(
-                    '.back-button, .page-title, .price-section, .price-card, .cta-bottom, .cta-button'
-                );
-                
-                elements.forEach((element, index) => {
-                    setTimeout(() => {
-                        element.style.opacity = '1';
-                        element.style.transform = 'translateY(0)';
-                        element.style.transform = 'translateX(0)';
-                    }, index * 150);
-                });
-            }
-        });
-    </script>
 </head>
 <body>
     <a href="index.html" class="back-button">← Назад</a>
@@ -350,5 +309,43 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Генерация случайного фона из папки background/
+        const randomBgNumber = Math.floor(Math.random() * 10) + 1;
+        const bgImageUrl = `background/background${randomBgNumber}.jpg`;
+        
+        const preloadImage = new Image();
+        preloadImage.src = bgImageUrl;
+        
+        preloadImage.onload = function() {
+            document.body.style.backgroundImage = `url('${bgImageUrl}')`;
+            document.body.style.backgroundSize = 'cover';
+            document.body.style.backgroundPosition = 'center center';
+            document.body.style.backgroundAttachment = 'fixed';
+            
+            // Запускаем анимацию после загрузки фона
+            animateElements();
+        };
+        
+        preloadImage.onerror = function() {
+            document.body.style.background = '#000';
+            // Все равно запускаем анимацию
+            animateElements();
+        };
+        
+        function animateElements() {
+            const elements = document.querySelectorAll(
+                '.back-button, .page-title, .price-section, .price-card, .cta-bottom, .cta-button'
+            );
+            
+            elements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translate(0, 0)';
+                }, index * 150);
+            });
+        }
+    </script>
 </body>
 </html>
