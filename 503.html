@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>503 - Сервис лежит</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #00ff88;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            padding: 50px;
+        }
+        h1 {
+            font-size: 3em;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        .status {
+            font-size: 1.5em;
+            color: #ff4444;
+            margin: 20px 0;
+        }
+        .advice {
+            font-size: 1.2em;
+            color: #888;
+            margin-top: 30px;
+        }
+        .console {
+            background: #000;
+            border: 1px solid #00ff88;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: left;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>503 - СЕРВИС ЛЕЖИТ</h1>
+    
+    <div class="status">🚨 ВСЁ УПАЛО! 🚨</div>
+    
+    <div class="console">
+        > systemctl status all<br>
+        ● database.service - failed<br>
+        ● api.service - failed<br>
+        ● web.service - failed<br>
+        > ERROR: ALL_SYSTEMS_DOWN<br>
+        > RECOMMENDATION: Попозже зайди<br>
+    </div>
+    
+    <div class="advice">
+        Бро, серваки прилегли. Зайди попозже, ок?<br>
+        А пока можешь кофе выпить ☕
+    </div>
+</body>
+</html>
