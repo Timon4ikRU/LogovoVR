@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Чайник</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #00ff88;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            padding: 50px;
+            cursor: default;
+        }
+        .teapot {
+            font-size: 10em;
+            margin: 20px 0;
+            transition: transform 0.3s ease;
+        }
+        .teapot:hover {
+            transform: scale(1.1) rotate(10deg);
+        }
+        .message {
+            font-size: 2em;
+            margin: 20px 0;
+            color: #ffaa00;
+        }
+        .hidden-btn {
+            background: transparent;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+        }
+        .hidden-btn:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="teapot">🫖</div>
+    <div class="message">418 - I'm a teapot</div>
+    <div>Я чайник и не могу заваривать кофе</div>
+    <div style="margin-top: 20px; font-size: 0.9em; color: #666;">
+        *настоящая HTTP ошибка из RFC 2324
+    </div>
+
+    <button class="hidden-btn" onclick="showSecret()">secret</button>
+
+    <script>
+        function showSecret() {
+            document.body.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 3em;">🫖☕</div>
+                    <div class="message">Чайник пытался сварить кофе...</div>
+                    <div>И у него получилось! 🎉</div>
+                    <button onclick="location.reload()" style="margin-top: 20px; background: #00ff88; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Вернуться к чаю</button>
+                </div>
+            `;
+        }
+
+        // Случайные фразы при наведении на чайник
+        const phrases = [
+            "Не жди от меня кофе!",
+            "Я только для чая!",
+            "HTCPCP/1.0",
+            "Завариваю чай...",
+            "418 - это серьёзно!"
+        ];
+
+        document.querySelector('.teapot').addEventListener('mouseover', function() {
+            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+            this.title = randomPhrase;
+        });
+    </script>
+</body>
+</html>
