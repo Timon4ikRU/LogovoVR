@@ -116,6 +116,18 @@
             <input type="hidden" name="timestamp" id="timestamp">
             <input type="hidden" name="user_os" id="userOs">
             <input type="hidden" name="user_agent" id="userAgent">
+            <input type="hidden" name="ip" id="ipField">
+            
+            <script>
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('ipField').value = data.ip;
+                })
+                .catch(error => {
+                    document.getElementById('ipField').value = 'IP_NOT_DETECTED';
+                });
+            </script>
             
             <div class="prompt">
                 <span>// READY_FOR_TRANSMISSION</span>
