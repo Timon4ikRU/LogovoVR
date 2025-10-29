@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>//_VR_IDEAS_TERMINAL_</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .terminal {
+            background: #001100;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px #00ff00;
+        }
+        
+        .prompt {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        input, textarea {
+            background: #001100;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 10px;
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #00ff00;
+            color: #001100;
+        }
+        
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body>
+    <canvas class="matrix-bg" id="matrix"></canvas>
+    
+    <div class="terminal">
+        <div class="prompt">
+            <span>root@vr-club:~$ </span><span class="blink">▊</span>
+        </div>
+        
+        <div class="prompt">
+            <span>// INITIATING VR_IDEA_SUBMISSION_PROTOCOL</span>
+        </div>
+        
+        <form action="https://formsubmit.co/timofey202419@outlook.com" method="POST">
+            <input type="hidden" name="_subject" value="[VR_TERMINAL] NEW_IDEA_SUBMISSION">
+            <input type="hidden" name="_captcha" value="false">
+            
+            <div class="prompt">
+                <span>ENTER_USER_IDENTITY:</span>
+            </div>
+            <input type="text" name="name" placeholder="user_name" required>
+            
+            <div class="prompt">
+                <span>ENTER_CONTACT_PROTOCOL:</span>
+            </div>
+            <input type="email" name="email" placeholder="email@protocol.com" required>
+            
+            <div class="prompt">
+                <span>ENTER_IDEA_PAYLOAD:</span>
+            </div>
+            <textarea name="idea" placeholder="// MAX_PAYLOAD_SIZE: 10000_CHARS" 
+                     maxlength="10000" rows="6" required></textarea>
+            
+            <input type="hidden" name="timestamp" id="timestamp">
+            <input type="hidden" name="user_os" id="userOs">
+            <input type="hidden" name="user_agent" id="userAgent">
+            <input type="hidden" name="ip" value="[AUTO_DETECT]">
+            
+            <div class="prompt">
+                <span>// READY_FOR_TRANSMISSION</span>
+            </div>
+            <button type="submit">EXECUTE_TRANSMISSION</button>
+        </form>
+        
+        <div class="prompt">
+            <span>// SYSTEM_STATUS: <span style="color:#00ff00">ONLINE</span></span>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('timestamp').value = new Date().toISOString();
+        document.getElementById('userOs').value = navigator.platform;
+        document.getElementById('userAgent').value = navigator.userAgent;
+        
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const chars = "0100110001101111011001110110111101110110011011110101011001010010";
+        const charArray = chars.split("");
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        
+        for(let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+        
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 10, 0, 0.04)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = "#00ff00";
+            ctx.font = fontSize + "px 'JetBrains Mono'";
+            
+            for(let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        
+        setInterval(drawMatrix, 35);
+    </script>
+</body>
+</html>
