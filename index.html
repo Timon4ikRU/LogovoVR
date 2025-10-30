@@ -18,7 +18,7 @@
         }
         
         body {
-            background: #000; /* Чёрный фон на время загрузки */
+            background: #000;
             color: white;
             min-height: 100vh;
             position: relative;
@@ -43,12 +43,17 @@
             text-align: center;
         }
         
-        /* Стиль для номера телефона вверху */
-        .phone-top {
+        .top-panel {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1000;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .phone-top {
             background: rgba(0, 255, 136, 0.2);
             padding: 10px 15px;
             border-radius: 10px;
@@ -60,11 +65,197 @@
             opacity: 0;
             transform: translateY(-20px);
             transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .music-trigger {
+            background: rgba(136, 0, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(136, 0, 255, 0.3);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            white-space: nowrap;
         }
         
         .phone-top:hover {
             background: rgba(0, 255, 136, 0.3);
             transform: translateY(-23px);
+        }
+        
+        .music-trigger:hover {
+            background: rgba(136, 0, 255, 0.3);
+            transform: translateY(-23px);
+        }
+        
+        .music-player {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 320px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(136, 0, 255, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            z-index: 1001;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+        
+        .music-player.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #8800ff;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+        
+        .track-info {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        #currentTrack {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #00ff88;
+        }
+        
+        #currentTime {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8800ff, #00ff88);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .play-btn {
+            background: rgba(136, 0, 255, 0.3);
+            border: 1px solid rgba(136, 0, 255, 0.5);
+        }
+        
+        .play-btn:hover {
+            background: rgba(136, 0, 255, 0.5);
+        }
+        
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        #volumeSlider {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .playlist {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .track-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .track-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .track-item.playing {
+            background: rgba(136, 0, 255, 0.2);
+            border-left: 3px solid #8800ff;
         }
         
         .logo {
@@ -145,7 +336,6 @@
             transition: opacity 0.8s ease, transform 0.8s ease;
         }
         
-        /* Стиль для кнопок CTA */
         .cta-buttons {
             display: flex;
             justify-content: center;
@@ -186,6 +376,24 @@
         }
         
         @media (max-width: 768px) {
+            .top-panel {
+                position: relative;
+                top: 0;
+                right: 0;
+                justify-content: center;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            
+            .music-player {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 90%;
+                max-width: 320px;
+            }
+            
             .logo {
                 font-size: 2rem;
             }
@@ -213,19 +421,46 @@
                 flex-direction: column;
                 align-items: center;
             }
-            
-            .phone-top {
-                position: relative;
-                top: 0;
-                right: 0;
-                display: inline-block;
-                margin-bottom: 1rem;
-            }
         }
     </style>
 </head>
 <body>
-    <a href="tel:+73466490070" class="phone-top">📞 +7 (3466) 49-00-70</a>
+    <div class="top-panel">
+        <a href="tel:+73466490070" class="phone-top">📞 +7 (3466) 49-00-70</a>
+        <div class="music-trigger" onclick="toggleMusicPlayer()">🎵 Музыка</div>
+    </div>
+    
+    <div id="musicPlayer" class="music-player">
+        <div class="player-header">
+            <span>🎵 Фоновая музыка</span>
+            <button onclick="closePlayer()" class="close-btn">×</button>
+        </div>
+        <div class="track-info">
+            <div id="currentTrack">Выберите трек</div>
+            <div id="currentTime">0:00 / 0:00</div>
+        </div>
+        <div class="progress-container" onclick="seekAudio(event)">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div class="controls">
+            <button onclick="previousTrack()" class="control-btn" title="Предыдущий">⏮</button>
+            <button onclick="togglePlay()" id="playBtn" class="control-btn play-btn" title="Воспроизвести">▶️</button>
+            <button onclick="nextTrack()" class="control-btn" title="Следующий">⏭</button>
+            <button onclick="toggleShuffle()" id="shuffleBtn" class="control-btn" title="Перемешать">🔀</button>
+            <button onclick="toggleRepeat()" id="repeatBtn" class="control-btn" title="Повтор">🔁</button>
+        </div>
+        <div class="volume-container">
+            <span>🔊</span>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.7" oninput="setVolume(this.value)">
+        </div>
+        <div class="playlist">
+            <div class="track-item" data-track="music/track1.mp3" data-name="Трек 1 - Эпичный">Эпичный саундтрек</div>
+            <div class="track-item" data-track="music/track2.mp3" data-name="Трек 2 - Расслабляющий">Расслабляющая музыка</div>
+            <div class="track-item" data-track="music/track3.mp3" data-name="Трек 3 - Гейминг">Гейминг атмосфера</div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer"></audio>
     
     <div class="container">
         <h1 class="logo">Logovo VR</h1>
@@ -310,25 +545,219 @@
     </a>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Генерация случайного фона из папки background/
-            const randomBgNumber = Math.floor(Math.random() * 10) + 1; // от 1 до 10
+        class MusicPlayer {
+            constructor() {
+                this.audio = document.getElementById('audioPlayer');
+                this.playlist = [];
+                this.currentTrackIndex = 0;
+                this.isPlaying = false;
+                this.isShuffled = false;
+                this.isRepeated = false;
+                this.originalPlaylist = [];
+                
+                this.loadPlaylist();
+                this.setupEventListeners();
+            }
+
+            loadPlaylist() {
+                const trackElements = document.querySelectorAll('.track-item');
+                this.playlist = Array.from(trackElements).map((element, index) => ({
+                    name: element.getAttribute('data-name') || element.textContent,
+                    file: element.getAttribute('data-track'),
+                    element: element
+                }));
+                this.originalPlaylist = [...this.playlist];
+            }
+
+            setupEventListeners() {
+                this.audio.addEventListener('timeupdate', () => {
+                    this.updateProgress();
+                    this.updateTimeDisplay();
+                });
+
+                this.audio.addEventListener('ended', () => {
+                    if (this.isRepeated) {
+                        this.audio.currentTime = 0;
+                        this.audio.play();
+                    } else {
+                        this.nextTrack();
+                    }
+                });
+
+                document.querySelectorAll('.track-item').forEach((element, index) => {
+                    element.addEventListener('click', () => {
+                        this.loadTrack(index);
+                        if (this.isPlaying) {
+                            this.audio.play();
+                        }
+                    });
+                });
+            }
+
+            loadTrack(index) {
+                this.currentTrackIndex = index;
+                const track = this.playlist[index];
+                
+                this.audio.src = track.file;
+                document.getElementById('currentTrack').textContent = track.name;
+                
+                document.querySelectorAll('.track-item').forEach((item, i) => {
+                    item.classList.toggle('playing', i === index);
+                });
+                
+                if (this.isPlaying) {
+                    this.audio.play();
+                }
+            }
+
+            togglePlay() {
+                if (this.audio.src === '') {
+                    this.loadTrack(0);
+                }
+                
+                if (this.isPlaying) {
+                    this.audio.pause();
+                    document.getElementById('playBtn').innerHTML = '▶️';
+                } else {
+                    this.audio.play();
+                    document.getElementById('playBtn').innerHTML = '⏸️';
+                }
+                this.isPlaying = !this.isPlaying;
+            }
+
+            nextTrack() {
+                let nextIndex = (this.currentTrackIndex + 1) % this.playlist.length;
+                this.loadTrack(nextIndex);
+                if (this.isPlaying) {
+                    this.audio.play();
+                }
+            }
+
+            previousTrack() {
+                let prevIndex = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
+                this.loadTrack(prevIndex);
+                if (this.isPlaying) {
+                    this.audio.play();
+                }
+            }
+
+            toggleShuffle() {
+                this.isShuffled = !this.isShuffled;
+                const shuffleBtn = document.getElementById('shuffleBtn');
+                
+                if (this.isShuffled) {
+                    for (let i = this.playlist.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [this.playlist[i], this.playlist[j]] = [this.playlist[j], this.playlist[i]];
+                    }
+                    shuffleBtn.style.background = 'rgba(136, 0, 255, 0.3)';
+                } else {
+                    this.playlist = [...this.originalPlaylist];
+                    shuffleBtn.style.background = '';
+                }
+                
+                this.loadTrack(0);
+            }
+
+            toggleRepeat() {
+                this.isRepeated = !this.isRepeated;
+                const repeatBtn = document.getElementById('repeatBtn');
+                
+                if (this.isRepeated) {
+                    repeatBtn.style.background = 'rgba(136, 0, 255, 0.3)';
+                } else {
+                    repeatBtn.style.background = '';
+                }
+            }
+
+            setVolume(volume) {
+                this.audio.volume = volume;
+            }
+
+            updateProgress() {
+                const progress = (this.audio.currentTime / this.audio.duration) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+            }
+
+            updateTimeDisplay() {
+                const currentTime = document.getElementById('currentTime');
+                currentTime.textContent = 
+                    `${this.formatTime(this.audio.currentTime)} / ${this.formatTime(this.audio.duration)}`;
+            }
+
+            formatTime(seconds) {
+                if (isNaN(seconds)) return '0:00';
+                const minutes = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${minutes}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            seekAudio(event) {
+                const progressContainer = document.querySelector('.progress-container');
+                const clickX = event.offsetX;
+                const width = progressContainer.offsetWidth;
+                const duration = this.audio.duration;
+                
+                this.audio.currentTime = (clickX / width) * duration;
+            }
+        }
+
+        let musicPlayer;
+
+        function toggleMusicPlayer() {
+            const player = document.getElementById('musicPlayer');
+            player.classList.toggle('active');
+        }
+
+        function closePlayer() {
+            document.getElementById('musicPlayer').classList.remove('active');
+        }
+
+        function togglePlay() {
+            musicPlayer.togglePlay();
+        }
+
+        function nextTrack() {
+            musicPlayer.nextTrack();
+        }
+
+        function previousTrack() {
+            musicPlayer.previousTrack();
+        }
+
+        function toggleShuffle() {
+            musicPlayer.toggleShuffle();
+        }
+
+        function toggleRepeat() {
+            musicPlayer.toggleRepeat();
+        }
+
+        function setVolume(volume) {
+            musicPlayer.setVolume(volume);
+        }
+
+        function seekAudio(event) {
+            musicPlayer.seekAudio(event);
+        }
+
+        window.onload = function() {
+            musicPlayer = new MusicPlayer();
+            
+            const randomBgNumber = Math.floor(Math.random() * 10) + 1;
             const bgImageUrl = `background/background${randomBgNumber}.jpg`;
             
-            // Создаем изображение для предзагрузки
             const preloadImage = new Image();
             preloadImage.src = bgImageUrl;
             
             preloadImage.onload = function() {
-                // Когда изображение загрузилось, применяем его как фон
                 document.body.style.backgroundImage = `url('${bgImageUrl}')`;
                 document.body.style.backgroundSize = 'cover';
                 document.body.style.backgroundPosition = 'center center';
                 document.body.style.backgroundAttachment = 'fixed';
                 
-                // Запускаем анимацию элементов
                 const elements = document.querySelectorAll(
-                    '.phone-top, .logo, .description, .cta-button, .address, .link-card'
+                    '.phone-top, .music-trigger, .logo, .description, .cta-button, .address, .link-card'
                 );
                 
                 elements.forEach((element, index) => {
@@ -339,13 +768,11 @@
                 });
             };
             
-            // Если изображение не загрузилось, используем fallback
             preloadImage.onerror = function() {
-                document.body.style.background = '#000'; // Просто чёрный фон
+                document.body.style.background = '#000';
                 
-                // Все равно запускаем анимацию
                 const elements = document.querySelectorAll(
-                    '.phone-top, .logo, .description, .cta-button, .address, .link-card'
+                    '.phone-top, .music-trigger, .logo, .description, .cta-button, .address, .link-card'
                 );
                 
                 elements.forEach((element, index) => {
@@ -355,6 +782,17 @@
                     }, index * 200);
                 });
             };
+        };
+
+        document.addEventListener('click', function(event) {
+            const player = document.getElementById('musicPlayer');
+            const trigger = document.querySelector('.music-trigger');
+            
+            if (player.classList.contains('active') && 
+                !player.contains(event.target) && 
+                !trigger.contains(event.target)) {
+                closePlayer();
+            }
         });
     </script>
 </body>
