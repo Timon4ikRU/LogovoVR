@@ -43,6 +43,7 @@
             text-align: center;
         }
         
+        /* Верхняя панель с телефоном и музыкой */
         .top-panel {
             position: fixed;
             top: 20px;
@@ -94,6 +95,7 @@
             transform: translateY(-23px);
         }
         
+        /* Музыкальный плеер */
         .music-player {
             position: fixed;
             top: 80px;
@@ -425,11 +427,13 @@
     </style>
 </head>
 <body>
+    <!-- Верхняя панель с телефоном и музыкой -->
     <div class="top-panel">
         <a href="tel:+73466490070" class="phone-top">📞 +7 (3466) 49-00-70</a>
         <div class="music-trigger" onclick="toggleMusicPlayer()">🎵 Музыка</div>
     </div>
     
+    <!-- Музыкальный плеер -->
     <div id="musicPlayer" class="music-player">
         <div class="player-header">
             <span>🎵 Фоновая музыка</span>
@@ -465,7 +469,7 @@
             <div class="track-item" data-track="music/Imagine_Dragons-Bones.mp3" data-name="Imagine Dragons - Bones">Imagine Dragons - Bones</div>
             <div class="track-item" data-track="music/Imagine_Dragons-Natural.mp3" data-name="Imagine Dragons - Natural">Imagine Dragons - Natural</div>
             <div class="track-item" data-track="music/Imagine_Dragons-Thunder.mp3" data-name="Imagine Dragons - Thunder">Imagine Dragons - Thunder</div>
-            <div class="track-item" data-track="music/Lubeh-Horse.mp3" data-name="Lubeh - Horse">Любэ - Конь</div>
+            <div class="track-item" data-track="music/Lubeh-Horse.mp3" data-name="Любэ - Конь">Конь</div>
             <div class="track-item" data-track="music/Ludwig_van_Beethoven-Moonlight_Sonata.mp3" data-name="Beethoven - Moonlight Sonata">Лунная Соната</div>
             <div class="track-item" data-track="music/Martin_Garrix-Animals.mp3" data-name="Martin Garrix - Animals">Martin Garrix - Animals</div>
             <div class="track-item" data-track="music/Peyton_Parrish-Valhalla_Calling.mp3" data-name="Peyton Parrish - Valhalla Calling">Valhalla Calling</div>
@@ -564,6 +568,7 @@
     </a>
 
     <script>
+        // Музыкальный плеер с улучшенной обработкой ошибок
         class MusicPlayer {
             constructor() {
                 this.audio = document.getElementById('audioPlayer');
@@ -576,6 +581,24 @@
                 
                 this.loadPlaylist();
                 this.setupEventListeners();
+                this.setupErrorHandling();
+            }
+
+            setupErrorHandling() {
+                this.audio.addEventListener('error', (e) => {
+                    const currentTrack = this.playlist[this.currentTrackIndex];
+                    console.error('❌ Ошибка загрузки:', currentTrack?.file);
+                    
+                    // Пропускаем проблемный трек
+                    setTimeout(() => {
+                        console.log('⏭ Пропускаем проблемный трек');
+                        this.nextTrack();
+                    }, 500);
+                });
+
+                this.audio.addEventListener('canplaythrough', () => {
+                    console.log('✅ Трек готов:', this.audio.src);
+                });
             }
 
             loadPlaylist() {
@@ -586,6 +609,7 @@
                     element: element
                 }));
                 this.originalPlaylist = [...this.playlist];
+                console.log('🎵 Загружено треков:', this.playlist.length);
             }
 
             setupEventListeners() {
@@ -603,11 +627,14 @@
                     }
                 });
 
+                // Клики по трекам в плейлисте
                 document.querySelectorAll('.track-item').forEach((element, index) => {
                     element.addEventListener('click', () => {
                         this.loadTrack(index);
                         if (this.isPlaying) {
-                            this.audio.play();
+                            this.audio.play().catch(e => {
+                                console.error('Ошибка воспроизведения:', e);
+                            });
                         }
                     });
                 });
@@ -617,15 +644,17 @@
                 this.currentTrackIndex = index;
                 const track = this.playlist[index];
                 
+                console.log('🎯 Загружаем трек:', track.file);
                 this.audio.src = track.file;
                 document.getElementById('currentTrack').textContent = track.name;
                 
-                document.querySelectorAll('.track-item').forEach((item, i) => {
-                    item.classList.toggle('playing', i === index);
+                this.updateTrackHighlight(index);
                 });
                 
                 if (this.isPlaying) {
-                    this.audio.play();
+                    this.audio.play().catch(e => {
+                        console.error('Ошибка воспроизведения при загрузке:', e);
+                    });
                 }
             }
 
@@ -638,26 +667,26 @@
                     this.audio.pause();
                     document.getElementById('playBtn').innerHTML = '▶️';
                 } else {
-                    this.audio.play();
-                    document.getElementById('playBtn').innerHTML = '⏸️';
+                    this.audio.play().then(() => {
+                        document.getElementById('playBtn').innerHTML = '⏸️';
+                    }).catch(e => {
+                        console.error('Ошибка воспроизведения:', e);
+                        this.isPlaying = false;
+                    });
                 }
                 this.isPlaying = !this.isPlaying;
             }
 
             nextTrack() {
                 let nextIndex = (this.currentTrackIndex + 1) % this.playlist.length;
+                console.log('⏭ Следующий трек:', nextIndex);
                 this.loadTrack(nextIndex);
-                if (this.isPlaying) {
-                    this.audio.play();
-                }
             }
 
             previousTrack() {
                 let prevIndex = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
+                console.log('⏮ Предыдущий трек:', prevIndex);
                 this.loadTrack(prevIndex);
-                if (this.isPlaying) {
-                    this.audio.play();
-                }
             }
 
             toggleShuffle() {
@@ -665,17 +694,19 @@
                 const shuffleBtn = document.getElementById('shuffleBtn');
                 
                 if (this.isShuffled) {
+                    // Перемешиваем плейлист
                     for (let i = this.playlist.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
                         [this.playlist[i], this.playlist[j]] = [this.playlist[j], this.playlist[i]];
                     }
                     shuffleBtn.style.background = 'rgba(136, 0, 255, 0.3)';
                 } else {
+                    // Восстанавливаем оригинальный порядок
                     this.playlist = [...this.originalPlaylist];
                     shuffleBtn.style.background = '';
                 }
                 
-                this.loadTrack(0);
+                this.updateTrackHighlight(this.currentTrackIndex);
             }
 
             toggleRepeat() {
@@ -687,6 +718,14 @@
                 } else {
                     repeatBtn.style.background = '';
                 }
+            }
+
+            updateTrackHighlight(index) {
+                document.querySelectorAll('.track-item').forEach((item, i) => {
+                    const itemTrack = item.getAttribute('data-track');
+                    const currentTrack = this.playlist[index]?.file;
+                    item.classList.toggle('playing', itemTrack === currentTrack);
+                });
             }
 
             setVolume(volume) {
@@ -721,6 +760,7 @@
             }
         }
 
+        // Глобальные переменные и функции
         let musicPlayer;
 
         function toggleMusicPlayer() {
@@ -760,9 +800,12 @@
             musicPlayer.seekAudio(event);
         }
 
+        // Инициализация при загрузке страницы
         window.onload = function() {
+            // Инициализация музыкального плеера
             musicPlayer = new MusicPlayer();
             
+            // Генерация случайного фона
             const randomBgNumber = Math.floor(Math.random() * 10) + 1;
             const bgImageUrl = `background/background${randomBgNumber}.jpg`;
             
@@ -775,6 +818,7 @@
                 document.body.style.backgroundPosition = 'center center';
                 document.body.style.backgroundAttachment = 'fixed';
                 
+                // Запускаем анимацию элементов
                 const elements = document.querySelectorAll(
                     '.phone-top, .music-trigger, .logo, .description, .cta-button, .address, .link-card'
                 );
@@ -803,6 +847,7 @@
             };
         };
 
+        // Закрытие плеера при клике вне его
         document.addEventListener('click', function(event) {
             const player = document.getElementById('musicPlayer');
             const trigger = document.querySelector('.music-trigger');
