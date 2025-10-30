@@ -685,39 +685,21 @@
                 const shuffleBtn = document.getElementById('shuffleBtn');
                 
                 if (this.isShuffled) {
-                    // Сохраняем текущий трек до перемешивания
-                    const currentTrack = this.playlist[this.currentTrackIndex];
+                    // Crypto-based shuffle
+                    const randomValues = new Uint32Array(this.playlist.length);
+                    crypto.getRandomValues(randomValues);
                     
-                    // Перемешиваем весь плейлист
                     for (let i = this.playlist.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
+                        const j = randomValues[i] % (i + 1);
                         [this.playlist[i], this.playlist[j]] = [this.playlist[j], this.playlist[i]];
                     }
-                    
-                    // Находим где теперь находится наш старый текущий трек
-                    const newIndex = this.playlist.findIndex(track => 
-                        track.file === currentTrack.file && track.name === currentTrack.name
-                    );
-                    
-                    // Переключаемся на него в новом порядке
-                    this.currentTrackIndex = newIndex;
                     shuffleBtn.style.background = 'rgba(136, 0, 255, 0.3)';
                 } else {
-                    // Восстанавливаем оригинальный порядок
-                    const currentTrack = this.playlist[this.currentTrackIndex];
                     this.playlist = [...this.originalPlaylist];
-                    
-                    // Находим текущий трек в оригинальном порядке
-                    const newIndex = this.playlist.findIndex(track => 
-                        track.file === currentTrack.file && track.name === currentTrack.name
-                    );
-                    
-                    this.currentTrackIndex = newIndex;
                     shuffleBtn.style.background = '';
                 }
                 
-                // Обновляем выделение и перезагружаем текущий трек
-                this.updateTrackHighlight(this.currentTrackIndex);
+                this.loadTrack(0);
             }
 
             toggleRepeat() {
