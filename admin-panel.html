@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #000000, #00ff00);
+            color: #00ff00;
+            min-height: 100vh;
+            transition: background 0.3s ease;
+        }
+
+        .login-section {
+            padding: 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
+        }
+
+        .login-form {
+            display: inline-block;
+            background: rgba(0, 255, 0, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #00ff00;
+        }
+
+        .login-form input {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .login-form button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+        }
+
+        .login-form button:hover {
+            background: #00cc00;
+        }
+
+        .error-message {
+            color: #ff0000;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 12px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .status-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 255, 0, 0.9);
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+        }
+
+        .error-bg {
+            background: linear-gradient(to bottom, #000000, #ff0000) !important;
+        }
+
+        .playlist {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .track-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .track-item:hover {
+            background: rgba(0, 255, 0, 0.3);
+        }
+
+        .music-controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .music-controls button {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 15px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .music-controls button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .now-playing {
+            margin-top: 10px;
+            text-align: center;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-message" id="statusMessage">Работает!</div>
+
+    <div class="login-section">
+        <div class="login-form">
+            <input type="text" id="username" placeholder="Логин" value="Admin">
+            <input type="password" id="password" placeholder="Пароль">
+            <button onclick="checkLogin()">Войти</button>
+            <div class="error-message" id="errorMessage">Неверный логин или пароль!</div>
+        </div>
+    </div>
+
+    <div class="container" id="content" style="display: none;">
+        <!-- Sounds Section -->
+        <div class="section">
+            <h2>Sounds</h2>
+            <div class="buttons-grid">
+                <button class="btn" onclick="playSound('err_snds/HTML200')">HTML200</button>
+                <button class="btn" onclick="playSound('err_snds/HTML401')">HTML401</button>
+                <button class="btn" onclick="playSound('err_snds/HTML403')">HTML403</button>
+                <button class="btn" onclick="playSound('err_snds/HTML404')">HTML404</button>
+                <button class="btn" onclick="playSound('err_snds/HTML420')">HTML420</button>
+                <button class="btn" onclick="playSound('err_snds/HTML451')">HTML451</button>
+                <button class="btn" onclick="playSound('err_snds/HTML500')">HTML500</button>
+                <button class="btn" onclick="playSound('err_snds/HTML502')">HTML502</button>
+            </div>
+        </div>
+
+        <!-- Pages Section -->
+        <div class="section">
+            <h2>Pages</h2>
+            <div class="buttons-grid">
+                <button class="btn" onclick="checkPage('index.html')">index.html</button>
+                <button class="btn" onclick="checkPage('music-player.html')">music-player.html</button>
+                <button class="btn" onclick="checkPage('price-list.html')">price-list.html</button>
+                <button class="btn" onclick="checkPage('rules.html')">rules.html</button>
+                <button class="btn" onclick="checkPage('tea.html')">tea.html</button>
+                <button class="btn" onclick="checkPage('upd-form.html')">upd-form.html</button>
+                <button class="btn" onclick="checkPage('401.html')">401.html</button>
+                <button class="btn" onclick="checkPage('403.html')">403.html</button>
+                <button class="btn" onclick="checkPage('404.html')">404.html</button>
+                <button class="btn" onclick="checkPage('420.html')">420.html</button>
+                <button class="btn" onclick="checkPage('451.html')">451.html</button>
+                <button class="btn" onclick="checkPage('500.html')">500.html</button>
+            </div>
+        </div>
+
+        <!-- Background Section -->
+        <div class="section">
+            <h2>Background</h2>
+            <div class="buttons-grid">
+                <button class="btn" onclick="checkBackground('background/background1.jpg')">background1.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background2.jpg')">background2.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background3.jpg')">background3.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background4.jpg')">background4.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background5.jpg')">background5.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background6.jpg')">background6.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background7.jpg')">background7.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background8.jpg')">background8.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background9.jpg')">background9.jpg</button>
+                <button class="btn" onclick="checkBackground('background/background10.jpg')">background10.jpg</button>
+            </div>
+        </div>
+
+        <!-- Music Section -->
+        <div class="section">
+            <h2>Music</h2>
+            <div class="playlist">
+                <div class="track-item" data-track="music/8BitEra-SuperMario.mp3" data-name="8BitEra - Super Mario">Тема из игры Super Mario</div>
+                <div class="track-item" data-track="music/Aleksandr_Rybak-Fairytale.mp3" data-name="Александр Рыбак - Fairytale">Fairytale (Александр Рыбак)</div>
+                <div class="track-item" data-track="music/APSENT-Mojno_ya_s_toboy.mp3" data-name="AP$ENT - Можно я с тобой">Можно я с тобой (AP$ENT)</div>
+                <div class="track-item" data-track="music/BassCover-Hoist_the_Colours.mp3" data-name="BassCover - Hoist the Colours">Hoist the Colours (BassCover, Hans Zimmer)</div>
+                <div class="track-item" data-track="music/C418-Area_Math.mp3" data-name="C418 - Area Math">Area Math (C418, Minecraft)</div>
+                <div class="track-item" data-track="music/C418-Wet_Hands.mp3" data-name="C418 - Wet Hands">Wet Hands (C418, Minecraft)</div>
+                <div class="track-item" data-track="music/Dyan_Dxxdy-Cute_Depressed.mp3" data-name="Dyan Dxxdy - Cute Depressed">Cute Depressed (Dyan Dxxdy)</div>
+                <div class="track-item" data-track="music/Dyan_Dxxdy-Cute_Depressed_Slowed.mp3" data-name="Dyan Dxxdy - Cute Depressed (Slowed)">Cute Depressed (Slowed) (Dyan Dxxdy)</div>
+                <div class="track-item" data-track="music/Imagine_Dragons-Believer.mp3" data-name="Imagine Dragons - Believer">Believer (Imagine Dragons)</div>
+                <div class="track-item" data-track="music/Imagine_Dragons-Bones.mp3" data-name="Imagine Dragons - Bones">Bones (Imagine Dragons)</div>
+                <div class="track-item" data-track="music/Imagine_Dragons-Natural.mp3" data-name="Imagine Dragons - Natural">Natural (Imagine Dragons)</div>
+                <div class="track-item" data-track="music/Imagine_Dragons-Thunder.mp3" data-name="Imagine Dragons - Thunder">Thunder (Imagine Dragons)</div>
+                <div class="track-item" data-track="music/Korol_i_Shut-Eli_Myaso_Muzhiki.mp3" data-name="Король и Шут - Ели мясо мужики">Ели мясо мужики (Король и Шут)</div>
+                <div class="track-item" data-track="music/Korol_i_Shut-Kukla_Kolduna.mp3" data-name="Король и Шут - Кукла колдуна">Кукла колдуна (Король и Шут)</div>
+                <div class="track-item" data-track="music/Korol_i_Shut-Prygnu_so_Skaly.mp3" data-name="Король и Шут - Прыгну со скалы">Прыгну со скалы (Король и Шут)</div>
+                <div class="track-item" data-track="music/Lubeh-Horse.mp3" data-name="Любэ - Конь">Конь (Любэ)</div>
+                <div class="track-item" data-track="music/Mission_Impossible-Main_Theme.mp3" data-name="Mission Impossible (Main Theme)">Main theme from Mission Impossible</div>
+                <div class="track-item" data-track="music/ReLogic-Alternate_Day.mp3" data-name="Re-Logic - Alternate Day">Alternate Day (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Dungeon.mp3" data-name="Re-Logic - Dungeon">Dungeon (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Eclipse.mp3" data-name="Re-Logic - Eclipse">Eclipse (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Ice.mp3" data-name="Re-Logic - Ice">Ice (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Mushrooms.mp3" data-name="Re-Logic - Mushrooms">Mushrooms (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Ocean.mp3" data-name="Re-Logic - Ocean">Ocean (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Overworld_Day.mp3" data-name="Re-Logic - Overworld Day">Overworld Day (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Overworld_Night.mp3" data-name="Re-Logic - Overworld Night">Overworld Night (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/ReLogic-Title_Screen.mp3" data-name="Re-Logic - Title Screen">Title Screen (Re-Logic, Terraria)</div>
+                <div class="track-item" data-track="music/Sheet_Music_Boss-Rush_E.mp3" data-name="Sheet Music Boss - RUSH E">RUSH E (Sheet Music Boss)</div>
+                <div class="track-item" data-track="music/Star_Wars-The_Imperial_March.mp3" data-name="Star Wars - The Imperial March">The Imperial March (Star Wars)</div>
+                <div class="track-item" data-track="music/WW-OIIA_Cat.mp3" data-name="W&W - OIIA Cat">OIIA Cat (W&W)</div>
+            </div>
+            <div class="music-controls">
+                <button onclick="playMusic()">▶️ Воспроизвести</button>
+                <button onclick="pauseMusic()">⏸️ Пауза</button>
+                <button onclick="stopMusic()">⏹️ Стоп</button>
+            </div>
+            <div class="now-playing" id="nowPlaying"></div>
+        </div>
+    </div>
+
+    <script>
+        // Хеши паролей (SHA-256) вместо чистого текста
+        const passwordHashes = [
+            "2db556f27d28be05fc9745c5513f57fc47e59a8eeda5339a6c3b5bce5258b03e",
+            "ea613b6918aef7b32e7a875e649c92309eb3a6e0cae10289dc721d74ad2613a5",
+            "590ab3a941c688f46e6aba6826f60aa7357d744ad41c2c801264cdc0a3a15806",
+            "238146fd103e82c4ff2072c8038193432fc09f376b02642f9eadefa2d5a8203c"
+        ];
+
+        let audio = null;
+        let currentTrack = null;
+
+        // Функция для создания SHA-256 хеша
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function checkLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const content = document.getElementById('content');
+
+            if (username === 'Admin') {
+                const passwordHash = await sha256(password);
+                if (passwordHashes.includes(passwordHash)) {
+                    content.style.display = 'block';
+                    errorMessage.style.display = 'none';
+                    showStatus('Добро пожаловать!');
+                    return;
+                }
+            }
+            
+            errorMessage.style.display = 'block';
+            document.body.classList.add('error-bg');
+            setTimeout(() => {
+                document.body.classList.remove('error-bg');
+            }, 1000);
+        }
+
+        function showStatus(message) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 2000);
+        }
+
+        function playSound(soundPath) {
+            const audio = new Audio(soundPath);
+            audio.onerror = function() {
+                document.body.classList.add('error-bg');
+                setTimeout(() => {
+                    document.body.classList.remove('error-bg');
+                }, 1000);
+            };
+            audio.oncanplaythrough = function() {
+                showStatus('Работает!');
+                audio.play();
+            };
+            audio.load();
+        }
+
+        function checkPage(pagePath) {
+            fetch(pagePath, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        showStatus('Работает!');
+                    } else {
+                        throw new Error('File not found');
+                    }
+                })
+                .catch(error => {
+                    document.body.classList.add('error-bg');
+                    setTimeout(() => {
+                        document.body.classList.remove('error-bg');
+                    }, 1000);
+                });
+        }
+
+        function checkBackground(bgPath) {
+            const img = new Image();
+            img.onload = function() {
+                showStatus('Работает!');
+            };
+            img.onerror = function() {
+                document.body.classList.add('error-bg');
+                setTimeout(() => {
+                    document.body.classList.remove('error-bg');
+                }, 1000);
+            };
+            img.src = bgPath;
+        }
+
+        // Музыкальный плеер
+        document.querySelectorAll('.track-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const track = this.getAttribute('data-track');
+                const name = this.getAttribute('data-name');
+                playTrack(track, name);
+            });
+        });
+
+        function playTrack(track, name) {
+            if (audio) {
+                audio.pause();
+            }
+            
+            audio = new Audio(track);
+            audio.onerror = function() {
+                document.body.classList.add('error-bg');
+                setTimeout(() => {
+                    document.body.classList.remove('error-bg');
+                }, 1000);
+            };
+            audio.oncanplaythrough = function() {
+                showStatus('Работает!');
+                audio.play();
+                document.getElementById('nowPlaying').textContent = `Сейчас играет: ${name}`;
+            };
+            audio.load();
+            currentTrack = { track, name };
+        }
+
+        function playMusic() {
+            if (audio && currentTrack) {
+                audio.play();
+                document.getElementById('nowPlaying').textContent = `Сейчас играет: ${currentTrack.name}`;
+            }
+        }
+
+        function pauseMusic() {
+            if (audio) {
+                audio.pause();
+                document.getElementById('nowPlaying').textContent = 'Пауза';
+            }
+        }
+
+        function stopMusic() {
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+                document.getElementById('nowPlaying').textContent = '';
+            }
+        }
+    </script>
+</body>
+</html>
