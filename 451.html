@@ -144,5 +144,19 @@
         
         <a href="index.html" class="home-btn">>_ НА ГЛАВНУЮ</a>
     </div>
+
+    <audio id="errorSound" autoplay>
+        <source src="err_snds/HTML451.mp3" type="audio/mpeg">
+        Твой браузер не поддерживает аудио.
+    </audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const audio = document.getElementById('errorSound');
+            audio.play().catch(error => {
+                console.log('Автовоспроизведение заблокировано:', error);
+            });
+        });
+    </script>
 </body>
 </html>

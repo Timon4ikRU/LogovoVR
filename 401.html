@@ -26,5 +26,19 @@
     <div class="message">Я тебя не звал - иди на... стоп, без матов</div>
     <div class="message">Я тебя не знаю - представься сначала!</div>
     <div style="font-size: 3em;">🚫👤❓</div>
+
+    <audio id="errorSound" autoplay>
+        <source src="err_snds/HTML401.mp3" type="audio/mpeg">
+        Твой браузер не поддерживает аудио.
+    </audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const audio = document.getElementById('errorSound');
+            audio.play().catch(error => {
+                console.log('Автовоспроизведение заблокировано:', error);
+            });
+        });
+    </script>
 </body>
 </html>

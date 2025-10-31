@@ -455,6 +455,13 @@
     </style>
 </head>
 <body>
+    <audio id="successSound">
+        <source src="err_snds/HTML200.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="errorSound">
+        <source src="err_snds/HTML502.mp3" type="audio/mpeg">
+    </audio>
+
     <div class="top-panel">
         <a href="tel:+73466490070" class="phone-top">📞 +7 (3466) 49-00-70</a>
         <div class="music-trigger" onclick="toggleMusicPlayer()">🎵 Музыка</div>
@@ -632,6 +639,15 @@
     </a>
 
     <script>
+        const successSound = document.getElementById('successSound');
+        const errorSound = document.getElementById('errorSound');
+
+        function playStatusSound(type) {
+            const sound = type === 'success' ? successSound : errorSound;
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log('Автовоспроизведение звука заблокировано:', e));
+        }
+
         class MusicPlayer {
             constructor() {
                 this.audio = document.getElementById('audioPlayer');
@@ -652,7 +668,8 @@
                     const currentTrack = this.playlist[this.currentTrackIndex];
                     console.error('❌ Ошибка загрузки:', currentTrack?.file);
                     
-                    // Пропускаем проблемный трек
+                    playStatusSound('error');
+                    
                     setTimeout(() => {
                         console.log('⏭ Пропускаем проблемный трек');
                         this.nextTrack();
@@ -661,6 +678,7 @@
 
                 this.audio.addEventListener('canplaythrough', () => {
                     console.log('✅ Трек готов:', this.audio.src);
+                    playStatusSound('success');
                 });
             }
 
@@ -877,7 +895,8 @@
                 document.body.style.backgroundPosition = 'center center';
                 document.body.style.backgroundAttachment = 'fixed';
                 
-                // Запускаем анимацию элементов
+                playStatusSound('success');
+                
                 const elements = document.querySelectorAll(
                     '.phone-top, .music-trigger, .logo, .description, .cta-button, .address, .link-card, .group-title'
                 );
@@ -893,6 +912,8 @@
             preloadImage.onerror = function() {
                 document.body.style.background = '#000';
                 
+                playStatusSound('error');
+                
                 const elements = document.querySelectorAll(
                     '.phone-top, .music-trigger, .logo, .description, .cta-button, .address, .link-card, .group-title'
                 );
@@ -906,7 +927,6 @@
             };
         };
 
-        // Закрытие плеера при клике вне его
         document.addEventListener('click', function(event) {
             const player = document.getElementById('musicPlayer');
             const trigger = document.querySelector('.music-trigger');
