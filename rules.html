@@ -23,7 +23,6 @@
         position: relative;
     }
     
-    /* Фоновое изображение */
     .background-image {
         position: fixed;
         top: 0;
@@ -37,7 +36,6 @@
         opacity: 0.7;
     }
     
-    /* Fallback градиент */
     .fallback-gradient {
         position: fixed;
         top: 0;
@@ -48,7 +46,6 @@
         z-index: -2;
     }
     
-    /* Контейнер для всего контента */
     .container {
         max-width: 1200px;
         margin: 0 auto;
@@ -57,7 +54,6 @@
         z-index: 1;
     }
     
-    /* Кнопка назад */
     .back-button {
         display: inline-block;
         padding: 10px 20px;
@@ -75,7 +71,6 @@
         box-shadow: 0 0 10px #00ff00;
     }
     
-    /* Кнопка бронирования */
     .book-button {
         display: inline-block;
         padding: 12px 25px;
@@ -94,7 +89,6 @@
         transform: translateY(-2px);
     }
     
-    /* Контейнер для правил */
     .rules-container {
         background: rgba(0, 0, 0, 0.8);
         padding: 30px;
@@ -188,21 +182,17 @@
   </style>
 </head>
 <body>
-    <!-- Fallback градиент -->
     <div class="fallback-gradient"></div>
     
-    <!-- Случайный фон -->
     <div class="background-image" id="randomBackground"></div>
     
     <div class="container">
-        <!-- Хедер с кнопками -->
         <div class="header-buttons">
             <a href="index.html" class="back-button">← Назад в логово</a>
             <a href="tel:+73466490070" class="book-button">📞 Забронировать сеанс</a>
             <a href="451.html" class="back-button">...</a>
         </div>
         
-        <!-- Контейнер для правил -->
         <div class="rules-container">
             <h1>ПРАВИЛА ПОСЕЩЕНИЯ ИГОРОВОГО СООБЩЕСТВА<br>ВИРТУАЛЬНОЙ РЕАЛЬНОСТИ<br><span class="highlight">LogovoVR</span></h1>
             
@@ -337,42 +327,36 @@
     </div>
 
     <script>
-        // Генерируем список фонов от background1.jpg до background10.jpg
         const backgroundImages = [];
         for (let i = 1; i <= 10; i++) {
             backgroundImages.push(`background/background${i}.jpg`);
         }
         
-        // Функция для получения случайного фона
         function getRandomBackground() {
             const randomIndex = Math.floor(Math.random() * backgroundImages.length);
             return backgroundImages[randomIndex];
         }
         
-        // Устанавливаем случайный фон при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             const backgroundElement = document.getElementById('randomBackground');
             const randomBackground = getRandomBackground();
             
             backgroundElement.style.backgroundImage = `url('${randomBackground}')`;
             
-            // Логируем для отладки
             console.log('Установлен фон:', randomBackground);
         });
         
-        // Дополнительно: смена фона каждые 30 секунд (опционально)
         setInterval(() => {
             const backgroundElement = document.getElementById('randomBackground');
             const randomBackground = getRandomBackground();
             
-            // Плавная смена фона
             backgroundElement.style.opacity = '0';
             setTimeout(() => {
                 backgroundElement.style.backgroundImage = `url('${randomBackground}')`;
                 backgroundElement.style.opacity = '0.7';
             }, 1000);
             
-        }, 30000); // 30 секунд
+        }, 30000);
     </script>
 </body>
 </html>
