@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal</title>
+    <title>Логово Админа</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -198,14 +198,14 @@
         <div class="section">
             <h2>Sounds</h2>
             <div class="buttons-grid">
-                <button class="btn" onclick="playSound('err_snds/HTML200')">HTML200</button>
-                <button class="btn" onclick="playSound('err_snds/HTML401')">HTML401</button>
-                <button class="btn" onclick="playSound('err_snds/HTML403')">HTML403</button>
-                <button class="btn" onclick="playSound('err_snds/HTML404')">HTML404</button>
-                <button class="btn" onclick="playSound('err_snds/HTML420')">HTML420</button>
-                <button class="btn" onclick="playSound('err_snds/HTML451')">HTML451</button>
-                <button class="btn" onclick="playSound('err_snds/HTML500')">HTML500</button>
-                <button class="btn" onclick="playSound('err_snds/HTML502')">HTML502</button>
+                <button class="btn" onclick="playSound('err_snds/HTML200.mp3')">HTML200</button>
+                <button class="btn" onclick="playSound('err_snds/HTML401.mp3')">HTML401</button>
+                <button class="btn" onclick="playSound('err_snds/HTML403.mp3')">HTML403</button>
+                <button class="btn" onclick="playSound('err_snds/HTML404.mp3')">HTML404</button>
+                <button class="btn" onclick="playSound('err_snds/HTML420.mp3')">HTML420</button>
+                <button class="btn" onclick="playSound('err_snds/HTML451.mp3')">HTML451</button>
+                <button class="btn" onclick="playSound('err_snds/HTML500.mp3')">HTML500</button>
+                <button class="btn" onclick="playSound('err_snds/HTML502.mp3')">HTML502</button>
             </div>
         </div>
 
@@ -289,7 +289,6 @@
     </div>
 
     <script>
-        // Хеши паролей (SHA-256) вместо чистого текста
         const passwordHashes = [
             "2db556f27d28be05fc9745c5513f57fc47e59a8eeda5339a6c3b5bce5258b03e",
             "ea613b6918aef7b32e7a875e649c92309eb3a6e0cae10289dc721d74ad2613a5",
@@ -300,7 +299,6 @@
         let audio = null;
         let currentTrack = null;
 
-        // Функция для создания SHA-256 хеша
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
