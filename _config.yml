@@ -1,0 +1,12 @@
+# _config.yml
+title: "Logovo VR"
+description: "VR клуб в Нижневартовске"
+theme: jekyll-theme-cayman
+
+plugins:
+  - jekyll-redirect-from
+
+include:
+  - .well-known
+
+safe: true
