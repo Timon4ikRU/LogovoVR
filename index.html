@@ -668,7 +668,6 @@
                     const currentTrack = this.playlist[this.currentTrackIndex];
                     console.error('❌ Ошибка загрузки:', currentTrack?.file);
                     
-                    playStatusSound('error');
                     
                     setTimeout(() => {
                         console.log('⏭ Пропускаем проблемный трек');
@@ -678,7 +677,6 @@
 
                 this.audio.addEventListener('canplaythrough', () => {
                     console.log('✅ Трек готов:', this.audio.src);
-                    playStatusSound('success');
                 });
             }
 
