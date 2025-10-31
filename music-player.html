@@ -307,6 +307,7 @@
                 this.isShuffled = false;
                 this.isRepeated = false;
                 this.originalPlaylist = [];
+                this.shuffledPlaylist = [];
                 
                 this.loadPlaylist();
                 this.setupEventListeners();
@@ -332,6 +333,7 @@
                     element: element
                 }));
                 this.originalPlaylist = [...this.playlist];
+                this.shuffledPlaylist = [...this.playlist];
             }
 
             setupEventListeners() {
@@ -413,21 +415,34 @@
                 const shuffleBtn = document.getElementById('shuffleBtn');
                 
                 if (this.isShuffled) {
-                    // Crypto-based shuffle
-                    const randomValues = new Uint32Array(this.playlist.length);
-                    crypto.getRandomValues(randomValues);
+                    const currentTrack = this.playlist[this.currentTrackIndex];
                     
-                    for (let i = this.playlist.length - 1; i > 0; i--) {
+                    const shuffled = [...this.originalPlaylist];
+                    const randomValues = new Uint32Array(shuffled.length);
+                    window.crypto.getRandomValues(randomValues);
+                    
+                    for (let i = shuffled.length - 1; i > 0; i--) {
                         const j = randomValues[i] % (i + 1);
-                        [this.playlist[i], this.playlist[j]] = [this.playlist[j], this.playlist[i]];
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                     }
+                    
+                    const currentIndexInShuffled = shuffled.findIndex(track => track.file === currentTrack.file);
+                    if (currentIndexInShuffled > 0) {
+                        [shuffled[0], shuffled[currentIndexInShuffled]] = [shuffled[currentIndexInShuffled], shuffled[0]];
+                    }
+                    
+                    this.playlist = shuffled;
+                    this.currentTrackIndex = 0;
                     shuffleBtn.style.background = 'rgba(136, 0, 255, 0.3)';
                 } else {
+                    const currentTrack = this.playlist[this.currentTrackIndex];
                     this.playlist = [...this.originalPlaylist];
+                    const originalIndex = this.originalPlaylist.findIndex(track => track.file === currentTrack.file);
+                    this.currentTrackIndex = originalIndex >= 0 ? originalIndex : 0;
                     shuffleBtn.style.background = '';
                 }
                 
-                this.loadTrack(0);
+                this.loadTrack(this.currentTrackIndex);
             }
 
             toggleRepeat() {
