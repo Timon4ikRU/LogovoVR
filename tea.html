@@ -41,6 +41,11 @@
         .hidden-btn:hover {
             opacity: 1;
         }
+        .crypto-status {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -51,27 +56,52 @@
         *настоящая HTTP ошибка из RFC 2324
     </div>
 
-    <button class="hidden-btn" onclick="showSecret()">secret</button>
+    <button class="hidden-btn" onclick="brewCoffee()">secret</button>
 
     <script>
-        function showSecret() {
-            document.body.innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 3em;">🫖☕</div>
-                    <div class="message">Чайник пытался сварить кофе...</div>
-                    <div>И у него получилось! 🎉</div>
-                    <button onclick="location.reload()" style="margin-top: 20px; background: #00ff88; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Вернуться к чаю</button>
-                </div>
-            `;
+        // Crypto-based рандомизация с использованием Web Crypto API
+        async function getCryptoRandom() {
+            const array = new Uint32Array(1);
+            window.crypto.getRandomValues(array);
+            return array[0] / (0xFFFFFFFF + 1);
         }
 
-        // Случайные фразы при наведении на чайник
+        async function brewCoffee() {
+            const randomValue = await getCryptoRandom();
+            const willBrewCoffee = randomValue > 0.5;
+            
+            if (willBrewCoffee) {
+                document.body.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em;">🫖☕</div>
+                        <div class="message">Чайник пытался сварить кофе...</div>
+                        <div>И у него получилось! 🎉</div>
+                        <div class="crypto-status">Crypto-рандомизация: ${randomValue.toFixed(4)} > 0.5</div>
+                        <button onclick="location.reload()" style="margin-top: 20px; background: #00ff88; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Вернуться к чаю</button>
+                    </div>
+                `;
+            } else {
+                document.body.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em;">🫖🚫</div>
+                        <div class="message" style="color: #ff4444;">"Иди и ищи кофеварку. Или турку."</div>
+                        <div>Чайник проявил характер и отказался!</div>
+                        <div class="crypto-status">Crypto-рандомизация: ${randomValue.toFixed(4)} ≤ 0.5</div>
+                        <button onclick="location.reload()" style="margin-top: 20px; background: #ff4444; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Принять судьбу</button>
+                    </div>
+                `;
+            }
+        }
+
         const phrases = [
             "Не жди от меня кофе!",
             "Я только для чая!",
             "HTCPCP/1.0",
             "Завариваю чай...",
-            "418 - это серьёзно!"
+            "418 - это серьёзно!",
+            "Crypto-based отказ!",
+            "50% шанс на кофе!",
+            "Попробуй свою удачу!"
         ];
 
         document.querySelector('.teapot').addEventListener('mouseover', function() {
