@@ -56,11 +56,18 @@
             font-family: 'JetBrains Mono', monospace;
             cursor: pointer;
             margin-top: 10px;
+            transition: all 0.3s ease;
         }
         
-        button:hover {
+        button:hover:not(:disabled) {
             background: #00ff00;
             color: #001100;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         .matrix-bg {
@@ -78,6 +85,76 @@
             border-top: 1px solid #00ff00;
             padding-top: 15px;
         }
+        
+        .status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid;
+            background: #002200;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .success {
+            color: #00ff00;
+            border-color: #00ff00;
+        }
+        
+        .error {
+            color: #ff0000;
+            border-color: #ff0000;
+        }
+        
+        .warning {
+            color: #ffff00;
+            border-color: #ffff00;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ff00;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .system-log {
+            background: #000;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            color: #00ff00;
+            margin: 2px 0;
+        }
+        
+        .log-timestamp {
+            color: #888;
+        }
+        
+        .log-info {
+            color: #00ff00;
+        }
+        
+        .log-success {
+            color: #00ff88;
+        }
+        
+        .log-error {
+            color: #ff0000;
+        }
     </style>
 </head>
 <body>
@@ -93,50 +170,40 @@
             <span>>> INITIATING PROTOCOL...</span>
         </div>
         
-        <form action="https://formsubmit.co/timofey202419@outlook.com" method="POST">
-            <input type="hidden" name="_next" value="https://timon4ikru.github.io/LogovoVR/">
-            <input type="hidden" name="_subject" value="[VR_TERMINAL] NEW_IDEA_SUBMISSION">
-            <input type="hidden" name="_captcha" value="false">
-            
+        <form id="ideaForm">
             <div class="prompt">
                 <span>ENTER_USER_IDENTITY:</span>
             </div>
-            <input type="text" name="name" placeholder="user_name" required>
+            <input type="text" id="userName" placeholder="user_name" required>
             
             <div class="prompt">
                 <span>ENTER_CONTACT_PROTOCOL:</span>
             </div>
-            <input type="email" name="email" placeholder="email@protocol.com" required>
+            <input type="email" id="userEmail" placeholder="email@protocol.com" required>
             
             <div class="prompt">
                 <span>ENTER_IDEA_PAYLOAD:</span>
             </div>
-            <textarea name="idea" placeholder="// MAX_PAYLOAD_SIZE: 10000_CHARS" 
+            <textarea id="userIdea" placeholder="// MAX_PAYLOAD_SIZE: 10000_CHARS" 
                      maxlength="10000" rows="6" required></textarea>
-            
-            <input type="hidden" name="timestamp" id="timestamp">
-            <input type="hidden" name="user_os" id="userOs">
-            <input type="hidden" name="user_agent" id="userAgent">
-            <input type="hidden" name="ip" id="ipField">
-            
-            <script>
-            fetch('https://api.ipify.org?format=json')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('ipField').value = data.ip;
-                })
-                .catch(error => {
-                    document.getElementById('ipField').value = 'IP_NOT_DETECTED';
-                });
-            </script>
             
             <div class="prompt">
                 <span>// sudo check_status</br></span>
-                <span>>>200 OK</br></span>
-                <span>>> READY_FOR_TRANSMISSION</span>
+                <span id="transmissionStatus">>>> INITIALIZING...</span>
             </div>
-            <button type="submit">EXECUTE_TRANSMISSION</button>
+            <button type="submit" id="submitBtn">
+                EXECUTE_TRANSMISSION
+            </button>
         </form>
+        
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+        
+        <div class="system-log" id="systemLog">
+            <div class="log-entry">
+                <span class="log-timestamp">[00:00:00]</span>
+                <span class="log-info">> SYSTEM_BOOT</span>
+            </div>
+        </div>
         
         <div class="nav-buttons">
             <div class="prompt">
@@ -146,15 +213,240 @@
         </div>
         
         <div class="prompt">
-            <span>>> SYSTEM_STATUS: <span style="color:#00ff00">ONLINE</span></span>
+            <span id="systemStatus">>>> SYSTEM_STATUS: <span style="color:#00ff00">INITIALIZING...</span></span>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script>
-        document.getElementById('timestamp').value = new Date().toISOString();
-        document.getElementById('userOs').value = navigator.platform;
-        document.getElementById('userAgent').value = navigator.userAgent;
+        // === НАСТРОЙКИ EMAILJS ===
+        const EMAILJS_CONFIG = {
+            PUBLIC_KEY: 'qsXC8gCcga_7pNr1w',
+            SERVICE_ID: 'Logovo_Idea_Submit',
+            TEMPLATE_ID: 'template_61tm3lm'
+        };
         
+        // Системные переменные
+        let transmissionLog = [];
+        
+        // === ИНИЦИАЛИЗАЦИЯ EMAILJS ===
+        function initializeEmailJS() {
+            try {
+                emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+                logToSystem('EmailJS initialized successfully', 'success');
+                updateSystemStatus('ONLINE', '#00ff00');
+                updateTransmissionStatus('READY_FOR_TRANSMISSION');
+                return true;
+            } catch (error) {
+                logToSystem(`EmailJS initialization error: ${error.message}`, 'error');
+                updateSystemStatus('ERROR', '#ff0000');
+                updateTransmissionStatus('SYSTEM_ERROR');
+                showStatusMessage('>>> SYSTEM_ERROR: Failed to initialize EmailJS', 'error');
+                return false;
+            }
+        }
+        
+        // === СИСТЕМНОЕ ЛОГИРОВАНИЕ ===
+        function logToSystem(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = {
+                timestamp,
+                message,
+                type
+            };
+            
+            transmissionLog.push(logEntry);
+            
+            // Добавляем в лог на экране
+            const logElement = document.getElementById('systemLog');
+            const logDiv = document.createElement('div');
+            logDiv.className = 'log-entry';
+            logDiv.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="log-${type}">> ${message}</span>
+            `;
+            
+            logElement.appendChild(logDiv);
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            // Ограничиваем лог 50 записями
+            if (transmissionLog.length > 50) {
+                transmissionLog.shift();
+                if (logElement.children.length > 1) {
+                    logElement.removeChild(logElement.firstChild.nextSibling);
+                }
+            }
+        }
+        
+        // === ОБНОВЛЕНИЕ СТАТУСА СИСТЕМЫ ===
+        function updateSystemStatus(status, color = '#00ff00') {
+            const statusElement = document.getElementById('systemStatus');
+            statusElement.innerHTML = `>>> SYSTEM_STATUS: <span style="color:${color}">${status}</span>`;
+        }
+        
+        // === ОБНОВЛЕНИЕ СТАТУСА ПЕРЕДАЧИ ===
+        function updateTransmissionStatus(status) {
+            const statusElement = document.getElementById('transmissionStatus');
+            statusElement.textContent = `>>> ${status}`;
+        }
+        
+        // === ПОКАЗАТЬ СООБЩЕНИЕ СТАТУСА ===
+        function showStatusMessage(message, type = 'success') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type}`;
+            statusElement.style.display = 'block';
+            
+            logToSystem(message.replace('>>> ', ''), type);
+            
+            // Автоматическое скрытие через 5 секунд
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // === ПОЛУЧЕНИЕ IP АДРЕСА ===
+        async function getUserIP() {
+            const services = [
+                'https://api.ipify.org?format=json',
+                'https://api64.ipify.org?format=json',
+                'https://ipinfo.io/json'
+            ];
+            
+            for (let service of services) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+                    
+                    const response = await fetch(service, { 
+                        signal: controller.signal 
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const ip = data.ip || data.ip_address;
+                        logToSystem(`IP detected: ${ip}`, 'info');
+                        return ip;
+                    }
+                } catch (error) {
+                    logToSystem(`IP service ${service} failed`, 'warning');
+                    continue;
+                }
+            }
+            
+            logToSystem('IP not detected', 'warning');
+            return 'IP_NOT_DETECTED';
+        }
+        
+        // === ОТПРАВКА ФОРМЫ ===
+        document.getElementById('ideaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const userName = document.getElementById('userName').value.trim();
+            const userEmail = document.getElementById('userEmail').value.trim();
+            const userIdea = document.getElementById('userIdea').value.trim();
+            
+            // Валидация
+            if (!userName || !userEmail || !userIdea) {
+                showStatusMessage('>>> ERROR: All fields are required', 'error');
+                return;
+            }
+            
+            if (!validateEmail(userEmail)) {
+                showStatusMessage('>>> ERROR: Invalid email format', 'error');
+                return;
+            }
+            
+            // Начинаем отправку
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> TRANSMITTING...';
+            
+            updateSystemStatus('TRANSMITTING', '#ffff00');
+            updateTransmissionStatus('TRANSMITTING_PAYLOAD...');
+            logToSystem('Starting transmission...', 'info');
+            
+            try {
+                // Получаем IP
+                logToSystem('Acquiring IP address...', 'info');
+                const userIp = await getUserIP();
+                logToSystem(`IP acquired: ${userIp}`, 'success');
+                
+                // Подготавливаем данные
+                const templateParams = {
+                    user_name: userName,
+                    user_email: userEmail,
+                    user_idea: userIdea,
+                    timestamp: new Date().toISOString(),
+                    user_os: navigator.platform,
+                    user_agent: navigator.userAgent,
+                    user_ip: userIp,
+                    user_browser: navigator.userAgentData?.brands?.[0]?.brand || 'Unknown'
+                };
+                
+                logToSystem('Sending via EmailJS...', 'info');
+                
+                // Отправляем через EmailJS
+                const response = await emailjs.send(
+                    EMAILJS_CONFIG.SERVICE_ID,
+                    EMAILJS_CONFIG.TEMPLATE_ID,
+                    templateParams
+                );
+                
+                if (response.status === 200) {
+                    // Успех!
+                    logToSystem('Transmission successful! Status: 200', 'success');
+                    showStatusMessage('>>> TRANSMISSION_SUCCESS: PAYLOAD_DELIVERED', 'success');
+                    updateSystemStatus('ONLINE', '#00ff00');
+                    updateTransmissionStatus('TRANSMISSION_COMPLETE');
+                    
+                    // Очищаем форму
+                    document.getElementById('ideaForm').reset();
+                    
+                    // Показываем детали
+                    logToSystem(`To: ${userEmail}`, 'info');
+                    logToSystem(`User: ${userName}`, 'info');
+                    logToSystem(`Payload size: ${userIdea.length} chars`, 'info');
+                    
+                    // Автоматический переход на главную через 3 секунды
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 3000);
+                    
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('Transmission error:', error);
+                logToSystem(`Transmission failed: ${error.message}`, 'error');
+                showStatusMessage(`>>> TRANSMISSION_FAILED: ${error.message}`, 'error');
+                updateSystemStatus('ERROR', '#ff0000');
+                updateTransmissionStatus('TRANSMISSION_FAILED');
+                
+                // Предложение альтернативного контакта
+                setTimeout(() => {
+                    showStatusMessage('>>> Please contact us directly at: +7 (3466) 49-00-70', 'warning');
+                }, 2000);
+                
+            } finally {
+                // Восстанавливаем кнопку
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'EXECUTE_TRANSMISSION';
+            }
+        });
+        
+        // === ВАЛИДАЦИЯ EMAIL ===
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+        
+        // === МАТРИЧНЫЙ ФОН ===
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
         
@@ -190,6 +482,40 @@
         }
         
         setInterval(drawMatrix, 35);
+        
+        // === ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ ===
+        window.addEventListener('load', async () => {
+            updateSystemStatus('BOOTING...', '#ffff00');
+            logToSystem('System booting up...', 'info');
+            
+            // Инициализация EmailJS
+            const emailjsReady = initializeEmailJS();
+            
+            if (emailjsReady) {
+                logToSystem('Checking connectivity...', 'info');
+                
+                try {
+                    // Проверяем соединение
+                    const ip = await getUserIP();
+                    logToSystem(`System online. IP: ${ip}`, 'success');
+                    logToSystem('All systems operational', 'success');
+                } catch (error) {
+                    logToSystem('Limited connectivity detected', 'warning');
+                    showStatusMessage('>>> WARNING: Limited connectivity', 'warning');
+                }
+            } else {
+                // Если EmailJS не инициализирован
+                showStatusMessage('>>> CRITICAL: EmailJS not configured. Please check PUBLIC_KEY', 'error');
+                document.getElementById('submitBtn').disabled = true;
+                document.getElementById('submitBtn').textContent = 'SYSTEM_ERROR';
+            }
+        });
+        
+        // === ОБРАБОТКА ИЗМЕНЕНИЯ РАЗМЕРА ОКНА ===
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 </html>
