@@ -7,6 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    
+    <!-- SUPABASE КЛИЕНТ -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&display=swap');
         
@@ -93,6 +97,110 @@
         .music-trigger:hover {
             background: rgba(136, 0, 255, 0.3);
             transform: translateY(-23px);
+        }
+        
+        /* Панель пользователя */
+        .user-auth-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1002;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            min-width: 200px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
+            display: none;
+        }
+        
+        .user-auth-panel.visible {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-info {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .user-email {
+            font-weight: bold;
+            color: #ffaa00;
+            word-break: break-all;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .auth-btn {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-btn:hover {
+            background: rgba(0, 255, 136, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .auth-btn.logout {
+            background: rgba(255, 68, 68, 0.2);
+            border-color: rgba(255, 68, 68, 0.3);
+            color: #ff4444;
+        }
+        
+        .auth-btn.logout:hover {
+            background: rgba(255, 68, 68, 0.3);
+        }
+        
+        .login-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .login-indicator:hover {
+            background: rgba(0, 255, 136, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .login-indicator.logged-in {
+            background: rgba(0, 255, 136, 0.3);
+            border-color: #00ff88;
         }
         
         .music-player {
@@ -410,13 +518,13 @@
         
         .snowflake {
             position: absolute;
-            top: -20px; /* Start above the screen */
+            top: -20px;
             color: white;
             font-size: 1.2em;
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
             user-select: none;
             pointer-events: none;
-            opacity: 0; /* Start invisible */
+            opacity: 0;
             filter: blur(0.5px);
         }
 
@@ -686,32 +794,6 @@
         }
 
         @media (max-width: 768px) {
-            .snowflake {
-                font-size: 1em;
-            }
-
-            .snowflake:nth-child(11),
-            .snowflake:nth-child(12),
-            .snowflake:nth-child(13),
-            .snowflake:nth-child(14),
-            .snowflake:nth-child(15) {
-                display: none;
-            }
-
-            .snowflake:nth-child(1) { left: 10%; animation: fall1 12s linear infinite; }
-            .snowflake:nth-child(2) { left: 25%; animation: fall2 15s linear infinite; }
-            .snowflake:nth-child(3) { left: 40%; animation: fall3 10s linear infinite; }
-            .snowflake:nth-child(4) { left: 55%; animation: fall4 17s linear infinite; }
-            .snowflake:nth-child(5) { left: 70%; animation: fall5 13s linear infinite; }
-            .snowflake:nth-child(6) { left: 85%; animation: fall6 11s linear infinite; }
-            .snowflake:nth-child(7) { left: 15%; animation: fall7 16s linear infinite; }
-            .snowflake:nth-child(8) { left: 30%; animation: fall8 10s linear infinite; }
-            .snowflake:nth-child(9) { left: 60%; animation: fall9 14s linear infinite; }
-            .snowflake:nth-child(10) { left: 90%; animation: fall10 9s linear infinite; }
-        }
-        
-        /* Адаптивность для мобильных */
-        @media (max-width: 768px) {
             .top-panel {
                 position: relative;
                 top: 0;
@@ -719,6 +801,18 @@
                 justify-content: center;
                 margin-bottom: 1rem;
                 flex-wrap: wrap;
+            }
+            
+            .user-auth-panel {
+                top: 120px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
+            
+            .login-indicator {
+                top: 100px;
+                right: 10px;
             }
             
             .music-player {
@@ -765,7 +859,6 @@
                 align-items: center;
             }
             
-            /* Adjust snowflakes for mobile */
             .snowflake {
                 font-size: 1em;
             }
@@ -784,6 +877,23 @@
     </style>
 </head>
 <body>
+    <!-- SUPABASE AUTH ПАНЕЛЬ -->
+    <div id="authPanel" class="user-auth-panel">
+        <div id="userInfo" class="user-info">
+            <div style="color: #ffaa00; font-weight: bold;">Загрузка...</div>
+            <div style="font-size: 12px; color: #8fd493; margin-top: 5px;">Проверка авторизации</div>
+        </div>
+        <div id="authButtons" class="auth-buttons">
+            <a href="login.html" class="auth-btn">🔑 Войти</a>
+            <a href="register.html" class="auth-btn">📝 Регистрация</a>
+        </div>
+    </div>
+    
+    <!-- ИНДИКАТОР ВХОДА -->
+    <div id="loginIndicator" class="login-indicator" onclick="toggleAuthPanel()">
+        👤
+    </div>
+
     <audio id="successSound">
         <source src="err_snds/HTML200.mp3" type="audio/mpeg">
     </audio>
@@ -989,6 +1099,173 @@
     </a>
 
     <script>
+        // ==================== SUPABASE НАСТРОЙКА ====================
+        const SUPABASE_CONFIG = {
+            url: 'https://gdbemyluqtnfytvujfnu.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg'
+        };
+        
+        // Инициализация Supabase
+        const supabase = window.supabase.createClient(
+            SUPABASE_CONFIG.url, 
+            SUPABASE_CONFIG.key
+        );
+        
+        // ==================== ФУНКЦИИ АВТОРИЗАЦИИ ====================
+        let authPanelVisible = false;
+        
+        // Переключение панели авторизации
+        function toggleAuthPanel() {
+            const panel = document.getElementById('authPanel');
+            panel.classList.toggle('visible');
+            authPanelVisible = !authPanelVisible;
+            
+            // Закрытие при клике вне панели
+            if (authPanelVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeAuthPanelOnClickOutside);
+                }, 10);
+            }
+        }
+        
+        // Закрытие панели при клике вне
+        function closeAuthPanelOnClickOutside(event) {
+            const panel = document.getElementById('authPanel');
+            const indicator = document.getElementById('loginIndicator');
+            
+            if (!panel.contains(event.target) && !indicator.contains(event.target)) {
+                panel.classList.remove('visible');
+                authPanelVisible = false;
+                document.removeEventListener('click', closeAuthPanelOnClickOutside);
+            }
+        }
+        
+        // Проверка авторизации
+        async function checkAuth() {
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) throw error;
+                
+                if (user) {
+                    // ПОЛЬЗОВАТЕЛЬ ВОШЁЛ
+                    showUserPanel(user);
+                    
+                    // Проверяем, админ ли пользователь
+                    await checkAdminStatus(user.id);
+                } else {
+                    // ПОЛЬЗОВАТЕЛЬ НЕ АВТОРИЗОВАН
+                    showLoginPanel();
+                }
+            } catch (error) {
+                console.error('Ошибка проверки авторизации:', error);
+                showLoginPanel();
+            }
+        }
+        
+        // Показываем панель для авторизованного пользователя
+        function showUserPanel(user) {
+            const userInfo = document.getElementById('userInfo');
+            const authButtons = document.getElementById('authButtons');
+            const indicator = document.getElementById('loginIndicator');
+            
+            // Обновляем индикатор
+            indicator.classList.add('logged-in');
+            indicator.title = `Вошёл как: ${user.email}`;
+            
+            // Информация о пользователе
+            userInfo.innerHTML = `
+                <div class="user-email">${user.email}</div>
+                <div style="font-size: 12px; color: #8fd493; margin-top: 5px;">
+                    ID: ${user.id.substring(0, 8)}...
+                </div>
+            `;
+            
+            // Кнопки для авторизованного пользователя
+            authButtons.innerHTML = `
+                <a href="booking.html" class="auth-btn">📅 Забронировать</a>
+                <a href="#" id="adminLink" class="auth-btn" style="display: none;">👑 Админ-панель</a>
+                <button onclick="logout()" class="auth-btn logout">🚪 Выйти</button>
+            `;
+        }
+        
+        // Показываем панель для неавторизованного пользователя
+        function showLoginPanel() {
+            const userInfo = document.getElementById('userInfo');
+            const authButtons = document.getElementById('authButtons');
+            const indicator = document.getElementById('loginIndicator');
+            
+            // Сбрасываем индикатор
+            indicator.classList.remove('logged-in');
+            indicator.title = 'Войти в систему';
+            
+            // Сообщение
+            userInfo.innerHTML = `
+                <div style="color: #ffaa00; font-weight: bold;">Не авторизован</div>
+                <div style="font-size: 12px; color: #8fd493; margin-top: 5px;">
+                    Войдите для бронирования
+                </div>
+            `;
+            
+            // Кнопки для входа
+            authButtons.innerHTML = `
+                <a href="login.html" class="auth-btn">🔑 Войти</a>
+                <a href="register.html" class="auth-btn">📝 Регистрация</a>
+            `;
+        }
+        
+        // Проверяем, является ли пользователь админом
+        async function checkAdminStatus(userId) {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('user_type')
+                    .eq('id', userId)
+                    .single();
+                    
+                if (data && data.user_type === 'admin') {
+                    // ПОКАЗЫВАЕМ ССЫЛКУ НА АДМИН-ПАНЕЛЬ
+                    const adminLink = document.getElementById('adminLink');
+                    if (adminLink) {
+                        adminLink.style.display = 'block';
+                        adminLink.href = 'admin-panel.html';
+                    }
+                }
+            } catch (error) {
+                console.log('Пользователь не админ или ошибка проверки:', error);
+            }
+        }
+        
+        // Выход из системы
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) throw error;
+                
+                // Перезагружаем страницу
+                window.location.reload();
+            } catch (error) {
+                console.error('Ошибка выхода:', error);
+                alert('Ошибка выхода из системы');
+            }
+        }
+        
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Проверяем авторизацию при загрузке
+            checkAuth();
+            
+            // Слушаем изменения авторизации (real-time)
+            supabase.auth.onAuthStateChange((event, session) => {
+                console.log('Статус авторизации изменился:', event);
+                
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                    checkAuth();
+                }
+            });
+        });
+
         const successSound = document.getElementById('successSound');
         const errorSound = document.getElementById('errorSound');
 
