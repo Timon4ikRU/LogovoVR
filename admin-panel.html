@@ -253,6 +253,16 @@
             color: #000;
         }
 
+        .action-btn.warning {
+            color: #ffc107;
+            border-color: #ffc107;
+        }
+
+        .action-btn.warning:hover {
+            background: #ffc107;
+            color: #000;
+        }
+
         .search-box {
             width: 100%;
             padding: 10px;
@@ -309,93 +319,42 @@
             font-size: 0.8em;
         }
 
-        /* Модальное окно */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1001;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: #000;
-            border: 2px solid #00ff00;
-            border-radius: 10px;
-            padding: 30px;
-            min-width: 400px;
-            max-width: 90%;
-        }
-
-        .modal-header {
-            color: #00ff00;
+        .invite-section {
             margin-bottom: 20px;
-            text-align: center;
+            padding: 15px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 10px;
         }
 
-        .modal-input {
-            width: 100%;
-            padding: 10px;
-            background: #111;
-            color: #00ff00;
-            border: 1px solid #333;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .modal-buttons {
+        .invite-form {
             display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
+            gap: 10px;
+            margin-top: 10px;
         }
 
-        .modal-btn {
-            padding: 10px 20px;
+        .invite-form input {
+            flex: 1;
+            padding: 10px;
+            background: #008800;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+
+        .invite-form button {
+            background: #00c200;
+            color: #000;
             border: none;
+            padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .modal-btn.confirm {
-            background: #00ff00;
-            color: #000;
-        }
-
-        .modal-btn.cancel {
-            background: #ff4444;
-            color: #000;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="status-message" id="statusMessage">Работает!</div>
-
-    <!-- Модальное окно для смены пароля -->
-    <div class="modal" id="passwordModal">
-        <div class="modal-content">
-            <h3 class="modal-header">🔑 Изменение пароля</h3>
-            <div id="passwordModalContent">
-                <!-- Контент будет заполняться динамически -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно для смены email -->
-    <div class="modal" id="emailModal">
-        <div class="modal-content">
-            <h3 class="modal-header">📧 Изменение email</h3>
-            <div id="emailModalContent">
-                <!-- Контент будет заполняться динамически -->
-            </div>
-        </div>
-    </div>
 
     <!-- Информация о пользователе -->
     <div class="user-info" id="userInfo" style="display: none;">
@@ -425,10 +384,20 @@
         <div class="section">
             <h2>📊 Управление таблицами Supabase</h2>
             
+            <!-- Приглашение пользователей -->
+            <div class="invite-section">
+                <h3>📨 Пригласить нового пользователя</h3>
+                <p style="color: #8fd493; margin-bottom: 10px;">Отправьте приглашение на email. Пользователь получит ссылку для регистрации.</p>
+                <div class="invite-form">
+                    <input type="email" id="inviteEmail" placeholder="email@example.com">
+                    <button onclick="inviteUser()">Отправить приглашение</button>
+                </div>
+            </div>
+
             <!-- Bookings Table -->
             <div style="margin-bottom: 30px;">
                 <h3>📅 Бронирования (bookings)</h3>
-                <input type="text" class="search-box" id="searchBookings" placeholder="Поиск по телефону или ID..." onkeyup="searchBookings()">
+                <input type="text" class="search-box" id="searchBookings" placeholder="Поиск по телефону, email или ID..." onkeyup="searchBookings()">
                 <div id="bookingsTable"></div>
                 <div class="pagination" id="bookingsPagination"></div>
             </div>
@@ -541,11 +510,7 @@
         const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
-        // Для управления пользователями нужен admin API ключ
-        const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTc4MjAwMCwiZXhwIjoyMDgxMzU4MDAwfQ.A8E9UQKRT9WtO6U0eRueP5sXymVgBc4s8SxrPV9NWJE'; // service_role ключ
-        
         let supabase = null;
-        let supabaseAdmin = null; // Для админских операций
         let currentUser = null;
         let isAdmin = false;
         let isLocalAdmin = false;
@@ -571,21 +536,13 @@
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 Инициализация админ-панели...');
             
-            // Инициализируем Supabase (обычный клиент)
+            // Инициализируем Supabase
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
                 auth: {
                     autoRefreshToken: true,
                     persistSession: true,
                     detectSessionInUrl: true,
                     storage: localStorage
-                }
-            });
-            
-            // Инициализируем админский клиент
-            supabaseAdmin = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
                 }
             });
             
@@ -598,15 +555,6 @@
                     const track = this.getAttribute('data-track');
                     const name = this.getAttribute('data-name');
                     playTrack(track, name);
-                });
-            });
-            
-            // Закрытие модальных окон при клике вне
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        this.style.display = 'none';
-                    }
                 });
             });
         });
@@ -770,8 +718,153 @@
             loadUsersTable();
         }
 
-        // ==================== УПРАВЛЕНИЕ ТАБЛИЦАМИ ====================
-        // Bookings
+        // ==================== БЕЗОПАСНЫЕ АДМИНСКИЕ ОПЕРАЦИИ ====================
+        
+        // 1. Приглашение новых пользователей
+        async function inviteUser() {
+            const emailInput = document.getElementById('inviteEmail');
+            const email = emailInput.value.trim();
+            
+            if (!email || !email.includes('@')) {
+                showStatus('Введите корректный email', true);
+                return;
+            }
+            
+            if (!confirm(`Отправить приглашение на ${email}?`)) return;
+            
+            try {
+                const { error } = await supabase.auth.signUp({
+                    email: email,
+                    options: {
+                        emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/login.html'
+                    }
+                });
+                
+                if (error) {
+                    if (error.message.includes('already registered')) {
+                        showStatus('Пользователь с таким email уже существует', true);
+                    } else {
+                        throw error;
+                    }
+                    return;
+                }
+                
+                showStatus(`Приглашение отправлено на ${email}`);
+                emailInput.value = '';
+                
+            } catch (error) {
+                console.error('Ошибка отправки приглашения:', error);
+                showStatus('Ошибка отправки приглашения: ' + error.message, true);
+            }
+        }
+
+        // 2. Отправка ссылки для сброса пароля
+        async function sendPasswordReset(userId, userEmail) {
+            if (!confirm(`Отправить ссылку для сброса пароля на ${userEmail}?`)) return;
+            
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+                    redirectTo: 'https://timon4ikru.github.io/LogovoVR/reset-password.html'
+                });
+                
+                if (error) throw error;
+                
+                showStatus(`Ссылка для сброса пароля отправлена на ${userEmail}`);
+                
+            } catch (error) {
+                console.error('Ошибка отправки ссылки:', error);
+                showStatus('Ошибка отправки ссылки', true);
+            }
+        }
+
+        // 3. Управление правами админа (только в таблице profiles)
+        async function makeAdmin(userId, userEmail) {
+            if (!confirm(`Назначить пользователя ${userEmail} администратором?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ user_type: 'admin' })
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                showStatus(`Пользователь ${userEmail} назначен администратором`);
+                loadUsersTable(currentUsersPage);
+                
+            } catch (error) {
+                console.error('Ошибка назначения админа:', error);
+                showStatus('Ошибка назначения админа', true);
+            }
+        }
+
+        async function makeUser(userId, userEmail) {
+            if (!confirm(`Сделать пользователя ${userEmail} обычным пользователем?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ user_type: 'user' })
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                showStatus(`Пользователь ${userEmail} стал обычным пользователем`);
+                loadUsersTable(currentUsersPage);
+                
+            } catch (error) {
+                console.error('Ошибка изменения типа:', error);
+                showStatus('Ошибка изменения типа', true);
+            }
+        }
+
+        // 4. Смена username (безопасно)
+        async function changeUsername(userId, userEmail) {
+            const newUsername = prompt(`Введите новый username для ${userEmail}:`, 'user');
+            if (!newUsername || newUsername.trim().length < 2) {
+                alert('Username должен быть не менее 2 символов');
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ username: newUsername.trim() })
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                showStatus(`Username для ${userEmail} изменен на "${newUsername}"`);
+                loadUsersTable(currentUsersPage);
+                
+            } catch (error) {
+                console.error('Ошибка смены username:', error);
+                showStatus('Ошибка смены username', true);
+            }
+        }
+
+        // 5. Удаление профиля (не удаляет пользователя из auth)
+        async function deleteProfile(userId, userEmail) {
+            if (!confirm(`Удалить профиль ${userEmail}?\n\nЭто удалит только профиль из таблицы profiles. Пользователь останется в системе.`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .delete()
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                showStatus(`Профиль ${userEmail} удален`);
+                loadUsersTable(currentUsersPage);
+                
+            } catch (error) {
+                console.error('Ошибка удаления профиля:', error);
+                showStatus('Ошибка удаления профиля', true);
+            }
+        }
+
+        // ==================== УПРАВЛЕНИЕ БРОНИРОВАНИЯМИ ====================
         async function loadBookingsTable(page = 1, search = '') {
             try {
                 document.getElementById('bookingsTable').innerHTML = '<div class="loading">Загрузка бронирований...</div>';
@@ -781,7 +874,7 @@
                     .select('*', { count: 'exact' });
                 
                 if (search) {
-                    query = query.or(`phone.ilike.%${search}%,id.eq.${parseInt(search) || 0}`);
+                    query = query.or(`phone.ilike.%${search}%,user_email.ilike.%${search}%,id.eq.${parseInt(search) || 0}`);
                 }
                 
                 const { data: bookings, error, count } = await query
@@ -791,7 +884,7 @@
                 if (error) {
                     console.error('Ошибка загрузки бронирований:', error);
                     document.getElementById('bookingsTable').innerHTML = 
-                        '<div style="color: #ff4444;">Ошибка загрузки бронирований: ' + error.message + '</div>';
+                        '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>';
                     return;
                 }
                 
@@ -911,42 +1004,36 @@
             }
         }
 
-        // Users
+        // ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ====================
         async function loadUsersTable(page = 1, search = '') {
             try {
                 document.getElementById('usersTable').innerHTML = '<div class="loading">Загрузка пользователей...</div>';
                 
-                // Получаем пользователей из auth.users через админский API
-                let query = supabaseAdmin.auth.admin.listUsers();
+                let query = supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact' });
                 
-                const { data: { users }, error } = await query;
+                if (search) {
+                    query = query.or(`email.ilike.%${search}%,username.ilike.%${search}%`);
+                }
+                
+                const { data: profiles, error, count } = await query
+                    .order('created_at', { ascending: false })
+                    .range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
                 
                 if (error) {
                     console.error('Ошибка загрузки пользователей:', error);
                     document.getElementById('usersTable').innerHTML = 
-                        '<div style="color: #ff4444;">Ошибка загрузки пользователей. Нужен service_role ключ.</div>';
+                        '<div style="color: #666; text-align: center; padding: 20px;">' +
+                        'Таблица profiles не существует или ошибка загрузки.<br>' +
+                        'Запустите SQL для создания таблицы в Supabase SQL Editor.' +
+                        '</div>';
                     return;
                 }
                 
-                // Фильтрация по поиску
-                let filteredUsers = users || [];
-                if (search) {
-                    const searchLower = search.toLowerCase();
-                    filteredUsers = filteredUsers.filter(user => 
-                        (user.email && user.email.toLowerCase().includes(searchLower)) ||
-                        (user.id && user.id.toLowerCase().includes(searchLower))
-                    );
-                }
-                
-                // Пагинация
-                const totalCount = filteredUsers.length;
-                const startIndex = (page - 1) * itemsPerPage;
-                const endIndex = startIndex + itemsPerPage;
-                const pagedUsers = filteredUsers.slice(startIndex, endIndex);
-                
                 currentUsersPage = page;
-                displayUsersTable(pagedUsers, totalCount);
-                createPagination('usersPagination', totalCount, page, 'loadUsersTable');
+                displayUsersTable(profiles || [], count || 0);
+                createPagination('usersPagination', count || 0, page, 'loadUsersTable');
                 
             } catch (error) {
                 console.error('Ошибка загрузки пользователей:', error);
@@ -955,10 +1042,10 @@
             }
         }
 
-        async function displayUsersTable(users, totalCount) {
-            if (!users || users.length === 0) {
+        function displayUsersTable(profiles, totalCount) {
+            if (!profiles || profiles.length === 0) {
                 document.getElementById('usersTable').innerHTML = 
-                    '<div style="color: #666; text-align: center;">Нет пользователей</div>';
+                    '<div style="color: #666; text-align: center;">Нет пользователей в таблице profiles</div>';
                 return;
             }
             
@@ -970,190 +1057,43 @@
                             <th>Email</th>
                             <th>Username</th>
                             <th>Тип</th>
-                            <th>Статус</th>
-                            <th>Последний вход</th>
+                            <th>Создан</th>
+                            <th>Обновлен</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
             
-            for (const user of users) {
-                // Получаем профиль пользователя
-                let profile = null;
-                try {
-                    const { data } = await supabase
-                        .from('profiles')
-                        .select('username, user_type')
-                        .eq('id', user.id)
-                        .single();
-                    profile = data;
-                } catch (e) {
-                    console.log('Профиль не найден для пользователя', user.id);
-                }
-                
-                const shortId = user.id ? user.id.substring(0, 8) + '...' : 'N/A';
-                const username = profile?.username || user.email?.split('@')[0] || 'user';
-                const userType = profile?.user_type || 'user';
+            profiles.forEach(profile => {
+                const shortId = profile.id ? profile.id.substring(0, 8) + '...' : 'N/A';
+                const username = profile.username || profile.email?.split('@')[0] || 'user';
+                const userType = profile.user_type || 'user';
                 const userTypeColor = userType === 'admin' ? '#00ff00' : '#8fd493';
-                const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString('ru-RU') : 'Никогда';
-                const isConfirmed = user.email_confirmed_at ? '✅ Подтвержден' : '❌ Не подтвержден';
+                const created = profile.created_at ? new Date(profile.created_at).toLocaleString('ru-RU') : 'Нет данных';
+                const updated = profile.updated_at ? new Date(profile.updated_at).toLocaleString('ru-RU') : 'Нет данных';
                 
                 html += `
                     <tr>
-                        <td title="${user.id || ''}">${shortId}</td>
-                        <td>${user.email || 'Нет email'}</td>
+                        <td title="${profile.id || ''}">${shortId}</td>
+                        <td>${profile.email || 'Нет email'}</td>
                         <td>${username}</td>
                         <td style="color: ${userTypeColor}">${userType}</td>
-                        <td>${isConfirmed}</td>
-                        <td>${lastSignIn}</td>
+                        <td>${created}</td>
+                        <td>${updated}</td>
                         <td>
-                            <button class="action-btn" onclick="changePassword('${user.id}', '${user.email}')">🔑</button>
-                            <button class="action-btn" onclick="changeEmail('${user.id}', '${user.email}')">📧</button>
-                            <button class="action-btn" onclick="makeAdmin('${user.id}', '${user.email}')">👑</button>
-                            <button class="action-btn" onclick="makeUser('${user.id}', '${user.email}')">👤</button>
-                            <button class="action-btn delete" onclick="deleteUser('${user.id}', '${user.email}')">🗑️</button>
+                            <button class="action-btn" onclick="makeAdmin('${profile.id}', '${profile.email || username}')">👑</button>
+                            <button class="action-btn" onclick="makeUser('${profile.id}', '${profile.email || username}')">👤</button>
+                            <button class="action-btn warning" onclick="sendPasswordReset('${profile.id}', '${profile.email}')">🔐</button>
+                            <button class="action-btn" onclick="changeUsername('${profile.id}', '${profile.email || username}')">📝</button>
+                            <button class="action-btn delete" onclick="deleteProfile('${profile.id}', '${profile.email || username}')">🗑️</button>
                         </td>
                     </tr>
                 `;
-            }
+            });
             
             html += '</tbody></table>';
             document.getElementById('usersTable').innerHTML = html;
-        }
-
-        // ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ====================
-        async function changePassword(userId, userEmail) {
-            const newPassword = prompt(`Введите новый пароль для ${userEmail} (минимум 6 символов):`);
-            if (!newPassword || newPassword.length < 6) {
-                alert('Пароль должен быть не менее 6 символов');
-                return;
-            }
-            
-            if (!confirm(`Изменить пароль для ${userEmail}?`)) return;
-            
-            try {
-                const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
-                    userId,
-                    { password: newPassword }
-                );
-                
-                if (error) throw error;
-                
-                showStatus(`Пароль для ${userEmail} успешно изменен`);
-                loadUsersTable(currentUsersPage);
-                
-            } catch (error) {
-                console.error('Ошибка смены пароля:', error);
-                showStatus('Ошибка смены пароля. Нужен service_role ключ.', true);
-            }
-        }
-
-        async function changeEmail(userId, currentEmail) {
-            const newEmail = prompt(`Введите новый email для пользователя ${currentEmail}:`);
-            if (!newEmail || !newEmail.includes('@')) {
-                alert('Введите корректный email');
-                return;
-            }
-            
-            if (!confirm(`Изменить email с ${currentEmail} на ${newEmail}?`)) return;
-            
-            try {
-                // Обновляем email в auth.users
-                const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
-                    userId,
-                    { email: newEmail }
-                );
-                
-                if (error) throw error;
-                
-                // Обновляем email в profiles
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .update({ email: newEmail })
-                    .eq('id', userId);
-                
-                if (profileError) {
-                    console.error('Ошибка обновления профиля:', profileError);
-                }
-                
-                showStatus(`Email для пользователя изменен на ${newEmail}`);
-                loadUsersTable(currentUsersPage);
-                
-            } catch (error) {
-                console.error('Ошибка смены email:', error);
-                showStatus('Ошибка смены email. Нужен service_role ключ.', true);
-            }
-        }
-
-        async function makeAdmin(userId, userEmail) {
-            if (!confirm(`Назначить пользователя ${userEmail} администратором?`)) return;
-            
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ user_type: 'admin' })
-                    .eq('id', userId);
-                
-                if (error) throw error;
-                
-                showStatus(`Пользователь ${userEmail} назначен администратором`);
-                loadUsersTable(currentUsersPage);
-                
-            } catch (error) {
-                console.error('Ошибка назначения админа:', error);
-                showStatus('Ошибка назначения админа', true);
-            }
-        }
-
-        async function makeUser(userId, userEmail) {
-            if (!confirm(`Сделать пользователя ${userEmail} обычным пользователем?`)) return;
-            
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ user_type: 'user' })
-                    .eq('id', userId);
-                
-                if (error) throw error;
-                
-                showStatus(`Пользователь ${userEmail} стал обычным пользователем`);
-                loadUsersTable(currentUsersPage);
-                
-            } catch (error) {
-                console.error('Ошибка изменения типа:', error);
-                showStatus('Ошибка изменения типа', true);
-            }
-        }
-
-        async function deleteUser(userId, userEmail) {
-            if (!confirm(`Удалить пользователя ${userEmail}? Все его бронирования также будут удалены.`)) return;
-            
-            try {
-                // Удаляем пользователя через админский API
-                const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-                
-                if (error) throw error;
-                
-                // Удаляем профиль
-                await supabase
-                    .from('profiles')
-                    .delete()
-                    .eq('id', userId);
-                
-                // Удаляем бронирования пользователя
-                await supabase
-                    .from('bookings')
-                    .delete()
-                    .eq('user_id', userId);
-                
-                showStatus(`Пользователь ${userEmail} удален`);
-                loadUsersTable(currentUsersPage);
-                
-            } catch (error) {
-                console.error('Ошибка удаления пользователя:', error);
-                showStatus('Ошибка удаления пользователя. Нужен service_role ключ.', true);
-            }
         }
 
         // Поиск
@@ -1312,6 +1252,9 @@
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && document.getElementById('adminLoginSection').style.display === 'block') {
                 checkLogin();
+            }
+            if (e.key === 'Enter' && document.getElementById('inviteEmail') && document.getElementById('inviteEmail').value) {
+                inviteUser();
             }
         });
     </script>
