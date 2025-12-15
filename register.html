@@ -248,7 +248,7 @@
                     if (error.message.includes('User already registered')) {
                         showError('Пользователь с таким email уже существует');
                     } else if (error.message.includes('Password')) {
-                        showError('Слишком слабый пароль');
+                        showError('Слишком слабый пароль. Пароль должен содержать: заглавные и строчные латинские буквы, цифры, спецсимволы (минимум 1)');
                     } else if (error.message.includes('rate limit')) {
                         showError('Слишком много попыток. Попробуйте позже.');
                     } else {
@@ -267,7 +267,7 @@
                 
                 if (data.user && !data.session) {
                     // Требуется подтверждение email
-                    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
+                    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения. Если Вас перенаправляет на localhost:3000, то всё правильно, и аккаунт подтверждён.');
                     
                     // Очищаем форму
                     document.getElementById('registerForm').reset();
@@ -275,7 +275,7 @@
                     // Перенаправляем на страницу входа через 3 секунды
                     setTimeout(() => {
                         window.location.href = 'login.html';
-                    }, 3000);
+                    }, 10000);
                     
                 } else if (data.session) {
                     // Автоматически вошли

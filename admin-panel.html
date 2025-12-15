@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Логово Админа</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -18,6 +20,26 @@
             color: #00ff00;
             min-height: 100vh;
             transition: background 0.3s ease;
+        }
+
+        .supabase-login-section {
+            padding: 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .supabase-login-section button {
+            background: #00c200;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
         }
 
         .login-section {
@@ -179,13 +201,134 @@
             text-align: center;
             font-style: italic;
         }
+
+        /* Таблицы управления */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #00ff00;
+        }
+
+        .data-table td {
+            padding: 8px 10px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: #8fd493;
+        }
+
+        .data-table tr:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .action-btn {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .action-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .action-btn.delete {
+            color: #ff4444;
+            border-color: #ff4444;
+        }
+
+        .action-btn.delete:hover {
+            background: #ff4444;
+            color: #000;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            background: #008800;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #8fd493;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #8fd493;
+            font-size: 0.9em;
+        }
+
+        .logout-btn {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 0.8em;
+        }
     </style>
 </head>
 <body>
     <div class="status-message" id="statusMessage">Работает!</div>
 
-    <div class="login-section">
+    <!-- Информация о пользователе -->
+    <div class="user-info" id="userInfo" style="display: none;">
+        <span id="userEmail"></span>
+        <button onclick="logoutSupabase()" class="logout-btn">Выйти</button>
+    </div>
+
+    <!-- Supabase авторизация -->
+    <div class="supabase-login-section" id="supabaseLoginSection">
+        <h3>Для доступа к админ-панели требуется авторизация</h3>
+        <button onclick="window.location.href='login.html'">Войти через Supabase</button>
+    </div>
+
+    <!-- Локальная авторизация админа -->
+    <div class="login-section" id="adminLoginSection">
         <div class="login-form">
+            <h3>Аутентификация администратора</h3>
             <input type="text" id="username" placeholder="Логин" value="Admin">
             <input type="password" id="password" placeholder="Пароль">
             <button onclick="checkLogin()">Войти</button>
@@ -194,6 +337,27 @@
     </div>
 
     <div class="container" id="content" style="display: none;">
+        <!-- Управление таблицами -->
+        <div class="section">
+            <h2>📊 Управление таблицами Supabase</h2>
+            
+            <!-- Bookings Table -->
+            <div style="margin-bottom: 30px;">
+                <h3>📅 Бронирования (bookings)</h3>
+                <input type="text" class="search-box" id="searchBookings" placeholder="Поиск по телефону или ID..." onkeyup="searchBookings()">
+                <div id="bookingsTable"></div>
+                <div class="pagination" id="bookingsPagination"></div>
+            </div>
+
+            <!-- Profiles Table -->
+            <div>
+                <h3>👥 Профили (profiles)</h3>
+                <input type="text" class="search-box" id="searchProfiles" placeholder="Поиск по email..." onkeyup="searchProfiles()">
+                <div id="profilesTable"></div>
+                <div class="pagination" id="profilesPagination"></div>
+            </div>
+        </div>
+
         <!-- Sounds Section -->
         <div class="section">
             <h2>Sounds</h2>
@@ -289,6 +453,16 @@
     </div>
 
     <script>
+        // ==================== SUPABASE КОНФИГ ====================
+        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        
+        let supabase = null;
+        let currentUser = null;
+        let isAdmin = false;
+        let isLocalAdmin = false;
+        
+        // Пароли для локальной админки
         const passwordHashes = [
             "2db556f27d28be05fc9745c5513f57fc47e59a8eeda5339a6c3b5bce5258b03e",
             "ea613b6918aef7b32e7a875e649c92309eb3a6e0cae10289dc721d74ad2613a5",
@@ -296,8 +470,149 @@
             "238146fd103e82c4ff2072c8038193432fc09f376b02642f9eadefa2d5a8203c"
         ];
 
+        // Переменные для таблиц
+        let currentBookingsPage = 1;
+        let currentProfilesPage = 1;
+        const itemsPerPage = 10;
+
+        // Музыкальный плеер
         let audio = null;
         let currentTrack = null;
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Инициализация админ-панели...');
+            
+            // Инициализируем Supabase
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true,
+                    storage: localStorage
+                }
+            });
+            
+            // Проверяем авторизацию Supabase
+            await checkSupabaseAuth();
+            
+            // Настройка музыки
+            document.querySelectorAll('.track-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const track = this.getAttribute('data-track');
+                    const name = this.getAttribute('data-name');
+                    playTrack(track, name);
+                });
+            });
+        });
+
+        // ==================== АВТОРИЗАЦИЯ SUPABASE ====================
+        async function checkSupabaseAuth() {
+            try {
+                console.log('🔐 Проверка Supabase авторизации...');
+                
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('Ошибка проверки сессии:', error);
+                    showLocalAdminLogin();
+                    return;
+                }
+                
+                if (session && session.user) {
+                    currentUser = session.user;
+                    console.log('✅ Supabase пользователь:', currentUser.email);
+                    
+                    // Проверяем, является ли пользователь админом
+                    await checkIfAdmin();
+                    
+                } else {
+                    console.log('❌ Supabase: Нет сессии');
+                    showLocalAdminLogin();
+                }
+                
+            } catch (error) {
+                console.error('❌ Ошибка Supabase авторизации:', error);
+                showLocalAdminLogin();
+            }
+        }
+
+        async function checkIfAdmin() {
+            try {
+                // Проверяем наличие таблицы profiles и поле user_type
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('user_type')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) {
+                    console.log('Профиль не найден или ошибка:', error);
+                    
+                    // Создаем профиль если его нет
+                    const { data: newProfile, error: createError } = await supabase
+                        .from('profiles')
+                        .upsert({
+                            id: currentUser.id,
+                            email: currentUser.email,
+                            user_type: 'user' // по умолчанию обычный пользователь
+                        })
+                        .select()
+                        .single();
+                    
+                    if (createError) {
+                        console.error('Ошибка создания профиля:', createError);
+                        showLocalAdminLogin();
+                        return;
+                    }
+                    
+                    // После создания профиля проверяем права
+                    if (newProfile && newProfile.user_type === 'admin') {
+                        isAdmin = true;
+                        showAdminInterface();
+                    } else {
+                        show403Error();
+                    }
+                    return;
+                }
+                
+                if (profile && profile.user_type === 'admin') {
+                    // Пользователь админ в Supabase
+                    isAdmin = true;
+                    showAdminInterface();
+                } else {
+                    // Не админ - показываем 403
+                    show403Error();
+                }
+                
+            } catch (error) {
+                console.error('Ошибка проверки админ-прав:', error);
+                showLocalAdminLogin();
+            }
+        }
+
+        // ==================== ЛОКАЛЬНАЯ АДМИНКА ====================
+        function showLocalAdminLogin() {
+            console.log('👨‍💼 Показываем локальную админку');
+            document.getElementById('supabaseLoginSection').style.display = 'none';
+            document.getElementById('adminLoginSection').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+        }
+
+        function show403Error() {
+            console.log('🚫 Пользователь не админ - 403');
+            document.body.innerHTML = `
+                <div style="text-align: center; padding: 100px; color: #ff4444;">
+                    <h1 style="font-size: 3em;">403</h1>
+                    <h2>Доступ запрещен</h2>
+                    <p>У вас недостаточно прав для доступа к админ-панели</p>
+                    <button onclick="logoutSupabase()" style="margin-top: 20px; padding: 10px 20px; background: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Выйти
+                    </button>
+                </div>
+            `;
+        }
 
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
@@ -315,9 +630,15 @@
             if (username === 'Admin') {
                 const passwordHash = await sha256(password);
                 if (passwordHashes.includes(passwordHash)) {
+                    isLocalAdmin = true;
                     content.style.display = 'block';
                     errorMessage.style.display = 'none';
-                    showStatus('Добро пожаловать!');
+                    document.getElementById('adminLoginSection').style.display = 'none';
+                    showStatus('Добро пожаловать, Администратор!');
+                    
+                    // Загружаем данные таблиц
+                    loadBookingsTable();
+                    loadProfilesTable();
                     return;
                 }
             }
@@ -329,13 +650,354 @@
             }, 1000);
         }
 
-        function showStatus(message) {
+        // ==================== АДМИН ИНТЕРФЕЙС ====================
+        function showAdminInterface() {
+            console.log('🛠️ Показываем админ интерфейс');
+            document.getElementById('supabaseLoginSection').style.display = 'none';
+            document.getElementById('adminLoginSection').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('userEmail').textContent = currentUser.email;
+            
+            // Загружаем данные таблиц
+            loadBookingsTable();
+            loadProfilesTable();
+        }
+
+        // ==================== УПРАВЛЕНИЕ ТАБЛИЦАМИ ====================
+        // Bookings - исправленные запросы под твою структуру
+        async function loadBookingsTable(page = 1, search = '') {
+            try {
+                document.getElementById('bookingsTable').innerHTML = '<div class="loading">Загрузка бронирований...</div>';
+                
+                let query = supabase
+                    .from('bookings')
+                    .select('*', { count: 'exact' });
+                
+                // Ищем по телефону или ID
+                if (search) {
+                    query = query.or(`phone.ilike.%${search}%,id.eq.${parseInt(search) || 0}`);
+                }
+                
+                const { data: bookings, error, count } = await query
+                    .order('created_at', { ascending: false })
+                    .range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
+                
+                if (error) {
+                    console.error('Ошибка загрузки бронирований:', error);
+                    document.getElementById('bookingsTable').innerHTML = 
+                        '<div style="color: #ff4444;">Ошибка загрузки бронирований: ' + error.message + '</div>';
+                    return;
+                }
+                
+                console.log('Загружено бронирований:', bookings?.length, 'Всего:', count);
+                currentBookingsPage = page;
+                displayBookingsTable(bookings || []);
+                createPagination('bookingsPagination', count || 0, page, 'loadBookingsTable');
+                
+            } catch (error) {
+                console.error('Ошибка загрузки бронирований:', error);
+                document.getElementById('bookingsTable').innerHTML = 
+                    '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>';
+            }
+        }
+
+        function displayBookingsTable(bookings) {
+            if (!bookings || bookings.length === 0) {
+                document.getElementById('bookingsTable').innerHTML = 
+                    '<div style="color: #666; text-align: center;">Нет бронирований</div>';
+                return;
+            }
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Дата</th>
+                            <th>Время</th>
+                            <th>Людей</th>
+                            <th>Телефон</th>
+                            <th>Пользователь</th>
+                            <th>Статус</th>
+                            <th>Создано</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            bookings.forEach(booking => {
+                // Пробуем разные форматы даты
+                let dateStr = '';
+                if (booking.date) {
+                    dateStr = booking.date;
+                } else if (booking.formatted_date) {
+                    dateStr = booking.formatted_date;
+                } else {
+                    dateStr = 'Нет даты';
+                }
+                
+                // Получаем email пользователя (может быть null)
+                let userEmail = booking.user_email || booking.email || 'Нет email';
+                
+                // Форматируем время создания
+                let createdStr = '';
+                if (booking.created_at) {
+                    const created = new Date(booking.created_at);
+                    createdStr = created.toLocaleString('ru-RU');
+                } else {
+                    createdStr = 'Нет данных';
+                }
+                
+                // Статусы с цветами
+                const statusColors = {
+                    'pending': '#ffc107',
+                    'confirmed': '#00ff00',
+                    'cancelled': '#ff4444'
+                };
+                const statusTexts = {
+                    'pending': 'Ожидание',
+                    'confirmed': 'Подтверждено',
+                    'cancelled': 'Отменено'
+                };
+                const status = booking.status || 'pending';
+                
+                html += `
+                    <tr>
+                        <td>${booking.id || 'N/A'}</td>
+                        <td>${dateStr}</td>
+                        <td>${booking.hours || 'Нет времени'}</td>
+                        <td>${booking.people || 1}</td>
+                        <td>${booking.phone || 'Нет телефона'}</td>
+                        <td>${userEmail}</td>
+                        <td style="color: ${statusColors[status] || '#fff'}">${statusTexts[status] || status}</td>
+                        <td>${createdStr}</td>
+                        <td>
+                            <button class="action-btn" onclick="updateBookingStatus(${booking.id}, 'confirmed')">✅</button>
+                            <button class="action-btn" onclick="updateBookingStatus(${booking.id}, 'cancelled')">❌</button>
+                            <button class="action-btn delete" onclick="deleteBooking(${booking.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('bookingsTable').innerHTML = html;
+        }
+
+        async function updateBookingStatus(bookingId, status) {
+            if (!confirm(`Изменить статус бронирования #${bookingId} на "${status}"?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('bookings')
+                    .update({ status: status })
+                    .eq('id', bookingId);
+                
+                if (error) throw error;
+                
+                showStatus(`Статус бронирования #${bookingId} обновлен на "${status}"`);
+                loadBookingsTable(currentBookingsPage);
+                
+            } catch (error) {
+                console.error('Ошибка обновления статуса:', error);
+                showStatus('Ошибка обновления статуса', true);
+            }
+        }
+
+        async function deleteBooking(bookingId) {
+            if (!confirm(`Удалить бронирование #${bookingId}?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('bookings')
+                    .delete()
+                    .eq('id', bookingId);
+                
+                if (error) throw error;
+                
+                showStatus(`Бронирование #${bookingId} удалено`);
+                loadBookingsTable(currentBookingsPage);
+                
+            } catch (error) {
+                console.error('Ошибка удаления:', error);
+                showStatus('Ошибка удаления', true);
+            }
+        }
+
+        // Profiles
+        async function loadProfilesTable(page = 1, search = '') {
+            try {
+                document.getElementById('profilesTable').innerHTML = '<div class="loading">Загрузка профилей...</div>';
+                
+                let query = supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact' });
+                
+                if (search) {
+                    query = query.ilike('email', `%${search}%`);
+                }
+                
+                const { data: profiles, error, count } = await query
+                    .order('created_at', { ascending: false })
+                    .range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
+                
+                if (error) {
+                    // Если таблицы profiles нет, показываем сообщение
+                    if (error.message.includes('does not exist')) {
+                        document.getElementById('profilesTable').innerHTML = 
+                            '<div style="color: #666; text-align: center; padding: 20px;">' +
+                            'Таблица profiles не существует.<br>' +
+                            'Создайте таблицу в Supabase:<br><br>' +
+                            '<code style="background: #000; padding: 10px; display: block; text-align: left; color: #8fd493;">' +
+                            'CREATE TABLE profiles (<br>' +
+                            '  id UUID REFERENCES auth.users(id) PRIMARY KEY,<br>' +
+                            '  email TEXT,<br>' +
+                            '  user_type TEXT DEFAULT \'user\',<br>' +
+                            '  created_at TIMESTAMP DEFAULT NOW()<br>' +
+                            ');' +
+                            '</code></div>';
+                        return;
+                    }
+                    throw error;
+                }
+                
+                currentProfilesPage = page;
+                displayProfilesTable(profiles || []);
+                createPagination('profilesPagination', count || 0, page, 'loadProfilesTable');
+                
+            } catch (error) {
+                console.error('Ошибка загрузки профилей:', error);
+                document.getElementById('profilesTable').innerHTML = 
+                    '<div style="color: #ff4444;">Ошибка загрузки профилей</div>';
+            }
+        }
+
+        function displayProfilesTable(profiles) {
+            if (!profiles || profiles.length === 0) {
+                document.getElementById('profilesTable').innerHTML = 
+                    '<div style="color: #666; text-align: center;">Нет профилей</div>';
+                return;
+            }
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Тип пользователя</th>
+                            <th>Создан</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            profiles.forEach(profile => {
+                const created = profile.created_at ? new Date(profile.created_at).toLocaleString('ru-RU') : 'Нет данных';
+                const userTypeColor = profile.user_type === 'admin' ? '#00ff00' : '#8fd493';
+                const shortId = profile.id ? profile.id.substring(0, 8) + '...' : 'N/A';
+                
+                html += `
+                    <tr>
+                        <td title="${profile.id || ''}">${shortId}</td>
+                        <td>${profile.email || 'Нет email'}</td>
+                        <td style="color: ${userTypeColor}">${profile.user_type || 'user'}</td>
+                        <td>${created}</td>
+                        <td>
+                            <button class="action-btn" onclick="makeAdmin('${profile.id}', '${profile.email}')">👑</button>
+                            <button class="action-btn" onclick="makeUser('${profile.id}', '${profile.email}')">👤</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('profilesTable').innerHTML = html;
+        }
+
+        async function makeAdmin(userId, userEmail) {
+            if (!confirm(`Назначить пользователя ${userEmail} администратором?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ user_type: 'admin' })
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                showStatus(`Пользователь ${userEmail} назначен администратором`);
+                loadProfilesTable(currentProfilesPage);
+                
+            } catch (error) {
+                console.error('Ошибка назначения админа:', error);
+                showStatus('Ошибка назначения админа', true);
+            }
+        }
+
+        async function makeUser(userId, userEmail) {
+            if (!confirm(`Сделать пользователя ${userEmail} обычным пользователем?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ user_type: 'user' })
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                showStatus(`Пользователь ${userEmail} стал обычным пользователем`);
+                loadProfilesTable(currentProfilesPage);
+                
+            } catch (error) {
+                console.error('Ошибка изменения типа:', error);
+                showStatus('Ошибка изменения типа', true);
+            }
+        }
+
+        // Поиск
+        function searchBookings() {
+            const search = document.getElementById('searchBookings').value;
+            loadBookingsTable(1, search);
+        }
+
+        function searchProfiles() {
+            const search = document.getElementById('searchProfiles').value;
+            loadProfilesTable(1, search);
+        }
+
+        // Пагинация
+        function createPagination(elementId, totalCount, currentPage, callbackFunction) {
+            const totalPages = Math.ceil(totalCount / itemsPerPage);
+            if (totalPages <= 1) {
+                document.getElementById(elementId).innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="${callbackFunction}(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span>...</span>';
+                }
+            }
+            
+            document.getElementById(elementId).innerHTML = html;
+        }
+
+        // ==================== ОСТАЛЬНЫЕ ФУНКЦИИ ====================
+        function showStatus(message, isError = false) {
             const statusMessage = document.getElementById('statusMessage');
             statusMessage.textContent = message;
+            statusMessage.style.background = isError ? 'rgba(255, 0, 0, 0.9)' : 'rgba(0, 255, 0, 0.9)';
             statusMessage.style.display = 'block';
             setTimeout(() => {
                 statusMessage.style.display = 'none';
-            }, 2000);
+            }, 3000);
         }
 
         function playSound(soundPath) {
@@ -385,14 +1047,6 @@
         }
 
         // Музыкальный плеер
-        document.querySelectorAll('.track-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const track = this.getAttribute('data-track');
-                const name = this.getAttribute('data-name');
-                playTrack(track, name);
-            });
-        });
-
         function playTrack(track, name) {
             if (audio) {
                 audio.pause();
@@ -435,6 +1089,33 @@
                 document.getElementById('nowPlaying').textContent = '';
             }
         }
+
+        // Выход
+        async function logoutSupabase() {
+            try {
+                if (supabase && currentUser) {
+                    await supabase.auth.signOut();
+                }
+                
+                // Очищаем localStorage
+                localStorage.removeItem('supabase.auth.token');
+                localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
+                
+                // Обновляем страницу
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Ошибка выхода:', error);
+                window.location.reload();
+            }
+        }
+
+        // Автовход при нажатии Enter в форме
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && document.getElementById('adminLoginSection').style.display === 'block') {
+                checkLogin();
+            }
+        });
     </script>
 </body>
 </html>
