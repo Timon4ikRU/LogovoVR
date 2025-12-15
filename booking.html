@@ -459,11 +459,14 @@
                 
                 // Пытаемся разлогиниться на сервере
                 await supabase.auth.signOut();
-
+                
+                // Обновляем страницу
+                window.location.reload();
             } catch (error) {
                 console.error('Ошибка выхода:', error);
                 // В любом случае очищаем локальные данные и перезагружаем
                 localStorage.clear();
+                window.location.reload();
             }
         }
         
@@ -694,10 +697,8 @@
             
             if (event === 'SIGNED_IN') {
                 console.log('Пользователь вошёл');
-                window.location.reload();
             } else if (event === 'SIGNED_OUT') {
                 console.log('Пользователь вышел');
-                window.location.reload();
             } else if (event === 'TOKEN_REFRESHED') {
                 console.log('Токен обновлён');
             }
