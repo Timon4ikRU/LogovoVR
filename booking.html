@@ -507,12 +507,12 @@
                 const date = document.getElementById('bookingDate').value;
                 if (!date) return;
                 
-                // Получаем все бронирования на эту дату
+                // Получаем ВСЕ бронирования на эту дату
                 const { data: existingBookings, error } = await supabase
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
-                    .eq('status', 'confirmed'); // Только подтвержденные брони
+                    .in('status', ['pending', 'confirmed']); // Оба статуса!
                 
                 if (error) {
                     console.error('Ошибка загрузки бронирований:', error);
@@ -533,6 +533,10 @@
                 // Обновляем опции в select
                 const timeSelect = document.getElementById('bookingTime');
                 timeSelect.innerHTML = '<option value="">Выберите время</option>';
+                
+                // Информация о доступности
+                let availableSlots = 0;
+                let totalSlots = timeSlots.length;
                 
                 // Проверяем каждый временной слот
                 for (const timeSlot of timeSlots) {
@@ -557,8 +561,14 @@
                     
                     if (existingBookings && existingBookings.length > 0) {
                         for (const booking of existingBookings) {
-                            // Проверяем пересечение временных слотов
-                            const bookingStart = new Date(`${booking.date}T${booking.hours}`);
+                            // Нормализуем время брони (убираем секунды если есть)
+                            let bookingHours = booking.hours;
+                            if (bookingHours.includes(':')) {
+                                const timeParts = bookingHours.split(':');
+                                bookingHours = `${timeParts[0]}:${timeParts[1]}`;
+                            }
+                            
+                            const bookingStart = new Date(`${booking.date}T${bookingHours}`);
                             const bookingEnd = new Date(bookingStart);
                             bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
                             
@@ -579,14 +589,15 @@
                                 
                                 // Суммируем количество людей
                                 totalPeople += parseInt(booking.people) || 0;
+                                
+                                // Проверяем превышение лимита людей
+                                if (totalPeople >= MAX_TOTAL_PEOPLE) {
+                                    isAvailable = false;
+                                    conflictReason = `Достигнут лимит (${totalPeople}/${MAX_TOTAL_PEOPLE} чел.)`;
+                                    break;
+                                }
                             }
                         }
-                    }
-                    
-                    // Проверка 3: Максимальное количество людей
-                    if (isAvailable && totalPeople >= MAX_TOTAL_PEOPLE) {
-                        isAvailable = false;
-                        conflictReason = 'В это время уже достигнут лимит людей';
                     }
                     
                     // Добавляем опцию в select
@@ -594,19 +605,25 @@
                     option.value = timeSlot;
                     option.textContent = timeSlot;
                     
-                    if (!isAvailable) {
+                    if (isAvailable) {
+                        availableSlots++;
+                        option.style.color = '#00ff00';
+                    } else {
                         option.disabled = true;
                         option.textContent += ` (недоступно - ${conflictReason})`;
+                        option.style.color = '#ff4444';
                     }
                     
                     timeSelect.appendChild(option);
                 }
                 
-                // Если нет доступных временных слотов
-                if (timeSelect.options.length === 1) {
-                    timeSelect.innerHTML = '<option value="">Нет доступных временных слотов на эту дату</option>';
+                // Обновляем информацию о доступных слотах
+                const infoEl = document.getElementById('timeSlotInfo');
+                if (availableSlots === 0) {
+                    infoEl.innerHTML = `<span style="color: #ff4444;">⚠️ Нет доступных временных слотов на эту дату</span>`;
                     timeSelect.disabled = true;
                 } else {
+                    infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalSlots} временных слотов</span>`;
                     timeSelect.disabled = false;
                 }
                 
@@ -664,11 +681,12 @@
                 }
                 
                 // ============ ВАЛИДАЦИЯ 5: Проверка конфликтов ============
+                // Получаем ВСЕ бронирования на эту дату (включая pending, confirmed)
                 const { data: existingBookings, error: bookingsError } = await supabase
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
-                    .eq('status', 'confirmed');
+                    .in('status', ['pending', 'confirmed']); // И pending И confirmed!
                 
                 if (bookingsError) {
                     console.error('Ошибка проверки бронирований:', bookingsError);
@@ -685,20 +703,34 @@
                 
                 if (existingBookings && existingBookings.length > 0) {
                     for (const booking of existingBookings) {
-                        const bookingStart = new Date(`${booking.date}T${booking.hours}`);
+                        // Парсим время брони (может быть с секундами "12:00:00")
+                        let bookingHours = booking.hours;
+                        if (bookingHours.includes(':')) {
+                            // Оставляем только часы:минуты
+                            const timeParts = bookingHours.split(':');
+                            bookingHours = `${timeParts[0]}:${timeParts[1]}`;
+                        }
+                        
+                        const bookingStart = new Date(`${booking.date}T${bookingHours}`);
                         const bookingEnd = new Date(bookingStart);
                         bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
                         
                         // Проверяем пересечение временных интервалов
-                        if (slotStart < bookingEnd && slotEnd > bookingStart) {
+                        const isTimeConflict = slotStart < bookingEnd && slotEnd > bookingStart;
+                        
+                        if (isTimeConflict) {
+                            console.log('Найдено пересечение времени с бронированием:', booking.id, booking.hours);
+                            
                             // Проверка на special пометку
                             if (booking.notes && booking.notes.toLowerCase().includes('special')) {
                                 hasSpecialConflict = true;
+                                console.log('Обнаружена special пометка');
                                 break;
                             }
                             
                             // Суммируем количество людей
                             totalPeople += parseInt(booking.people) || 0;
+                            console.log('Текущая сумма людей:', totalPeople, '+', booking.people);
                         }
                     }
                 }
@@ -710,12 +742,17 @@
                 }
                 
                 // Проверка на максимальное количество людей
-                if ((totalPeople + people) > MAX_TOTAL_PEOPLE) {
-                    showError(`В это время уже забронировано ${totalPeople} человек. Максимально допустимо ${MAX_TOTAL_PEOPLE} человек.`);
+                const totalAfterBooking = totalPeople + people;
+                if (totalAfterBooking > MAX_TOTAL_PEOPLE) {
+                    showError(`В это время уже забронировано ${totalPeople} человек. Максимально допустимо ${MAX_TOTAL_PEOPLE} человек. Вы пытаетесь добавить еще ${people}.`);
                     return;
                 }
                 
                 console.log('✅ Все проверки пройдены, создаем бронирование...');
+                console.log('Дата:', date);
+                console.log('Время:', time);
+                console.log('Люди:', people);
+                console.log('Суммарно людей в это время:', totalAfterBooking);
                 
                 // Создаём бронирование
                 const { data, error } = await supabase
@@ -734,12 +771,6 @@
                 
                 if (error) {
                     console.error('Ошибка создания брони:', error);
-                    
-                    // Если ошибка про кеш схемы
-                    if (error.message.includes('schema cache') || error.message.includes('column')) {
-                        showError('Ошибка базы данных. Пожалуйста, попробуйте позже.');
-                        return;
-                    }
                     
                     if (error.message.includes('JWT')) {
                         showError('Сессия истекла. Пожалуйста, войдите снова.');
@@ -773,6 +804,7 @@
                 showError(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
             }
         }
+
         
         // ==================== ЗАГРУЗКА БРОНИРОВАНИЙ ====================
         async function loadUserBookings() {
