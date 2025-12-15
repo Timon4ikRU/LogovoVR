@@ -224,6 +224,47 @@
             margin-left: 10px;
         }
         
+        .time-slot {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .time-slot:hover {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+        }
+        
+        .time-slot.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 68, 68, 0.1);
+            border-color: #ff4444;
+        }
+        
+        .time-slot.selected {
+            background: #00ff88;
+            color: #000;
+            border-color: #00ff88;
+        }
+        
+        .time-slots-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .time-slot-info {
+            font-size: 0.9em;
+            color: #8fd493;
+            margin-top: 10px;
+        }
+        
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -236,6 +277,10 @@
             
             h1 {
                 font-size: 2em;
+            }
+            
+            .time-slots-container {
+                justify-content: center;
             }
         }
     </style>
@@ -284,6 +329,7 @@
                             <option value="20:00">20:00</option>
                             <option value="21:00">21:00</option>
                         </select>
+                        <div class="time-slot-info" id="timeSlotInfo"></div>
                     </div>
                 </div>
                 
@@ -338,23 +384,26 @@
         const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
-        // Инициализация Supabase с ОБЯЗАТЕЛЬНЫМ detectSessionInUrl: true
+        // Инициализация Supabase
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: {
                 autoRefreshToken: true,
                 persistSession: true,
-                detectSessionInUrl: true,  // ВАЖНО! Это для обработки редиректа после логина
+                detectSessionInUrl: true,
                 storage: localStorage
             }
         });
         
         // ==================== ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
+        const Z_HOURS = 2; // Длительность сеанса в часах
+        const MAX_TOTAL_PEOPLE = 6; // Максимальное количество людей суммарно
+        const MIN_HOURS_BEFORE = 2; // Минимальное время до бронирования в часах
         
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                console.log('DOM загружен, проверяем авторизацию...');
+                console.log('🚀 Инициализация бронирования...');
                 
                 // Устанавливаем минимальную дату (сегодня)
                 const today = new Date().toISOString().split('T')[0];
@@ -365,8 +414,16 @@
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 document.getElementById('bookingDate').value = tomorrow.toISOString().split('T')[0];
                 
-                // Проверяем авторизацию при загрузке
+                // Проверяем авторизацию
                 await checkAuth();
+                
+                // Слушаем изменения даты для проверки доступности времени
+                document.getElementById('bookingDate').addEventListener('change', async function() {
+                    await updateAvailableTimes();
+                });
+                
+                // Обновляем доступное время при загрузке
+                await updateAvailableTimes();
                 
             } catch (error) {
                 console.error('Ошибка инициализации:', error);
@@ -377,20 +434,21 @@
         // ==================== АВТОРИЗАЦИЯ ====================
         async function checkAuth() {
             try {
-                console.log('Проверка авторизации...');
+                console.log('🔐 Проверка авторизации...');
                 
-                // Пробуем получить текущую сессию
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                // Получаем текущую сессию
+                const { data: { session }, error } = await supabase.auth.getSession();
                 
-                if (sessionError) {
-                    console.error('Ошибка получения сессии:', sessionError);
-                    throw sessionError;
+                if (error) {
+                    console.error('Ошибка получения сессии:', error);
+                    showAuthRequired();
+                    return;
                 }
                 
                 if (session && session.user) {
                     // Пользователь авторизован
                     currentUser = session.user;
-                    console.log('Пользователь авторизован:', currentUser.email);
+                    console.log('✅ Пользователь авторизован:', currentUser.email);
                     
                     // Обновляем интерфейс
                     document.getElementById('userEmail').textContent = currentUser.email;
@@ -400,14 +458,14 @@
                     // Загружаем бронирования
                     loadUserBookings();
                     
-                    // Убираем хеш из URL если есть (после редиректа с логина)
+                    // Убираем хеш из URL если есть
                     if (window.location.hash) {
                         window.history.replaceState(null, null, window.location.pathname);
                     }
                     
                 } else {
                     // Не авторизован
-                    console.log('Пользователь не авторизован');
+                    console.log('❌ Пользователь не авторизован');
                     showAuthRequired();
                 }
                 
@@ -429,32 +487,141 @@
                 const { error } = await supabase.auth.signOut();
                 if (error) throw error;
                 
-                // Очищаем localStorage вручную на всякий случай
+                // Очищаем localStorage
                 localStorage.removeItem('supabase.auth.token');
                 localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
                 
-                // Обновляем интерфейс без перезагрузки
+                // Обновляем интерфейс
                 showAuthRequired();
                 
             } catch (error) {
                 console.error('Ошибка выхода:', error);
-                // Все равно очищаем и показываем форму авторизации
                 localStorage.clear();
                 showAuthRequired();
+            }
+        }
+        
+        // ==================== ПРОВЕРКА ДОСТУПНОСТИ ВРЕМЕНИ ====================
+        async function updateAvailableTimes() {
+            try {
+                const date = document.getElementById('bookingDate').value;
+                if (!date) return;
+                
+                // Получаем все бронирования на эту дату
+                const { data: existingBookings, error } = await supabase
+                    .from('bookings')
+                    .select('*')
+                    .eq('date', date)
+                    .eq('status', 'confirmed'); // Только подтвержденные брони
+                
+                if (error) {
+                    console.error('Ошибка загрузки бронирований:', error);
+                    return;
+                }
+                
+                // Получаем текущее время
+                const now = new Date();
+                const selectedDate = new Date(date);
+                
+                // Все доступные временные слоты
+                const timeSlots = [
+                    '12:00', '13:00', '14:00', '15:00', 
+                    '16:00', '17:00', '18:00', '19:00', 
+                    '20:00', '21:00'
+                ];
+                
+                // Обновляем опции в select
+                const timeSelect = document.getElementById('bookingTime');
+                timeSelect.innerHTML = '<option value="">Выберите время</option>';
+                
+                // Проверяем каждый временной слот
+                for (const timeSlot of timeSlots) {
+                    // Проверка 1: Не прошлое время
+                    const slotDateTime = new Date(selectedDate);
+                    const [hours, minutes] = timeSlot.split(':').map(Number);
+                    slotDateTime.setHours(hours, minutes, 0, 0);
+                    
+                    // Если выбран сегодня, проверяем что время не прошлое
+                    if (selectedDate.toDateString() === now.toDateString()) {
+                        const timeDiff = (slotDateTime - now) / (1000 * 60 * 60); // Разница в часах
+                        if (timeDiff < MIN_HOURS_BEFORE) {
+                            // Пропускаем это время - меньше 2 часов осталось
+                            continue;
+                        }
+                    }
+                    
+                    // Проверка 2: Конфликты с существующими бронированиями
+                    let isAvailable = true;
+                    let conflictReason = '';
+                    let totalPeople = 0;
+                    
+                    if (existingBookings && existingBookings.length > 0) {
+                        for (const booking of existingBookings) {
+                            // Проверяем пересечение временных слотов
+                            const bookingStart = new Date(`${booking.date}T${booking.hours}`);
+                            const bookingEnd = new Date(bookingStart);
+                            bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
+                            
+                            const slotStart = slotDateTime;
+                            const slotEnd = new Date(slotStart);
+                            slotEnd.setHours(slotEnd.getHours() + Z_HOURS);
+                            
+                            // Проверяем пересечение временных интервалов
+                            if (slotStart < bookingEnd && slotEnd > bookingStart) {
+                                // Временной конфликт найден
+                                
+                                // Проверка на special пометку
+                                if (booking.notes && booking.notes.toLowerCase().includes('special')) {
+                                    isAvailable = false;
+                                    conflictReason = 'В это время уже есть специальное бронирование';
+                                    break;
+                                }
+                                
+                                // Суммируем количество людей
+                                totalPeople += parseInt(booking.people) || 0;
+                            }
+                        }
+                    }
+                    
+                    // Проверка 3: Максимальное количество людей
+                    if (isAvailable && totalPeople >= MAX_TOTAL_PEOPLE) {
+                        isAvailable = false;
+                        conflictReason = 'В это время уже достигнут лимит людей';
+                    }
+                    
+                    // Добавляем опцию в select
+                    const option = document.createElement('option');
+                    option.value = timeSlot;
+                    option.textContent = timeSlot;
+                    
+                    if (!isAvailable) {
+                        option.disabled = true;
+                        option.textContent += ` (недоступно - ${conflictReason})`;
+                    }
+                    
+                    timeSelect.appendChild(option);
+                }
+                
+                // Если нет доступных временных слотов
+                if (timeSelect.options.length === 1) {
+                    timeSelect.innerHTML = '<option value="">Нет доступных временных слотов на эту дату</option>';
+                    timeSelect.disabled = true;
+                } else {
+                    timeSelect.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Ошибка обновления времени:', error);
             }
         }
         
         // ==================== СОЗДАНИЕ БРОНИРОВАНИЯ ====================
         async function createBooking() {
             try {
-                // Двойная проверка авторизации
+                // Проверяем авторизацию
                 if (!currentUser) {
-                    // Пробуем еще раз проверить
-                    await checkAuth();
-                    if (!currentUser) {
-                        showError('Требуется авторизация. Пожалуйста, войдите в систему.');
-                        return;
-                    }
+                    showError('Требуется авторизация. Пожалуйста, войдите в систему.');
+                    return;
                 }
                 
                 // Сбрасываем сообщения
@@ -462,33 +629,101 @@
                 
                 // Получаем данные формы
                 const date = document.getElementById('bookingDate').value;
-                const hours = document.getElementById('bookingTime').value;
-                const people = document.getElementById('peopleCount').value;
+                const time = document.getElementById('bookingTime').value;
+                const people = parseInt(document.getElementById('peopleCount').value);
                 const phone = document.getElementById('phoneNumber').value;
                 const notes = document.getElementById('notes').value;
                 
-                // Валидация
-                if (!date || !hours || !phone) {
+                // ============ ВАЛИДАЦИЯ 1: Проверка заполненности ============
+                if (!date || !time || !phone) {
                     showError('Заполните все обязательные поля');
                     return;
                 }
                 
-                // Упрощенная проверка телефона
+                // ============ ВАЛИДАЦИЯ 2: Проверка телефона ============
                 const phoneDigits = phone.replace(/\D/g, '');
                 if (phoneDigits.length < 11) {
                     showError('Введите корректный номер телефона (минимум 11 цифр)');
                     return;
                 }
                 
-                console.log('Создание бронирования для пользователя:', currentUser.email);
+                // ============ ВАЛИДАЦИЯ 3: Проверка на прошлое ============
+                const selectedDateTime = new Date(`${date}T${time}`);
+                const now = new Date();
+                
+                if (selectedDateTime <= now) {
+                    showError('Нельзя забронировать на прошедшее время');
+                    return;
+                }
+                
+                // ============ ВАЛИДАЦИЯ 4: Проверка за 2 часа ============
+                const timeDiff = (selectedDateTime - now) / (1000 * 60 * 60); // Разница в часах
+                if (timeDiff < MIN_HOURS_BEFORE) {
+                    showError(`Бронирование возможно не менее чем за ${MIN_HOURS_BEFORE} часа до начала сеанса`);
+                    return;
+                }
+                
+                // ============ ВАЛИДАЦИЯ 5: Проверка конфликтов ============
+                const { data: existingBookings, error: bookingsError } = await supabase
+                    .from('bookings')
+                    .select('*')
+                    .eq('date', date)
+                    .eq('status', 'confirmed');
+                
+                if (bookingsError) {
+                    console.error('Ошибка проверки бронирований:', bookingsError);
+                    showError('Ошибка проверки доступности времени');
+                    return;
+                }
+                
+                // Проверяем конфликты
+                let totalPeople = 0;
+                let hasSpecialConflict = false;
+                const slotStart = selectedDateTime;
+                const slotEnd = new Date(slotStart);
+                slotEnd.setHours(slotEnd.getHours() + Z_HOURS);
+                
+                if (existingBookings && existingBookings.length > 0) {
+                    for (const booking of existingBookings) {
+                        const bookingStart = new Date(`${booking.date}T${booking.hours}`);
+                        const bookingEnd = new Date(bookingStart);
+                        bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
+                        
+                        // Проверяем пересечение временных интервалов
+                        if (slotStart < bookingEnd && slotEnd > bookingStart) {
+                            // Проверка на special пометку
+                            if (booking.notes && booking.notes.toLowerCase().includes('special')) {
+                                hasSpecialConflict = true;
+                                break;
+                            }
+                            
+                            // Суммируем количество людей
+                            totalPeople += parseInt(booking.people) || 0;
+                        }
+                    }
+                }
+                
+                // Проверка на special
+                if (hasSpecialConflict) {
+                    showError('В это время уже есть специальное бронирование');
+                    return;
+                }
+                
+                // Проверка на максимальное количество людей
+                if ((totalPeople + people) > MAX_TOTAL_PEOPLE) {
+                    showError(`В это время уже забронировано ${totalPeople} человек. Максимально допустимо ${MAX_TOTAL_PEOPLE} человек.`);
+                    return;
+                }
+                
+                console.log('✅ Все проверки пройдены, создаем бронирование...');
                 
                 // Создаём бронирование
                 const { data, error } = await supabase
                     .from('bookings')
                     .insert([{
                         date: date,
-                        hours: hours,
-                        people: parseInt(people),
+                        hours: time,
+                        people: people,
                         phone: phone,
                         notes: notes || null,
                         status: 'pending',
@@ -498,17 +733,17 @@
                     .select();
                 
                 if (error) {
-                    console.error('Ошибка Supabase при создании брони:', error);
+                    console.error('Ошибка создания брони:', error);
                     
-                    // Проверяем специфические ошибки
-                    if (error.message.includes('JWT')) {
-                        showError('Сессия истекла. Пожалуйста, войдите снова.');
-                        logout();
+                    // Если ошибка про кеш схемы
+                    if (error.message.includes('schema cache') || error.message.includes('column')) {
+                        showError('Ошибка базы данных. Пожалуйста, попробуйте позже.');
                         return;
                     }
                     
-                    if (error.message.includes('violates foreign key constraint')) {
-                        showError('Ошибка привязки к пользователю');
+                    if (error.message.includes('JWT')) {
+                        showError('Сессия истекла. Пожалуйста, войдите снова.');
+                        logout();
                         return;
                     }
                     
@@ -516,20 +751,25 @@
                 }
                 
                 // Успех
-                console.log('Бронирование создано:', data);
+                console.log('✅ Бронирование создано:', data);
                 showSuccess(`✅ Бронирование #${data[0].id} создано! Мы свяжемся с вами для подтверждения.`);
                 
-                // Сбрасываем форму, но оставляем дату завтра
-                document.getElementById('bookingTime').value = '';
-                document.getElementById('peopleCount').value = '1';
-                document.getElementById('phoneNumber').value = '';
-                document.getElementById('notes').value = '';
+                // Сбрасываем форму
+                document.getElementById('bookingFormElement').reset();
+                
+                // Устанавливаем дату по умолчанию (завтра)
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('bookingDate').value = tomorrow.toISOString().split('T')[0];
+                
+                // Обновляем доступное время
+                await updateAvailableTimes();
                 
                 // Обновляем список бронирований
                 loadUserBookings();
                 
             } catch (error) {
-                console.error('Ошибка создания брони:', error);
+                console.error('❌ Ошибка создания брони:', error);
                 showError(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
             }
         }
@@ -537,12 +777,9 @@
         // ==================== ЗАГРУЗКА БРОНИРОВАНИЙ ====================
         async function loadUserBookings() {
             try {
-                if (!currentUser) {
-                    console.log('Нет пользователя для загрузки бронирований');
-                    return;
-                }
+                if (!currentUser) return;
                 
-                console.log('Загрузка бронирований для:', currentUser.id);
+                console.log('📋 Загрузка бронирований...');
                 
                 const { data: bookings, error } = await supabase
                     .from('bookings')
@@ -552,24 +789,17 @@
                 
                 if (error) {
                     console.error('Ошибка загрузки бронирований:', error);
-                    
-                    // Если таблицы нет, показываем пустой список
-                    if (error.message.includes('does not exist')) {
-                        console.log('Таблица bookings не существует');
-                        displayBookings([]);
-                        return;
-                    }
-                    
-                    throw error;
+                    document.getElementById('bookingsList').innerHTML = 
+                        '<p style="color: #ff4444;">Ошибка загрузки бронирований</p>';
+                    return;
                 }
                 
-                console.log('Загружено бронирований:', bookings?.length || 0);
                 displayBookings(bookings || []);
                 
             } catch (error) {
-                console.error('Ошибка загрузки бронирований:', error);
+                console.error('Ошибка:', error);
                 document.getElementById('bookingsList').innerHTML = 
-                    '<p style="color: #ff4444;">Ошибка загрузки бронирований</p>';
+                    '<p style="color: #ff4444;">Ошибка загрузки</p>';
             }
         }
         
@@ -577,7 +807,7 @@
             const bookingsList = document.getElementById('bookingsList');
             
             if (!bookings || bookings.length === 0) {
-                bookingsList.innerHTML = '<p style="color: #666; text-align: center;">У вас нет активных бронирований</p>';
+                bookingsList.innerHTML = '<p style="color: #666; text-align: center;">У вас нет бронирований</p>';
                 return;
             }
             
@@ -599,6 +829,12 @@
                 const created = new Date(booking.created_at);
                 const createdFormatted = created.toLocaleString('ru-RU');
                 
+                // Проверяем, можно ли отменить бронирование (за 2 часа до начала)
+                const bookingDateTime = new Date(`${booking.date}T${booking.hours}`);
+                const now = new Date();
+                const hoursUntilBooking = (bookingDateTime - now) / (1000 * 60 * 60);
+                const canCancel = hoursUntilBooking >= MIN_HOURS_BEFORE && booking.status === 'confirmed';
+                
                 html += `
                     <div class="booking-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -614,14 +850,38 @@
                             ${booking.notes ? `<p><strong>📝 Примечание:</strong> ${booking.notes}</p>` : ''}
                         </div>
                         
-                        <div style="font-size: 0.8em; color: #8fd493;">
-                            Создано: ${createdFormatted}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <div style="font-size: 0.8em; color: #8fd493;">
+                                Создано: ${createdFormatted}
+                            </div>
+                            ${canCancel ? `<button onclick="cancelBooking(${booking.id})" style="background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8em;">Отменить</button>` : ''}
                         </div>
                     </div>
                 `;
             });
             
             bookingsList.innerHTML = html;
+        }
+        
+        async function cancelBooking(bookingId) {
+            if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('bookings')
+                    .update({ status: 'cancelled' })
+                    .eq('id', bookingId)
+                    .eq('user_id', currentUser.id);
+                
+                if (error) throw error;
+                
+                showSuccess('Бронирование отменено');
+                loadUserBookings();
+                
+            } catch (error) {
+                console.error('Ошибка отмены бронирования:', error);
+                showError('Ошибка отмены бронирования', true);
+            }
         }
         
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
@@ -673,16 +933,15 @@
             }
         });
         
-        // Слушаем изменения авторизации (БЕЗ ПЕРЕЗАГРУЗКИ!)
+        // Слушаем изменения авторизации
         supabase.auth.onAuthStateChange((event, session) => {
             console.log('Auth state changed:', event);
             
             if (event === 'SIGNED_IN') {
-                console.log('Пользователь вошёл через onAuthStateChange');
-                // Просто обновляем интерфейс
+                console.log('Пользователь вошёл');
                 checkAuth();
             } else if (event === 'SIGNED_OUT') {
-                console.log('Пользователь вышел через onAuthStateChange');
+                console.log('Пользователь вышел');
                 showAuthRequired();
             }
         });
