@@ -338,62 +338,148 @@
         const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Инициализация Supabase с правильными настройками
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: false,
+                storage: localStorage
+            },
+            global: {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        });
         
         // ==================== ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
+        let isInitialized = false;
         
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
-            // Устанавливаем минимальную дату (сегодня)
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('bookingDate').min = today;
-            
-            // Проверяем авторизацию
-            await checkAuth();
-            
-            // Загружаем бронирования пользователя
-            if (currentUser) {
-                loadUserBookings();
+            try {
+                // Устанавливаем минимальную дату (сегодня)
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('bookingDate').min = today;
+                
+                // Устанавливаем дату по умолчанию (завтра)
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('bookingDate').value = tomorrow.toISOString().split('T')[0];
+                
+                // Проверяем авторизацию
+                await checkAuth();
+                
+                isInitialized = true;
+            } catch (error) {
+                console.error('Ошибка инициализации:', error);
+                showError('Ошибка загрузки страницы. Пожалуйста, обновите страницу.');
             }
         });
         
         // ==================== АВТОРИЗАЦИЯ ====================
         async function checkAuth() {
             try {
+                console.log('Проверка авторизации...');
+                
+                // Сначала проверяем наличие сессии в localStorage
+                const storedSession = localStorage.getItem('supabase.auth.token');
+                if (!storedSession) {
+                    console.log('Сессия не найдена в localStorage');
+                    showAuthRequired();
+                    return;
+                }
+                
+                // Получаем информацию о пользователе
                 const { data: { user }, error } = await supabase.auth.getUser();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Ошибка получения пользователя:', error);
+                    
+                    // Если ошибка связана с сетью, пробуем использовать сохранённые данные
+                    if (error.message.includes('Network') || error.message.includes('fetch')) {
+                        console.log('Сетевая ошибка, пытаемся использовать сохранённые данные...');
+                        try {
+                            const sessionData = JSON.parse(storedSession);
+                            if (sessionData && sessionData.currentSession && sessionData.currentSession.user) {
+                                currentUser = sessionData.currentSession.user;
+                                showUserInterface(currentUser);
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('Ошибка парсинга сессии:', e);
+                        }
+                    }
+                    
+                    showAuthRequired();
+                    return;
+                }
                 
                 if (user) {
                     // Пользователь авторизован
                     currentUser = user;
-                    document.getElementById('userEmail').textContent = user.email;
-                    document.getElementById('authRequired').style.display = 'none';
-                    document.getElementById('bookingForm').style.display = 'block';
+                    console.log('Пользователь авторизован:', user.email);
+                    showUserInterface(user);
+                    
+                    // Загружаем бронирования пользователя
+                    if (isInitialized) {
+                        loadUserBookings();
+                    }
                 } else {
                     // Не авторизован
-                    document.getElementById('authRequired').style.display = 'block';
-                    document.getElementById('bookingForm').style.display = 'none';
+                    console.log('Пользователь не авторизован');
+                    showAuthRequired();
                 }
             } catch (error) {
                 console.error('Ошибка проверки авторизации:', error);
-                showError('Ошибка проверки авторизации');
+                showError('Ошибка проверки авторизации. Пожалуйста, войдите снова.');
+                showAuthRequired();
             }
+        }
+        
+        function showUserInterface(user) {
+            document.getElementById('userEmail').textContent = user.email || 'Пользователь';
+            document.getElementById('authRequired').style.display = 'none';
+            document.getElementById('bookingForm').style.display = 'block';
+        }
+        
+        function showAuthRequired() {
+            document.getElementById('authRequired').style.display = 'block';
+            document.getElementById('bookingForm').style.display = 'none';
+            document.getElementById('userEmail').textContent = 'Не авторизован';
         }
         
         async function logout() {
             try {
+                // Очищаем localStorage
+                localStorage.removeItem('supabase.auth.token');
+                localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
+                
+                // Пытаемся разлогиниться на сервере
                 await supabase.auth.signOut();
+                
+                // Обновляем страницу
                 window.location.reload();
             } catch (error) {
                 console.error('Ошибка выхода:', error);
+                // В любом случае очищаем локальные данные и перезагружаем
+                localStorage.clear();
+                window.location.reload();
             }
         }
         
         // ==================== СОЗДАНИЕ БРОНИРОВАНИЯ ====================
         async function createBooking() {
             try {
+                // Проверяем авторизацию
+                if (!currentUser) {
+                    showError('Требуется авторизация');
+                    showAuthRequired();
+                    return;
+                }
+                
                 // Сбрасываем сообщения
                 hideMessages();
                 
@@ -410,12 +496,16 @@
                     return;
                 }
                 
-                if (!phone.match(/^\+7\s?\(\d{3}\)\s?\d{3}-\d{2}-\d{2}$/)) {
-                    showError('Введите телефон в формате: +7 (XXX) XXX-XX-XX');
+                // Упрощённая проверка телефона
+                const phoneDigits = phone.replace(/\D/g, '');
+                if (phoneDigits.length < 11) {
+                    showError('Введите корректный номер телефона');
                     return;
                 }
                 
                 // Создаём бронирование
+                console.log('Создание бронирования:', { date, hours, people, phone });
+                
                 const { data, error } = await supabase
                     .from('bookings')
                     .insert([{
@@ -423,52 +513,93 @@
                         hours: hours,
                         people: parseInt(people),
                         phone: phone,
-                        notes: notes,
-                        status: 'pending'
+                        notes: notes || null,
+                        status: 'pending',
+                        user_id: currentUser.id,
+                        user_email: currentUser.email
                     }])
                     .select();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Ошибка Supabase:', error);
+                    
+                    // Проверяем, существует ли таблица bookings
+                    if (error.message.includes('relation "bookings" does not exist')) {
+                        showError('Таблица бронирований не найдена. Пожалуйста, создайте таблицу в Supabase.');
+                        return;
+                    }
+                    
+                    if (error.message.includes('violates foreign key constraint')) {
+                        showError('Ошибка привязки к пользователю. Пожалуйста, войдите снова.');
+                        logout();
+                        return;
+                    }
+                    
+                    throw error;
+                }
                 
                 // Успех
+                console.log('Бронирование создано:', data);
                 showSuccess(`Бронирование #${data[0].id} создано! Мы свяжемся с вами для подтверждения.`);
                 
                 // Очищаем форму
                 document.getElementById('bookingFormElement').reset();
+                
+                // Устанавливаем дату по умолчанию (завтра)
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('bookingDate').value = tomorrow.toISOString().split('T')[0];
                 
                 // Обновляем список бронирований
                 loadUserBookings();
                 
             } catch (error) {
                 console.error('Ошибка создания брони:', error);
-                showError(`Ошибка: ${error.message}`);
+                showError(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
             }
         }
         
         // ==================== ЗАГРУЗКА БРОНИРОВАНИЙ ====================
         async function loadUserBookings() {
             try {
+                if (!currentUser) return;
+                
+                console.log('Загрузка бронирований для пользователя:', currentUser.id);
+                
                 const { data: bookings, error } = await supabase
                     .from('bookings')
                     .select('*')
+                    .eq('user_id', currentUser.id)
                     .order('date', { ascending: false })
                     .order('hours', { ascending: false });
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Ошибка загрузки бронирований:', error);
+                    
+                    // Если таблица не существует, показываем пустой список
+                    if (error.message.includes('relation "bookings" does not exist')) {
+                        console.log('Таблица bookings не существует');
+                        displayBookings([]);
+                        return;
+                    }
+                    
+                    throw error;
+                }
                 
+                console.log('Загружено бронирований:', bookings?.length || 0);
                 displayBookings(bookings || []);
                 
             } catch (error) {
                 console.error('Ошибка загрузки бронирований:', error);
                 document.getElementById('bookingsList').innerHTML = 
-                    '<p style="color: #ff4444;">Ошибка загрузки бронирований</p>';
+                    '<p style="color: #ff4444;">Ошибка загрузки бронирований. Пожалуйста, обновите страницу.</p>';
             }
         }
         
         function displayBookings(bookings) {
             const bookingsList = document.getElementById('bookingsList');
             
-            if (bookings.length === 0) {
+            if (!bookings || bookings.length === 0) {
                 bookingsList.innerHTML = '<p style="color: #666; text-align: center;">У вас нет активных бронирований</p>';
                 return;
             }
@@ -476,9 +607,13 @@
             let html = '';
             
             bookings.forEach(booking => {
-                const statusClass = `status-${booking.status}`;
+                const statusClass = `status-${booking.status || 'pending'}`;
                 const statusText = booking.status === 'pending' ? 'Ожидание' :
                                   booking.status === 'confirmed' ? 'Подтверждено' : 'Отменено';
+                
+                // Форматируем дату
+                const date = new Date(booking.date);
+                const formattedDate = date.toLocaleDateString('ru-RU');
                 
                 html += `
                     <div class="booking-card">
@@ -488,7 +623,7 @@
                         </div>
                         
                         <div style="margin-bottom: 10px;">
-                            <p><strong>📅 Дата:</strong> ${booking.date}</p>
+                            <p><strong>📅 Дата:</strong> ${formattedDate}</p>
                             <p><strong>⏰ Время:</strong> ${booking.hours}</p>
                             <p><strong>👥 Людей:</strong> ${booking.people} чел.</p>
                             <p><strong>📱 Телефон:</strong> ${booking.phone}</p>
@@ -538,17 +673,51 @@
             let value = e.target.value.replace(/\D/g, '');
             
             if (value.length > 0) {
-                value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7, 9) + '-' + value.substring(9, 11);
+                // Формат: +7 (XXX) XXX-XX-XX
+                let formatted = '+7';
+                if (value.length > 1) {
+                    formatted += ' (' + value.substring(1, 4);
+                }
+                if (value.length >= 4) {
+                    formatted += ') ' + value.substring(4, 7);
+                }
+                if (value.length >= 7) {
+                    formatted += '-' + value.substring(7, 9);
+                }
+                if (value.length >= 9) {
+                    formatted += '-' + value.substring(9, 11);
+                }
+                e.target.value = formatted;
             }
-            
-            e.target.value = value.substring(0, 18);
         });
         
         // Слушаем изменения авторизации
         supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+            console.log('Auth state changed:', event);
+            
+            if (event === 'SIGNED_IN') {
+                console.log('Пользователь вошёл');
                 window.location.reload();
+            } else if (event === 'SIGNED_OUT') {
+                console.log('Пользователь вышел');
+                window.location.reload();
+            } else if (event === 'TOKEN_REFRESHED') {
+                console.log('Токен обновлён');
             }
+        });
+        
+        // Обработка сетевых ошибок
+        window.addEventListener('online', function() {
+            console.log('Сеть восстановлена');
+            // Пытаемся заново проверить авторизацию
+            if (!currentUser) {
+                checkAuth();
+            }
+        });
+        
+        window.addEventListener('offline', function() {
+            console.log('Нет сети');
+            showError('Нет соединения с интернетом. Проверьте подключение.');
         });
     </script>
 </body>
