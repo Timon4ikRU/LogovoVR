@@ -90,6 +90,16 @@
         a:hover {
             text-decoration: underline;
         }
+        .status {
+            color: #00ff88;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+            display: none;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -106,8 +116,9 @@
             <input type="password" id="password" placeholder="Введите пароль" required>
         </div>
         
-        <button onclick="login()">Войти</button>
+        <button onclick="login()" id="loginBtn">Войти</button>
         
+        <div id="status" class="status"></div>
         <div id="error" class="error"></div>
         
         <div class="links">
@@ -135,18 +146,48 @@
             }
         }
         
+        // Функция обновления last_login_at
+        async function updateLastLogin(userId) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ 
+                        last_login_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', userId);
+                
+                if (error) {
+                    console.error('Ошибка обновления last_login:', error);
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Ошибка в updateLastLogin:', error);
+                return false;
+            }
+        }
+        
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
             
             document.getElementById('error').style.display = 'none';
+            document.getElementById('status').style.display = 'none';
             
             if (!email || !password) {
                 showError('Заполните все поля');
                 return;
             }
             
+            // Блокируем кнопку чтобы не спамили
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Вход...';
+            loginBtn.style.opacity = '0.7';
+            
             try {
+                // 1. Пробуем войти
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password
@@ -154,13 +195,41 @@
                 
                 if (error) {
                     showError(error.message);
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Войти';
+                    loginBtn.style.opacity = '1';
+                    return;
+                }
+                
+                // 2. Если вход успешен, показываем статус
+                showStatus('Вход выполнен, обновляем данные...');
+                
+                // 3. Обновляем last_login_at в профиле
+                if (data.user) {
+                    const updateSuccess = await updateLastLogin(data.user.id);
+                    
+                    if (updateSuccess) {
+                        showStatus('Данные обновлены! Перенаправление...');
+                        // 4. Ждем 1 секунду и редирект
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    } else {
+                        showStatus('Вход выполнен, но данные не обновлены. Перенаправление...');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    }
                 } else {
-                    // Успешный вход
                     window.location.href = 'index.html';
                 }
+                
             } catch (error) {
                 showError('Ошибка подключения к серверу');
                 console.error('Login error:', error);
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Войти';
+                loginBtn.style.opacity = '1';
             }
         }
         
@@ -168,6 +237,12 @@
             const errorEl = document.getElementById('error');
             errorEl.textContent = message;
             errorEl.style.display = 'block';
+        }
+        
+        function showStatus(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.style.display = 'block';
         }
         
         // ============== ИНИЦИАЛИЗАЦИЯ ==============
@@ -181,6 +256,9 @@
                     login();
                 }
             });
+            
+            // Фокус на email поле
+            document.getElementById('email').focus();
         });
     </script>
 </body>
