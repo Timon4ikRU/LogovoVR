@@ -279,7 +279,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Хакерский ASCII арт -->
         <div class="hacker-title">
 <pre style="color:#00ff00; font-size:10px;">
 ╔══════════════════════════════════════════════════╗
@@ -363,7 +362,7 @@
         </div>
 
         <!-- Кнопка назад в админку -->
-        <a href="index.html" class="back-link">⬅️ Назад в админ-панель</a>
+        <a href="admin-panel.html" class="back-link">⬅️ Назад в админ-панель</a>
     </div>
 
     <script>
@@ -770,18 +769,36 @@
         }
 
         async function sendPasswordChangeNotification() {
-            // Эта функция требует настройки EmailJS
+            if (typeof emailjs === 'undefined') {
+                console.log('EmailJS не загружен');
+                return;
+            }
+            
+            // Инициализируем с твоими ключами
+            emailjs.init('qsXC8gCcga_7pNr1w');
+            
             const templateParams = {
                 to_email: selectedUserEmail,
                 to_name: selectedUserEmail.split('@')[0],
                 admin_email: currentUser.email,
                 timestamp: new Date().toLocaleString('ru-RU'),
                 website_url: 'https://timon4ikru.github.io/LogovoVR',
-                login_url: 'https://timon4ikru.github.io/LogovoVR/login.html'
+                login_url: 'https://timon4ikru.github.io/LogovoVR/login.html',
+                change_date: new Date().toLocaleDateString('ru-RU'),
+                change_time: new Date().toLocaleTimeString('ru-RU'),
+                message_id: 'PASS-CHANGE-' + Date.now()
             };
             
-            // Здесь нужны твои ключи EmailJS
-            // await emailjs.send('SERVICE_ID', 'TEMPLATE_ID', templateParams);
+            try {
+                await emailjs.send(
+                    'LVR_Inviter',
+                    'template_odnburo',
+                    templateParams
+                );
+                console.log('Уведомление о смене пароля отправлено');
+            } catch (error) {
+                console.error('Ошибка отправки уведомления:', error);
+            }
         }
 
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
