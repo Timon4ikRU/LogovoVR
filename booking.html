@@ -265,6 +265,62 @@
             margin-top: 10px;
         }
         
+        .duration-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .duration-option {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .duration-option:hover {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+        }
+        
+        .duration-option.selected {
+            background: #00ff88;
+            color: #000;
+            border-color: #00ff88;
+            font-weight: bold;
+        }
+        
+        .duration-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 68, 68, 0.1);
+            border-color: #ff4444;
+        }
+        
+        .duration-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #8fd493;
+        }
+        
+        .closing-time-warning {
+            color: #ffaa00;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .early-time-notice {
+            color: #ffaa00;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -281,6 +337,10 @@
             
             .time-slots-container {
                 justify-content: center;
+            }
+            
+            .duration-selector {
+                flex-direction: column;
             }
         }
     </style>
@@ -315,9 +375,9 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="bookingTime">⏰ Время</label>
+                        <label for="bookingTime">⏰ Время начала (с 12:00)</label>
                         <select id="bookingTime" required>
-                            <option value="">Выберите время</option>
+                            <option value="">Выберите время начала</option>
                             <option value="12:00">12:00</option>
                             <option value="13:00">13:00</option>
                             <option value="14:00">14:00</option>
@@ -327,9 +387,29 @@
                             <option value="18:00">18:00</option>
                             <option value="19:00">19:00</option>
                             <option value="20:00">20:00</option>
-                            <option value="21:00">21:00</option>
                         </select>
+                        <div class="early-time-notice" id="earlyTimeNotice">
+                            ⚠️ Для бронирования до 12:00 звоните по телефону
+                        </div>
                         <div class="time-slot-info" id="timeSlotInfo"></div>
+                    </div>
+                </div>
+                
+                <!-- Выбор длительности -->
+                <div class="form-group">
+                    <label>⏳ Длительность сеанса (часов)</label>
+                    <div class="duration-selector" id="durationSelector">
+                        <div class="duration-option" data-hours="1">1 час</div>
+                        <div class="duration-option" data-hours="2">2 часа</div>
+                        <div class="duration-option" data-hours="3">3 часа</div>
+                        <div class="duration-option" data-hours="4">4 часа</div>
+                    </div>
+                    <input type="hidden" id="plannedTime" value="2" required>
+                    <div class="duration-info" id="durationInfo">
+                        🕒 Сеанс закончится в: <span id="endTime">--:--</span>
+                    </div>
+                    <div class="closing-time-warning" id="closingWarning">
+                        ⚠️ Клуб закрывается в 22:00. Убедитесь, что сеанс закончится до этого времени.
                     </div>
                 </div>
                 
@@ -338,7 +418,7 @@
                         <label for="peopleCount">👥 Количество человек</label>
                         <select id="peopleCount" required>
                             <option value="1">1 человек</option>
-                            <option value="2">2 человека</option>
+                            <option value="2" selected>2 человека</option>
                             <option value="3">3 человека</option>
                             <option value="4">4 человека</option>
                             <option value="5">5 человек</option>
@@ -396,9 +476,10 @@
         
         // ==================== ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
-        const Z_HOURS = 2; // Длительность сеанса в часах
         const MAX_TOTAL_PEOPLE = 6; // Максимальное количество людей суммарно
         const MIN_HOURS_BEFORE = 2; // Минимальное время до бронирования в часах
+        const CLOSING_TIME = 22; // Время закрытия (22:00)
+        const START_TIME = 12; // Начало бронирования через сайт
         
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
@@ -414,12 +495,34 @@
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 document.getElementById('bookingDate').value = tomorrow.toISOString().split('T')[0];
                 
+                // Инициализация выбора длительности
+                initDurationSelector();
+                
                 // Проверяем авторизацию
                 await checkAuth();
                 
-                // Слушаем изменения даты для проверки доступности времени
+                // Слушаем изменения даты и времени для проверки доступности
                 document.getElementById('bookingDate').addEventListener('change', async function() {
                     await updateAvailableTimes();
+                    calculateEndTime();
+                    updateDurationOptions();
+                });
+                
+                document.getElementById('bookingTime').addEventListener('change', function() {
+                    calculateEndTime();
+                    updateDurationOptions();
+                    
+                    // Показываем уведомление о раннем времени
+                    const timeSelect = document.getElementById('bookingTime');
+                    const earlyNotice = document.getElementById('earlyTimeNotice');
+                    if (timeSelect.value) {
+                        const [hours] = timeSelect.value.split(':').map(Number);
+                        if (hours < START_TIME) {
+                            earlyNotice.style.display = 'block';
+                        } else {
+                            earlyNotice.style.display = 'none';
+                        }
+                    }
                 });
                 
                 // Обновляем доступное время при загрузке
@@ -430,6 +533,117 @@
                 showError('Ошибка загрузки страницы');
             }
         });
+        
+        // ==================== ИНИЦИАЛИЗАЦИЯ ВЫБОРА ДЛИТЕЛЬНОСТИ ====================
+        function initDurationSelector() {
+            const durationOptions = document.querySelectorAll('.duration-option');
+            durationOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    if (this.classList.contains('disabled')) return;
+                    
+                    // Снимаем выделение со всех опций
+                    durationOptions.forEach(opt => opt.classList.remove('selected'));
+                    
+                    // Выделяем выбранную опцию
+                    this.classList.add('selected');
+                    
+                    // Устанавливаем значение в скрытом поле
+                    const hours = parseInt(this.dataset.hours);
+                    document.getElementById('plannedTime').value = hours;
+                    
+                    // Обновляем время окончания
+                    calculateEndTime();
+                });
+            });
+            
+            // Устанавливаем значение по умолчанию (2 часа)
+            const defaultOption = document.querySelector('.duration-option[data-hours="2"]');
+            if (defaultOption) {
+                defaultOption.classList.add('selected');
+                document.getElementById('plannedTime').value = 2;
+            }
+        }
+        
+        // ==================== ОБНОВЛЕНИЕ ДОСТУПНЫХ ОПЦИЙ ДЛИТЕЛЬНОСТИ ====================
+        function updateDurationOptions() {
+            const timeSelect = document.getElementById('bookingTime');
+            const selectedTime = timeSelect.value;
+            const dateSelect = document.getElementById('bookingDate').value;
+            
+            if (!selectedTime || !dateSelect) return;
+            
+            // Парсим выбранное время
+            const [hours, minutes] = selectedTime.split(':').map(Number);
+            const selectedDateTime = new Date(`${dateSelect}T${selectedTime}`);
+            
+            // Проверяем доступные опции длительности
+            const durationOptions = document.querySelectorAll('.duration-option');
+            durationOptions.forEach(option => {
+                const durationHours = parseInt(option.dataset.hours);
+                const endTime = new Date(selectedDateTime);
+                endTime.setHours(endTime.getHours() + durationHours);
+                
+                // Проверяем, не выходит ли за пределы времени закрытия
+                if (endTime.getHours() > CLOSING_TIME || 
+                    (endTime.getHours() === CLOSING_TIME && endTime.getMinutes() > 0)) {
+                    // Выходит за пределы закрытия
+                    option.classList.add('disabled');
+                    option.classList.remove('selected');
+                } else {
+                    option.classList.remove('disabled');
+                }
+            });
+            
+            // Если текущая выбранная опция стала недоступной, выбираем первую доступную
+            const currentDuration = parseInt(document.getElementById('plannedTime').value);
+            const currentOption = document.querySelector(`.duration-option[data-hours="${currentDuration}"]`);
+            
+            if (currentOption && currentOption.classList.contains('disabled')) {
+                // Ищем первую доступную опцию
+                const firstAvailable = document.querySelector('.duration-option:not(.disabled)');
+                if (firstAvailable) {
+                    firstAvailable.classList.add('selected');
+                    const newHours = parseInt(firstAvailable.dataset.hours);
+                    document.getElementById('plannedTime').value = newHours;
+                }
+            }
+            
+            calculateEndTime();
+        }
+        
+        // ==================== РАСЧЕТ ВРЕМЕНИ ОКОНЧАНИЯ ====================
+        function calculateEndTime() {
+            const timeSelect = document.getElementById('bookingTime');
+            const dateSelect = document.getElementById('bookingDate');
+            const durationInput = document.getElementById('plannedTime');
+            
+            if (!timeSelect.value || !dateSelect.value || !durationInput.value) {
+                document.getElementById('endTime').textContent = '--:--';
+                document.getElementById('closingWarning').style.display = 'none';
+                return;
+            }
+            
+            const [hours, minutes] = timeSelect.value.split(':').map(Number);
+            const duration = parseInt(durationInput.value);
+            
+            const startTime = new Date(`${dateSelect.value}T${timeSelect.value}`);
+            const endTime = new Date(startTime);
+            endTime.setHours(endTime.getHours() + duration);
+            
+            // Форматируем время окончания
+            const endHours = endTime.getHours().toString().padStart(2, '0');
+            const endMinutes = endTime.getMinutes().toString().padStart(2, '0');
+            
+            document.getElementById('endTime').textContent = `${endHours}:${endMinutes}`;
+            
+            // Показываем/скрываем предупреждение о закрытии
+            const closingWarning = document.getElementById('closingWarning');
+            if (endTime.getHours() >= CLOSING_TIME) {
+                closingWarning.style.display = 'block';
+            } else {
+                closingWarning.style.display = 'none';
+            }
+        }
         
         // ==================== АВТОРИЗАЦИЯ ====================
         async function checkAuth() {
@@ -523,16 +737,15 @@
                 const now = new Date();
                 const selectedDate = new Date(date);
                 
-                // Все доступные временные слоты
-                const timeSlots = [
-                    '12:00', '13:00', '14:00', '15:00', 
-                    '16:00', '17:00', '18:00', '19:00', 
-                    '20:00', '21:00'
-                ];
+                // Все доступные временные слоты (с 12:00 до 20:00)
+                const timeSlots = [];
+                for (let hour = START_TIME; hour <= 20; hour++) {
+                    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+                }
                 
                 // Обновляем опции в select
                 const timeSelect = document.getElementById('bookingTime');
-                timeSelect.innerHTML = '<option value="">Выберите время</option>';
+                timeSelect.innerHTML = '<option value="">Выберите время начала</option>';
                 
                 // Информация о доступности
                 let availableSlots = 0;
@@ -570,11 +783,13 @@
                             
                             const bookingStart = new Date(`${booking.date}T${bookingHours}`);
                             const bookingEnd = new Date(bookingStart);
-                            bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
+                            const bookingDuration = booking.planned_time || 2; // Используем planned_time или 2 по умолчанию
+                            bookingEnd.setHours(bookingEnd.getHours() + bookingDuration);
                             
                             const slotStart = slotDateTime;
                             const slotEnd = new Date(slotStart);
-                            slotEnd.setHours(slotEnd.getHours() + Z_HOURS);
+                            const slotDuration = 4; // Максимальная длительность для проверки
+                            slotEnd.setHours(slotEnd.getHours() + slotDuration);
                             
                             // Проверяем пересечение временных интервалов
                             if (slotStart < bookingEnd && slotEnd > bookingStart) {
@@ -647,12 +862,13 @@
                 // Получаем данные формы
                 const date = document.getElementById('bookingDate').value;
                 const time = document.getElementById('bookingTime').value;
+                const duration = parseInt(document.getElementById('plannedTime').value);
                 const people = parseInt(document.getElementById('peopleCount').value);
                 const phone = document.getElementById('phoneNumber').value;
                 const notes = document.getElementById('notes').value;
                 
                 // ============ ВАЛИДАЦИЯ 1: Проверка заполненности ============
-                if (!date || !time || !phone) {
+                if (!date || !time || !phone || !duration) {
                     showError('Заполните все обязательные поля');
                     return;
                 }
@@ -680,7 +896,24 @@
                     return;
                 }
                 
-                // ============ ВАЛИДАЦИЯ 5: Проверка конфликтов ============
+                // ============ ВАЛИДАЦИЯ 5: Проверка времени начала ============
+                const [hours] = time.split(':').map(Number);
+                if (hours < START_TIME) {
+                    showError(`Бронирование через сайт доступно только с ${START_TIME}:00. Для более раннего времени звоните по телефону.`);
+                    return;
+                }
+                
+                // ============ ВАЛИДАЦИЯ 6: Проверка времени окончания ============
+                const endTime = new Date(selectedDateTime);
+                endTime.setHours(endTime.getHours() + duration);
+                
+                if (endTime.getHours() > CLOSING_TIME || 
+                    (endTime.getHours() === CLOSING_TIME && endTime.getMinutes() > 0)) {
+                    showError(`Сеанс закончится после закрытия клуба (22:00). Выберите меньшую длительность или более раннее время.`);
+                    return;
+                }
+                
+                // ============ ВАЛИДАЦИЯ 7: Проверка конфликтов ============
                 // Получаем ВСЕ бронирования на эту дату (включая pending, confirmed)
                 const { data: existingBookings, error: bookingsError } = await supabase
                     .from('bookings')
@@ -699,7 +932,7 @@
                 let hasSpecialConflict = false;
                 const slotStart = selectedDateTime;
                 const slotEnd = new Date(slotStart);
-                slotEnd.setHours(slotEnd.getHours() + Z_HOURS);
+                slotEnd.setHours(slotEnd.getHours() + duration);
                 
                 if (existingBookings && existingBookings.length > 0) {
                     for (const booking of existingBookings) {
@@ -713,7 +946,8 @@
                         
                         const bookingStart = new Date(`${booking.date}T${bookingHours}`);
                         const bookingEnd = new Date(bookingStart);
-                        bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
+                        const bookingDuration = booking.planned_time || 2; // Используем planned_time из базы
+                        bookingEnd.setHours(bookingEnd.getHours() + bookingDuration);
                         
                         // Проверяем пересечение временных интервалов
                         const isTimeConflict = slotStart < bookingEnd && slotEnd > bookingStart;
@@ -751,8 +985,10 @@
                 console.log('✅ Все проверки пройдены, создаем бронирование...');
                 console.log('Дата:', date);
                 console.log('Время:', time);
+                console.log('Длительность:', duration, 'часов');
                 console.log('Люди:', people);
                 console.log('Суммарно людей в это время:', totalAfterBooking);
+                console.log('Время окончания:', endTime.toLocaleTimeString());
                 
                 // Создаём бронирование
                 const { data, error } = await supabase
@@ -760,6 +996,7 @@
                     .insert([{
                         date: date,
                         hours: time,
+                        planned_time: duration,
                         people: people,
                         phone: phone,
                         notes: notes || null,
@@ -783,15 +1020,26 @@
                 
                 // Успех
                 console.log('✅ Бронирование создано:', data);
-                showSuccess(`✅ Бронирование #${data[0].id} создано! Мы свяжемся с вами для подтверждения.`);
+                showSuccess(`✅ Бронирование #${data[0].id} создано! Длительность: ${duration} ч. Мы свяжемся с вами для подтверждения.`);
                 
                 // Сбрасываем форму
                 document.getElementById('bookingFormElement').reset();
                 
-                // Устанавливаем дату по умолчанию (завтра)
+                // Устанавливаем значения по умолчанию
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 document.getElementById('bookingDate').value = tomorrow.toISOString().split('T')[0];
+                
+                // Сбрасываем длительность к значению по умолчанию
+                const defaultOption = document.querySelector('.duration-option[data-hours="2"]');
+                if (defaultOption) {
+                    document.querySelectorAll('.duration-option').forEach(opt => opt.classList.remove('selected'));
+                    defaultOption.classList.add('selected');
+                    document.getElementById('plannedTime').value = 2;
+                }
+                
+                // Сбрасываем выбор времени
+                document.getElementById('bookingTime').selectedIndex = 0;
                 
                 // Обновляем доступное время
                 await updateAvailableTimes();
@@ -804,7 +1052,6 @@
                 showError(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
             }
         }
-
         
         // ==================== ЗАГРУЗКА БРОНИРОВАНИЙ ====================
         async function loadUserBookings() {
@@ -861,8 +1108,23 @@
                 const created = new Date(booking.created_at);
                 const createdFormatted = created.toLocaleString('ru-RU');
                 
+                // Рассчитываем время окончания
+                let bookingHours = booking.hours;
+                if (bookingHours.includes(':')) {
+                    const timeParts = bookingHours.split(':');
+                    bookingHours = `${timeParts[0]}:${timeParts[1]}`;
+                }
+                
+                const startTime = new Date(`${booking.date}T${bookingHours}`);
+                const endTime = new Date(startTime);
+                const duration = booking.planned_time || 2;
+                endTime.setHours(endTime.getHours() + duration);
+                
+                const endTimeFormatted = endTime.getHours().toString().padStart(2, '0') + ':' + 
+                                        endTime.getMinutes().toString().padStart(2, '0');
+                
                 // Проверяем, можно ли отменить бронирование (за 2 часа до начала)
-                const bookingDateTime = new Date(`${booking.date}T${booking.hours}`);
+                const bookingDateTime = startTime;
                 const now = new Date();
                 const hoursUntilBooking = (bookingDateTime - now) / (1000 * 60 * 60);
                 const canCancel = hoursUntilBooking >= MIN_HOURS_BEFORE && booking.status === 'confirmed';
@@ -876,7 +1138,9 @@
                         
                         <div style="margin-bottom: 10px;">
                             <p><strong>📅 Дата:</strong> ${formattedDate}</p>
-                            <p><strong>⏰ Время:</strong> ${booking.hours}</p>
+                            <p><strong>⏰ Начало:</strong> ${bookingHours}</p>
+                            <p><strong>🕒 Окончание:</strong> ${endTimeFormatted}</p>
+                            <p><strong>⏳ Длительность:</strong> ${duration} ч.</p>
                             <p><strong>👥 Людей:</strong> ${booking.people} чел.</p>
                             <p><strong>📱 Телефон:</strong> ${booking.phone}</p>
                             ${booking.notes ? `<p><strong>📝 Примечание:</strong> ${booking.notes}</p>` : ''}
