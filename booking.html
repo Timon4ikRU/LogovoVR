@@ -437,7 +437,7 @@
                 console.log('🔐 Проверка авторизации...');
                 
                 // Получаем текущую сессию
-                const { data: { session }, error } = await supabase.auth.getSession();
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
                 
                 if (error) {
                     console.error('Ошибка получения сессии:', error);
@@ -484,11 +484,11 @@
         
         async function logout() {
             try {
-                const { error } = await supabase.auth.signOut();
+                const { error } = await supabaseClient.auth.signOut();
                 if (error) throw error;
                 
                 // Очищаем localStorage
-                localStorage.removeItem('supabase.auth.token');
+                localStorage.removeItem('supabaseClient.auth.token');
                 localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
                 
                 // Обновляем интерфейс
@@ -508,7 +508,7 @@
                 if (!date) return;
                 
                 // Получаем ВСЕ бронирования на эту дату
-                const { data: existingBookings, error } = await supabase
+                const { data: existingBookings, error } = await supabaseClient
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
@@ -682,7 +682,7 @@
                 
                 // ============ ВАЛИДАЦИЯ 5: Проверка конфликтов ============
                 // Получаем ВСЕ бронирования на эту дату (включая pending, confirmed)
-                const { data: existingBookings, error: bookingsError } = await supabase
+                const { data: existingBookings, error: bookingsError } = await supabaseClient
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
@@ -755,7 +755,7 @@
                 console.log('Суммарно людей в это время:', totalAfterBooking);
                 
                 // Создаём бронирование
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('bookings')
                     .insert([{
                         date: date,
@@ -813,7 +813,7 @@
                 
                 console.log('📋 Загрузка бронирований...');
                 
-                const { data: bookings, error } = await supabase
+                const { data: bookings, error } = await supabaseClient
                     .from('bookings')
                     .select('*')
                     .eq('user_id', currentUser.id)
@@ -899,7 +899,7 @@
             if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
             
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('bookings')
                     .update({ status: 'cancelled' })
                     .eq('id', bookingId)
@@ -966,7 +966,7 @@
         });
         
         // Слушаем изменения авторизации
-        supabase.auth.onAuthStateChange((event, session) => {
+        supabaseClient.auth.onAuthStateChange((event, session) => {
             console.log('Auth state changed:', event);
             
             if (event === 'SIGNED_IN') {
