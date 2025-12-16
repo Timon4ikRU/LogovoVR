@@ -583,13 +583,17 @@
                 const endTime = new Date(selectedDateTime);
                 endTime.setHours(endTime.getHours() + durationHours);
                 
-                // Проверяем, не выходит ли за пределы времени закрытия
-                if (endTime.getHours() > CLOSING_TIME || 
-                    (endTime.getHours() === CLOSING_TIME && endTime.getMinutes() > 0)) {
-                    // Выходит за пределы закрытия
-                    option.classList.add('disabled');
-                    option.classList.remove('selected');
-                } else {
+                if (endTime.getHours() >= CLOSING_TIME){
+                    // Проверяем, не выходит ли за пределы времени закрытия
+                    if (endTime.getHours() > CLOSING_TIME || 
+                        (endTime.getHours() === CLOSING_TIME && endTime.getMinutes() > 0)) {
+                        // Выходит за пределы закрытия
+                        option.classList.add('disabled');
+                        option.classList.remove('selected');
+                    } else {
+                        option.classList.remove('disabled');
+                    }
+                } else{
                     option.classList.remove('disabled');
                 }
             });
