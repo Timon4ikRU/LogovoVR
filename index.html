@@ -1144,7 +1144,7 @@
         // Проверка авторизации
         async function checkAuth() {
             try {
-                const { data: { user }, error } = await supabase.auth.getUser();
+                const { data: { user }, error } = await supabaseClient.auth.getUser();
                 
                 if (error) throw error;
                 
@@ -1240,7 +1240,7 @@
         // Выход из системы
         async function logout() {
             try {
-                const { error } = await supabase.auth.signOut();
+                const { error } = await supabaseClient.auth.signOut();
                 
                 if (error) throw error;
                 
@@ -1258,7 +1258,7 @@
             checkAuth();
             
             // Слушаем изменения авторизации (real-time)
-            supabase.auth.onAuthStateChange((event, session) => {
+            supabaseClient.auth.onAuthStateChange((event, session) => {
                 console.log('Статус авторизации изменился:', event);
                 
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {

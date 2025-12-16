@@ -133,12 +133,12 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
         // ИНИЦИАЛИЗАЦИЯ SUPABASE (ГЛОБАЛЬНО)
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabaseClient.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         // ============== ФУНКЦИИ ==============
         async function checkAuth() {
             try {
-                const { data: { user }, error } = await supabase.auth.getUser();
+                const { data: { user }, error } = await supabaseClient.auth.getUser();
                 if (error) throw error;
                 if (user) window.location.href = 'index.html';
             } catch (error) {
@@ -188,7 +188,7 @@
             
             try {
                 // 1. Пробуем войти
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
