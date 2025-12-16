@@ -493,7 +493,7 @@
                 return;
             }
             
-            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Username</th><th>Тип</th><th>Создан</th><th>Обновлен</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Username</th><th>Тип</th><th>Создан</th><th>Обновлен</th><th>Последний логин</th><th>Действия</th></tr></thead><tbody>';
             
             profiles.forEach(profile => {
                 const shortId = profile.id ? profile.id.substring(0, 8) + '...' : 'N/A';
@@ -503,7 +503,9 @@
                 const created = profile.created_at ? new Date(profile.created_at).toLocaleString('ru-RU') : 'Нет данных';
                 const updated = profile.updated_at ? new Date(profile.updated_at).toLocaleString('ru-RU') : 'Нет данных';
                 const emailForAttr = (profile.email || username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const lastLogin = profile.last_login_at || profile.last_sign_in_at || 'Never';
                 const usernameForAttr = username.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const lastLoginFormatted  = lastLogin !== 'Never' ? new Date(lastLogin).toLocaleString('ru-RU'): 'Никогда';
                 
                 html += '<tr>' +
                     '<td title="' + (profile.id || '') + '">' + shortId + '</td>' +
@@ -511,6 +513,7 @@
                     '<td style="color: ' + userTypeColor + '">' + userType + '</td>' +
                     '<td>' + created + '</td>' +
                     '<td>' + updated + '</td>' +
+                    '<td>' + lastLoginFormatted + '</td>' +
                     '<td>' +
                         '<button class="action-btn" onclick="makeAdmin(\'' + profile.id + '\', \'' + emailForAttr + '\')">👑</button>' +
                         '<button class="action-btn" onclick="makeUser(\'' + profile.id + '\', \'' + emailForAttr + '\')">👤</button>' +
