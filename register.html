@@ -190,7 +190,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
         // Инициализируем Supabase сразу
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: {
                 autoRefreshToken: true,
                 persistSession: true,
