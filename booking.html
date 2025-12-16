@@ -478,7 +478,8 @@
         let currentUser = null;
         const MAX_TOTAL_PEOPLE = 6; // Максимальное количество людей суммарно
         const MIN_HOURS_BEFORE = 2; // Минимальное время до бронирования в часах
-        const CLOSING_TIME = 22; // Время закрытия (22:00)
+        const CLOSING_TIME_OBJ = new Date();
+        CLOSING_TIME_OBJ.setHours(22,0,0,0);
         const START_TIME = 12; // Начало бронирования через сайт
         
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
@@ -579,25 +580,22 @@
             // Проверяем доступные опции длительности
             const durationOptions = document.querySelectorAll('.duration-option');
             durationOptions.forEach(option => {
-                const durationHours = parseInt(option.dataset.hours);
-                const endTime = new Date(selectedDateTime);
-                endTime.setHours(endTime.getHours() + durationHours);
-                
-                if (endTime.getHours() >= 22) {
-                    // Если ровно 22:00 - можно, если больше - нельзя
-                    if (endTime.getHours() > 22 || 
-                        (endTime.getHours() === 22 && endTime.getMinutes() > 0)) {
-                        // Выходит за пределы закрытия
-                        option.classList.add('disabled');
-                        option.classList.remove('selected');
-                    } else {
-                        // Ровно 22:00 - можно
-                        option.classList.remove('disabled');
-                    }
-                } else {
-                    option.classList.remove('disabled');
-                }
-            });
+            const durationHours = parseInt(option.dataset.hours);
+            const endTime = new Date(selectedDateTime);
+            endTime.setHours(endTime.getHours() + durationHours);
+            
+            // Создаём объект времени закрытия для этой даты
+            const closingTimeToday = new Date(selectedDateTime);
+            closingTimeToday.setHours(22, 0, 0, 0);
+            
+            // Просто сравниваем Date объекты
+            if (endTime > closingTimeToday) {
+                option.classList.add('disabled');
+                option.classList.remove('selected');
+            } else {
+                option.classList.remove('disabled');
+            }
+        });
             
             // Если текущая выбранная опция стала недоступной, выбираем первую доступную
             const currentDuration = parseInt(document.getElementById('plannedTime').value);
@@ -641,15 +639,18 @@
             
             document.getElementById('endTime').textContent = `${endHours}:${endMinutes}`;
             
+            // Создаём объект времени закрытия для этой даты
+            const closingTimeToday = new Date(dateSelect.value);
+            closingTimeToday.setHours(22, 0, 0, 0);
+            
             // Показываем/скрываем предупреждение о закрытии
             const closingWarning = document.getElementById('closingWarning');
-            if (endTime.getHours() >= CLOSING_TIME) {
+            if (endTime > closingTimeToday) {
                 closingWarning.style.display = 'block';
             } else {
                 closingWarning.style.display = 'none';
             }
-        }
-        
+        }   
         // ==================== АВТОРИЗАЦИЯ ====================
         async function checkAuth() {
             try {
