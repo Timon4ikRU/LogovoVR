@@ -1,130 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Чайник Logovo VR</title>
+    <title>Чайник</title>
     <style>
         body {
             background: #0a0a0a;
             color: #00ff88;
             text-align: center;
             font-family: 'Courier New', monospace;
-            padding: 20px;
+            padding: 50px;
             cursor: default;
             min-height: 100vh;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+            margin: 0;
+            position: relative;
         }
         .teapot {
-            font-size: 12em;
+            font-size: 10em;
             margin: 20px 0;
             transition: transform 0.3s ease;
             cursor: pointer;
-            position: relative;
-            display: inline-block;
-            animation: float 3s ease-in-out infinite;
         }
         .teapot:hover {
             transform: scale(1.1) rotate(10deg);
-            animation: none;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        .steam {
-            position: absolute;
-            top: -70px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 50px;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .steam.active {
-            animation: steam 2s ease-out forwards;
-        }
-        @keyframes steam {
-            0% { opacity: 0; transform: translateX(-50%) translateY(0); }
-            20% { opacity: 1; }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-150px); }
         }
         .message {
             font-size: 2em;
             margin: 20px 0;
             color: #ffaa00;
         }
-        .instructions {
-            margin: 30px 0;
-            padding: 20px;
-            background: rgba(0, 255, 136, 0.05);
-            border: 1px dashed #00ff88;
-            border-radius: 10px;
-            text-align: left;
-            color: #8fd493;
+        .hidden-btn {
+            background: transparent;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
         }
-        .instructions h3 {
-            color: #ffaa00;
-            text-align: center;
-            margin-top: 0;
+        .hidden-btn:hover {
+            opacity: 1;
+            background: rgba(0, 255, 136, 0.1);
         }
-        .instructions ul {
-            padding-left: 20px;
-        }
-        .instructions li {
-            margin: 10px 0;
-        }
-        .gamble-info {
-            margin: 20px 0;
-            font-size: 0.9em;
+        .crypto-status {
+            font-size: 0.8em;
             color: #666;
-            text-align: center;
+            margin-top: 10px;
         }
-        /* Стили для кнопки квантовой зависимости */
-        .quantum-gamble {
-            background: linear-gradient(45deg, #ff00ff, #00ffff, #ffaa00);
-            background-size: 200% 200%;
+        .gamble-btn {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
             color: #000;
             border: none;
-            padding: 15px 30px;
-            border-radius: 12px;
+            padding: 12px 25px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1.1em;
             margin: 30px auto;
             display: block;
+            max-width: 400px;
             width: 90%;
-            max-width: 500px;
-            text-align: center;
-            transition: all 0.3s;
             box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
-            animation: pulse 2s infinite, gradientShift 3s infinite alternate;
+            animation: pulse 2s infinite;
         }
-        .quantum-gamble:hover {
+        .gamble-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
-            animation: pulse-fast 1s infinite, gradientShift 1.5s infinite alternate;
         }
         @keyframes pulse {
             0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 255, 0.5); }
-            50% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.8); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.8); }
         }
-        @keyframes pulse-fast {
-            0%, 100% { box-shadow: 0 0 25px rgba(255, 0, 255, 0.7); }
-            50% { box-shadow: 0 0 35px rgba(0, 255, 255, 0.9); }
+        .result-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 40px;
+            z-index: 2000;
+            min-width: 300px;
+            max-width: 90%;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.3);
         }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #ff4444;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px 10px;
         }
-        .gamble-warning {
+        .secret-result {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        .secret-status {
             color: #ffaa00;
-            font-size: 0.9em;
-            margin-top: 10px;
-            text-align: center;
+            font-size: 1.5em;
+            margin: 15px 0;
         }
-        /* Стили для рейтингов */
+        .gamble-info {
+            color: #ff00ff;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 0, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid #ff00ff;
+        }
+        .status-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 255, 136, 0.9);
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
         .stats-panel {
             margin: 30px auto;
             max-width: 600px;
@@ -150,262 +164,61 @@
             color: #00ff88;
             font-weight: bold;
         }
-        .rankings {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .rank-item {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-        }
-        .rank-place {
-            font-size: 1.8em;
-            color: #ffaa00;
-            font-weight: bold;
-        }
-        .rank-label {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 5px;
-        }
-        .leaderboard-link {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .leaderboard-link a {
-            color: #00ff88;
-            text-decoration: none;
-            border: 1px solid #00ff88;
-            padding: 10px 20px;
-            border-radius: 5px;
-            transition: all 0.3s;
-            display: inline-block;
-        }
-        .leaderboard-link a:hover {
-            background: #00ff88;
-            color: #000;
-        }
-        .brew-history {
-            margin-top: 20px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 5px;
-        }
-        .history-item {
-            padding: 8px 0;
-            color: #8fd493;
-            font-size: 0.9em;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px dashed rgba(0, 255, 136, 0.1);
-        }
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        .status-message {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 255, 136, 0.9);
-            color: #000;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-weight: bold;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
-            to { transform: translateX(-50%) translateY(0); opacity: 1; }
-        }
-        .login-prompt {
-            margin: 30px 0;
-            text-align: center;
-        }
-        .login-btn {
-            background: #00ff88;
-            color: #000;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            margin: 10px;
-            transition: all 0.3s;
-        }
-        .login-btn:hover {
-            background: #00cc66;
-            transform: translateY(-2px);
-        }
-        .user-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: #8fd493;
-            font-size: 0.9em;
-        }
-        .logout-btn {
-            background: rgba(255, 68, 68, 0.2);
-            color: #ff4444;
-            border: 1px solid #ff4444;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 10px;
-            font-size: 0.8em;
-            transition: all 0.3s;
-        }
-        .logout-btn:hover {
-            background: rgba(255, 68, 68, 0.4);
-        }
-        .click-counter {
-            margin: 20px 0;
-            font-size: 1.2em;
-            color: #ffaa00;
-        }
-        .click-animation {
-            position: fixed;
-            pointer-events: none;
-            z-index: 100;
-            animation: clickEffect 1s ease-out forwards;
-        }
-        @keyframes clickEffect {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -100px) scale(1.5); }
-        }
-        @media (max-width: 768px) {
-            .teapot { font-size: 8em; }
-            .quantum-gamble { width: 95%; padding: 12px 20px; font-size: 1em; }
-            .rankings { grid-template-columns: repeat(2, 1fr); }
-        }
     </style>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Статус сообщение -->
-        <div class="status-message" id="statusMessage"></div>
-        
-        <!-- Информация о пользователе -->
-        <div class="user-info" id="userInfo" style="display:none;">
-            <span id="userEmail"></span>
-            <button onclick="logout()" class="logout-btn">Выйти</button>
-        </div>
-        
-        <!-- Чайник -->
-        <div class="teapot" id="teapot">
-            🫖
-            <div class="steam" id="steam">♨️</div>
-        </div>
-        
-        <div class="message">418 - I'm a teapot</div>
-        <div>Кликай на меня и получишь что-то случайное!</div>
-        <div class="gamble-info">
-            *50% шанс на чай (+10), 49.9% шанс на кофе (+15), 0.1% шанс на квантовый напиток (+50)
-        </div>
-        
-        <!-- Звуки -->
-        <audio id="boilSound" src="sounds/boil.mp3" preload="auto"></audio>
-        <audio id="successSound" src="sounds/success.mp3" preload="auto"></audio>
-        <audio id="quantumSound" src="sounds/quantum.mp3" preload="auto"></audio>
-        
-        <!-- Инструкции -->
-        <div class="instructions">
-            <h3>📜 ПРАВИЛА ИГРЫ</h3>
-            <ul>
-                <li><strong>Чайник нейросетевой</strong> - он сам решает, что заварить</li>
-                <li><strong>50% шанс</strong> - получишь чай 🍵 (+10 очков)</li>
-                <li><strong>49.9% шанс</strong> - получишь кофе ☕ (+15 очков)</li>
-                <li><strong>0.1% шанс</strong> - квантовый напиток ⚛️ (+50 очков)</li>
-                <li><strong>Квантовая зависимость</strong> - специальный режим для риска</li>
-                <li>Чем больше кликаешь - тем выше шанс на удачу!</li>
-            </ul>
-        </div>
-        
-        <!-- Кнопка квантовой зависимости -->
-        <button class="quantum-gamble" onclick="brewQuantum()">
-            ⚛️ GAMBLING MODE: КВАНТОВАЯ ЗАВИСИМОСТЬ
-        </button>
-        <div class="gamble-warning">
-            Повышенный риск! 99.9% - обычный напиток, 0.1% - КВАНТОВАЯ ЗАПУТАННОСТЬ (+50)
-        </div>
-        
-        <!-- Секция рейтингов (показывается после авторизации) -->
-        <div id="statsSection" style="display:none;">
-            <div class="stats-panel">
-                <div class="stats-title">🏆 ТВОИ РЕЙТИНГИ</div>
-                
-                <div class="rankings">
-                    <div class="rank-item">
-                        <div class="rank-place" id="rankOverall">—</div>
-                        <div class="rank-label">Общий</div>
-                    </div>
-                    <div class="rank-item">
-                        <div class="rank-place" id="rankWeek">—</div>
-                        <div class="rank-label">Неделя</div>
-                    </div>
-                    <div class="rank-item">
-                        <div class="rank-place" id="rankMonth">—</div>
-                        <div class="rank-label">Месяц</div>
-                    </div>
-                    <div class="rank-item">
-                        <div class="rank-place" id="rankYear">—</div>
-                        <div class="rank-label">Год</div>
-                    </div>
-                </div>
+    <!-- Статус сообщение -->
+    <div class="status-message" id="statusMessage"></div>
+    
+    <div class="teapot" id="teapot">🫖</div>
+    <div class="message">418 - I'm a teapot</div>
+    <div>Кликай на меня и получишь случайный напиток!</div>
+    <div style="margin-top: 20px; font-size: 0.9em; color: #666;">
+        *50% чай (+10), 49.9% кофе (+15), 0.1% квантовый (+50)
+    </div>
 
-                <div style="margin-top: 20px;">
-                    <div class="stat-item">
-                        <span>🍵 Чашек чая:</span>
-                        <span class="stat-value" id="teaCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>☕ Чашек кофе:</span>
-                        <span class="stat-value" id="coffeeCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>⚛️ Квантовых напитков:</span>
-                        <span class="stat-value" id="quantumCount">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>🔥 Всего очков:</span>
-                        <span class="stat-value" id="totalScore">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>🎯 Средний счёт:</span>
-                        <span class="stat-value" id="avgScore">0</span>
-                    </div>
-                </div>
-
-                <div class="brew-history" id="brewHistory">
-                    <div style="color: #666; text-align: center; padding: 10px;">История варок появится здесь</div>
-                </div>
+    <!-- Секция статистики -->
+    <div id="statsSection" style="display:none;">
+        <div class="stats-panel">
+            <div class="stats-title">📊 ТВОЯ СТАТИСТИКА</div>
+            <div class="stat-item">
+                <span>🍵 Чашек чая:</span>
+                <span class="stat-value" id="teaCount">0</span>
             </div>
-
-            <div class="leaderboard-link">
-                <a href="leaderboard.html">📊 ПЕРЕЙТИ К ПОЛНОЙ ТАБЛИЦЕ ЛИДЕРОВ</a>
+            <div class="stat-item">
+                <span>☕ Чашек кофе:</span>
+                <span class="stat-value" id="coffeeCount">0</span>
             </div>
-        </div>
-        
-        <!-- Приглашение войти -->
-        <div class="login-prompt" id="loginPrompt">
-            <div style="color: #ffaa00; margin-bottom: 15px; font-size: 1.1em;">Войдите для участия в рейтинге</div>
-            <button class="login-btn" onclick="window.location.href='login.html'">Войти через Supabase</button>
-            <div style="margin-top: 15px; color: #666; font-size: 0.9em;">
-                Нет аккаунта? <a href="register.html" style="color: #00ff88;">Зарегистрируйтесь</a>
+            <div class="stat-item">
+                <span>⚛️ Квантовых напитков:</span>
+                <span class="stat-value" id="quantumCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span>🔥 Всего очков:</span>
+                <span class="stat-value" id="totalScore">0</span>
             </div>
         </div>
     </div>
+
+    <!-- Кнопка гемблинга -->
+    <button class="gamble-btn" onclick="startGamblingMode()">
+        ⚛️ GAMBLING MODE: АВТО-КЛИКЕР (3 сек)
+    </button>
+
+    <!-- Кнопка Secret -->
+    <button class="hidden-btn" onclick="brewCoffeeSecret()">secret</button>
+
+    <!-- Аудио элементы -->
+    <audio id="boilSound" preload="auto">
+        <source src="sounds/boil.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="successSound" preload="auto">
+        <source src="sounds/success.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="quantumSound" preload="auto">
+        <source src="sounds/quantum.mp3" type="audio/mpeg">
+    </audio>
 
     <script>
         // ==================== КОНФИГУРАЦИЯ ====================
@@ -415,10 +228,11 @@
         let supabase = null;
         let currentUser = null;
         let currentStats = { tea: 0, coffee: 0, quantum: 0, totalScore: 0 };
+        let gambleInterval = null;
 
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🫖 Инициализация честного чайника...');
+            console.log('🫖 Инициализация чайника...');
             
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
                 auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, storage: localStorage }
@@ -431,16 +245,11 @@
         function setupTeapot() {
             const teapot = document.getElementById('teapot');
             
-            teapot.addEventListener('click', function(e) {
+            teapot.addEventListener('click', function() {
                 if (!currentUser) {
                     showStatus('Войдите для участия в рейтинге!', false);
                     return;
                 }
-                
-                // Создаем анимацию клика
-                createClickAnimation(e);
-                
-                // Запускаем процесс варки
                 brewRandomDrink();
             });
             
@@ -453,28 +262,13 @@
                 "Только не жди, что я буду варить кофе!",
                 "418 - это мой код!",
                 "Случайность - мое второе имя!",
-                "Квантовая запутанность включена!",
-                "Будь готов к сюрпризам!",
-                "Нейросетевой чайник v2.0"
+                "Будь готов к сюрпризам!"
             ];
             
             teapot.addEventListener('mouseover', function() {
                 const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
                 this.title = randomPhrase;
             });
-        }
-
-        function createClickAnimation(event) {
-            const animation = document.createElement('div');
-            animation.className = 'click-animation';
-            animation.textContent = '💧';
-            animation.style.left = event.pageX + 'px';
-            animation.style.top = event.pageY + 'px';
-            document.body.appendChild(animation);
-            
-            setTimeout(() => {
-                animation.remove();
-            }, 1000);
         }
 
         // ==================== АВТОРИЗАЦИЯ ====================
@@ -484,13 +278,8 @@
                 
                 if (session?.user) {
                     currentUser = session.user;
-                    document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('userInfo').style.display = 'block';
-                    document.getElementById('loginPrompt').style.display = 'none';
                     document.getElementById('statsSection').style.display = 'block';
-                    
                     await loadUserStats();
-                    await loadBrewHistory();
                 }
             } catch (error) {
                 console.error('Ошибка авторизации:', error);
@@ -502,7 +291,7 @@
             try {
                 const { data: stats, error } = await supabase
                     .from('leaderboard')
-                    .select('drink, score, created_at')
+                    .select('drink, score')
                     .eq('user_id', currentUser.id);
                 
                 if (error) throw error;
@@ -528,79 +317,27 @@
                 document.getElementById('quantumCount').textContent = quantumCount;
                 document.getElementById('totalScore').textContent = totalScore;
                 
-                const totalBrews = teaCount + coffeeCount + quantumCount;
-                const avgScore = totalBrews > 0 ? (totalScore / totalBrews).toFixed(1) : '0';
-                document.getElementById('avgScore').textContent = avgScore;
-                
             } catch (error) {
                 console.error('Ошибка загрузки статистики:', error);
-            }
-        }
-
-        // ==================== ЗАГРУЗКА ИСТОРИИ ====================
-        async function loadBrewHistory() {
-            try {
-                const { data: history, error } = await supabase
-                    .from('leaderboard')
-                    .select('drink, score, created_at')
-                    .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-                
-                if (error) throw error;
-                
-                const historyDiv = document.getElementById('brewHistory');
-                historyDiv.innerHTML = '<div style="color:#666; margin-bottom:10px; font-weight:bold;">Последние варки:</div>';
-                
-                if (!history || history.length === 0) {
-                    historyDiv.innerHTML += '<div style="color:#666; text-align:center; padding:20px;">Еще нет варок</div>';
-                    return;
-                }
-                
-                history.forEach(record => {
-                    const item = document.createElement('div');
-                    item.className = 'history-item';
-                    
-                    const drinkEmoji = record.drink === 'tea' ? '🍵' : 
-                                     record.drink === 'coffee' ? '☕' : '⚛️';
-                    const drinkName = record.drink === 'tea' ? 'Чай' : 
-                                    record.drink === 'coffee' ? 'Кофе' : 'Квантовый';
-                    
-                    const date = new Date(record.created_at);
-                    const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                    const day = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
-                    
-                    item.innerHTML = `
-                        <span>${drinkEmoji} ${drinkName} <span style="color:#00ff88;">+${record.score}</span></span>
-                        <span style="color:#666;">${day} ${time}</span>
-                    `;
-                    
-                    historyDiv.appendChild(item);
-                });
-                
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
             }
         }
 
         // ==================== ЗВУКИ И АНИМАЦИИ ====================
         function playBoilSound() {
             const audio = document.getElementById('boilSound');
-            const steam = document.getElementById('steam');
-            
-            // Анимация пара
-            if (steam) {
-                steam.classList.remove('active');
-                void steam.offsetWidth;
-                steam.classList.add('active');
-            }
-            
-            // Воспроизведение звука
             if (audio) {
                 audio.currentTime = 0;
-                audio.play().catch(e => {
-                    console.log('Автовоспроизведение звука заблокировано:', e);
-                });
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => {
+                        console.log('Автовоспроизведение звука заблокировано:', e);
+                    });
+                }
+                // Останавливаем звук через 5 секунд
+                setTimeout(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }, 5000);
             }
         }
 
@@ -608,9 +345,17 @@
             const audio = document.getElementById(soundId);
             if (audio) {
                 audio.currentTime = 0;
-                audio.play().catch(e => {
-                    console.log(`Не удалось воспроизвести ${soundId}:`, e);
-                });
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => {
+                        console.log(`Не удалось воспроизвести ${soundId}:`, e);
+                    });
+                }
+                // Останавливаем звук через 5 секунд
+                setTimeout(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }, 5000);
             }
         }
 
@@ -645,18 +390,18 @@
                     // Чай
                     await addToLeaderboard('tea', 10);
                     playSound('successSound');
-                    showStatus(`🍵 Чай заварен! +10 очков (шанс: 50%, выпало: ${randomValue.toFixed(4)})`, true);
+                    showStatus(`🍵 Чай заварен! +10 очков`, true);
                 } else if (randomValue < 0.999) {
                     // Кофе
                     await addToLeaderboard('coffee', 15);
                     playSound('successSound');
-                    showStatus(`☕ Кофе сварено! +15 очков (шанс: 49.9%, выпало: ${randomValue.toFixed(4)})`, true);
+                    showStatus(`☕ Кофе сварено! +15 очков`, true);
                 } else {
                     // КВАНТОВЫЙ НАПИТОК!
                     await addToLeaderboard('quantum', 50);
                     playSound('quantumSound');
                     
-                    // Специальный экран для квантового попадания
+                    // Специальный экран
                     document.body.innerHTML = `
                         <div style="text-align: center; padding: 50px; background: linear-gradient(135deg, #000, #1a0033); color: #fff; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                             <div style="font-size: 5em; animation: spin 3s linear infinite;">⚛️🫖</div>
@@ -664,7 +409,6 @@
                             <div style="font-size: 1.2em; margin: 10px 0;">Напиток существует и не существует одновременно!</div>
                             <div style="color: #00ffff; font-size: 1.5em; margin: 20px 0;">+50 очков!</div>
                             <div style="color: #666; margin: 10px 0;">Crypto-рандомизация: ${randomValue.toFixed(6)}</div>
-                            <div style="color: #ffaa00; margin: 15px 0; font-size: 1.1em;">Шанс: 0.1% | Ты вошёл в историю!</div>
                             <button onclick="location.reload()" style="margin-top: 30px; background: linear-gradient(45deg, #ff00ff, #00ffff); color: #000; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
                                 🔄 ВЕРНУТЬСЯ В РЕАЛЬНОСТЬ
                             </button>
@@ -680,11 +424,11 @@
                 }
                 
                 await loadUserStats();
-                await loadBrewHistory();
             }, 800);
         }
 
-        async function brewQuantum() {
+        // ==================== SECRET КНОПКА ====================
+        async function brewCoffeeSecret() {
             if (!currentUser) {
                 showStatus('Войдите для участия в рейтинге!', false);
                 return;
@@ -695,41 +439,58 @@
             setTimeout(async () => {
                 const randomValue = await getCryptoRandom();
                 
-                // Для квантового режима шанс: 0.1% на квантовый, 99.9% на чай
-                if (randomValue > 0.999) {
-                    // КВАНТОВЫЙ НАПИТОК
-                    await addToLeaderboard('quantum', 50);
-                    playSound('quantumSound');
-                    
-                    // Специальный экран для квантового попадания
-                    document.body.innerHTML = `
-                        <div style="text-align: center; padding: 50px; background: linear-gradient(135deg, #000, #1a0033); color: #fff; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                            <div style="font-size: 5em; animation: spin 3s linear infinite;">⚛️🫖</div>
-                            <div style="font-size: 2.5em; color: #ff00ff; margin: 20px 0; text-shadow: 0 0 20px #ff00ff;">КВАНТОВАЯ ЗАВИСИМОСТЬ АКТИВИРОВАНА!</div>
-                            <div style="font-size: 1.2em; margin: 10px 0;">Ты рискнул и победил!</div>
-                            <div style="color: #00ffff; font-size: 1.5em; margin: 20px 0;">+50 очков!</div>
-                            <div style="color: #666; margin: 10px 0;">Crypto-рандомизация: ${randomValue.toFixed(6)}</div>
-                            <div style="color: #ffaa00; margin: 15px 0; font-size: 1.1em;">Шанс был 0.1% | Ты легенда!</div>
-                            <button onclick="location.reload()" style="margin-top: 30px; background: linear-gradient(45deg, #ff00ff, #00ffff); color: #000; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
-                                🎲 ПОВЕЗЛО!
-                            </button>
-                        </div>
-                        <style>
-                            @keyframes spin {
-                                0% { transform: rotate(0deg); }
-                                100% { transform: rotate(360deg); }
-                            }
-                        </style>
-                    `;
-                } else {
-                    // Просто чай
+                if (randomValue < 0.5) {
+                    // Чай
                     await addToLeaderboard('tea', 10);
                     playSound('successSound');
-                    showStatus(`Просто чай... +10 очков (рандом: ${randomValue.toFixed(6)})`, true);
-                    await loadUserStats();
-                    await loadBrewHistory();
+                    showStatus(`🔐 Секретный чай! +10 очков (${randomValue.toFixed(4)})`, true);
+                } else if (randomValue < 0.999) {
+                    // Кофе
+                    await addToLeaderboard('coffee', 20); // +20 очков за секрет
+                    playSound('successSound');
+                    showStatus(`🔐 Секретный кофе! +20 очков (${randomValue.toFixed(4)})`, true);
+                } else {
+                    // Квантовый
+                    await addToLeaderboard('quantum', 100); // +100 очков за секрет
+                    playSound('quantumSound');
+                    showStatus(`🔐 СЕКРЕТНЫЙ КВАНТ! +100 очков (${randomValue.toFixed(6)})`, true);
                 }
-            }, 1000);
+                
+                await loadUserStats();
+            }, 800);
+        }
+
+        // ==================== ГЕМБЛИНГ МОД ====================
+        function startGamblingMode() {
+            if (!currentUser) {
+                showStatus('Войдите для участия в рейтинге!', false);
+                return;
+            }
+            
+            if (gambleInterval) {
+                clearInterval(gambleInterval);
+                gambleInterval = null;
+                showStatus('⚡ Gambling mode остановлен', false);
+                return;
+            }
+            
+            showStatus('🎰 Gambling mode запущен (каждые 3 сек)', true);
+            
+            gambleInterval = setInterval(async () => {
+                const randomValue = await getCryptoRandom();
+                
+                if (randomValue < 0.5) {
+                    await addToLeaderboard('tea', 10);
+                } else if (randomValue < 0.999) {
+                    await addToLeaderboard('coffee', 15);
+                } else {
+                    await addToLeaderboard('quantum', 50);
+                }
+                
+                await loadUserStats();
+                showStatus(`🎲 Авто-клик: ${randomValue < 0.5 ? 'Чай' : randomValue < 0.999 ? 'Кофе' : 'КВАНТ!'}`, true);
+                
+            }, 3000); // Каждые 3 секунды
         }
 
         // ==================== РАБОТА С БАЗОЙ ДАННЫХ ====================
@@ -737,15 +498,14 @@
             try {
                 let username = currentUser.email.split('@')[0];
                 
-                // Получаем username из profiles
-                const { data: profile } = await supabase
+                // Получаем username из profiles - ИСПРАВЛЕННАЯ ЧАСТЬ
+                const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('username')
                     .eq('id', currentUser.id)
-                    .single()
-                    .catch(() => ({ data: null }));
+                    .maybeSingle(); // Используем maybeSingle вместо single().catch()
                 
-                if (profile?.username) {
+                if (!profileError && profile?.username) {
                     username = profile.username;
                 }
                 
@@ -766,12 +526,6 @@
                 console.error('Ошибка добавления в leaderboard:', error);
                 showStatus('Ошибка сохранения результата', false);
             }
-        }
-
-        function logout() {
-            localStorage.removeItem('supabase.auth.token');
-            localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
-            window.location.reload();
         }
     </script>
 </body>
