@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Таблица лидеров - Чайник Logovo VR</title>
+    <style>
+        body { background: #0a0a0a; color: #00ff88; font-family: 'Courier New', monospace; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; color: #ffaa00; margin: 20px 0; font-size: 2.5em; }
+        .filters { display: flex; justify-content: center; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        .filter-btn { background: rgba(0, 255, 136, 0.1); border: 1px solid #00ff88; color: #00ff88; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: all 0.3s; }
+        .filter-btn.active { background: #00ff88; color: #000; }
+        .filter-btn:hover { background: rgba(0, 255, 136, 0.3); }
+        .period-selector { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .period-btn { background: rgba(255, 170, 0, 0.1); border: 1px solid #ffaa00; color: #ffaa00; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .period-btn.active { background: #ffaa00; color: #000; }
+        .leaderboard-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .leaderboard-table th { background: rgba(0, 255, 136, 0.2); color: #00ff88; padding: 12px; text-align: left; border: 1px solid #00ff88; }
+        .leaderboard-table td { padding: 10px 12px; border: 1px solid rgba(0, 255, 136, 0.3); color: #8fd493; }
+        .leaderboard-table tr:nth-child(even) { background: rgba(0, 255, 136, 0.05); }
+        .leaderboard-table tr:hover { background: rgba(0, 255, 136, 0.1); }
+        .rank-1 { background: linear-gradient(90deg, rgba(255, 215, 0, 0.2), transparent) !important; color: #FFD700 !important; }
+        .rank-2 { background: linear-gradient(90deg, rgba(192, 192, 192, 0.2), transparent) !important; color: #C0C0C0 !important; }
+        .rank-3 { background: linear-gradient(90deg, rgba(205, 127, 50, 0.2), transparent) !important; color: #CD7F32 !important; }
+        .stats-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0; }
+        .stats-card { background: rgba(0, 255, 136, 0.05); border: 1px solid #00ff88; border-radius: 10px; padding: 20px; }
+        .stats-card h3 { color: #ffaa00; margin-bottom: 15px; }
+        .back-link { display: inline-block; margin-top: 20px; color: #00ff88; text-decoration: none; border: 1px solid #00ff88; padding: 8px 15px; border-radius: 5px; }
+        .drink-icon { font-size: 1.2em; margin-right: 5px; }
+        .loading { text-align: center; padding: 50px; color: #666; }
+        @media (max-width: 768px) { .filters, .period-selector { flex-direction: column; align-items: center; } .filter-btn, .period-btn { width: 200px; } }
+    </style>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 ТАБЛИЦА ЛИДЕРОВ ЧАЙНИКА</h1>
+        
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterBy('all')">Все напитки</button>
+            <button class="filter-btn" onclick="filterBy('tea')">🍵 Только чай</button>
+            <button class="filter-btn" onclick="filterBy('coffee')">☕ Только кофе</button>
+            <button class="filter-btn" onclick="filterBy('quantum')">⚛️ Только квантовые</button>
+        </div>
+        
+        <div class="period-selector">
+            <button class="period-btn active" onclick="setPeriod('overall')">За всё время</button>
+            <button class="period-btn" onclick="setPeriod('year')">За год</button>
+            <button class="period-btn" onclick="setPeriod('month')">За месяц</button>
+            <button class="period-btn" onclick="setPeriod('week')">За неделю</button>
+            <button class="period-btn" onclick="setPeriod('today')">За сегодня</button>
+        </div>
+        
+        <div id="leaderboard">
+            <div class="loading">Загрузка таблицы лидеров...</div>
+        </div>
+        
+        <div class="stats-summary" id="statsSummary">
+            <!-- Статистика загрузится здесь -->
+        </div>
+        
+        <a href="tea.html" class="back-link">← Назад к чайнику</a>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        
+        let supabase = null;
+        let currentFilter = 'all';
+        let currentPeriod = 'overall';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            await loadLeaderboard();
+            await loadStatsSummary();
+        });
+
+        function filterBy(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadLeaderboard();
+        }
+
+        function setPeriod(period) {
+            currentPeriod = period;
+            document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadLeaderboard();
+        }
+
+        async function loadLeaderboard() {
+            const leaderboardDiv = document.getElementById('leaderboard');
+            leaderboardDiv.innerHTML = '<div class="loading">Загрузка таблицы лидеров...</div>';
+            
+            try {
+                let query = supabase
+                    .from('leaderboard')
+                    .select('user_id, username, drink, score, created_at');
+                
+                // Фильтр по периоду
+                const now = new Date();
+                if (currentPeriod === 'year') {
+                    const yearStart = new Date(now.getFullYear(), 0, 1);
+                    query = query.gte('created_at', yearStart.toISOString());
+                } else if (currentPeriod === 'month') {
+                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                    query = query.gte('created_at', monthStart.toISOString());
+                } else if (currentPeriod === 'week') {
+                    const weekStart = new Date(now);
+                    weekStart.setDate(now.getDate() - 7);
+                    query = query.gte('created_at', weekStart.toISOString());
+                } else if (currentPeriod === 'today') {
+                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    query = query.gte('created_at', todayStart.toISOString());
+                }
+                
+                // Фильтр по напитку
+                if (currentFilter !== 'all') {
+                    query = query.eq('drink', currentFilter);
+                }
+                
+                const { data: records, error } = await query;
+                
+                if (error) throw error;
+                
+                // Группируем по пользователю
+                const userStats = {};
+                records.forEach(record => {
+                    if (!userStats[record.user_id]) {
+                        userStats[record.user_id] = {
+                            username: record.username || 'Аноним',
+                            totalScore: 0,
+                            teaCount: 0,
+                            coffeeCount: 0,
+                            quantumCount: 0,
+                            lastBrew: record.created_at
+                        };
+                    }
+                    
+                    userStats[record.user_id].totalScore += record.score || 0;
+                    if (record.drink === 'tea') userStats[record.user_id].teaCount++;
+                    if (record.drink === 'coffee') userStats[record.user_id].coffeeCount++;
+                    if (record.drink === 'quantum') userStats[record.user_id].quantumCount++;
+                    
+                    if (new Date(record.created_at) > new Date(userStats[record.user_id].lastBrew)) {
+                        userStats[record.user_id].lastBrew = record.created_at;
+                    }
+                });
+                
+                // Преобразуем в массив и сортируем
+                const sortedUsers = Object.entries(userStats)
+                    .map(([userId, stats]) => ({ userId, ...stats }))
+                    .sort((a, b) => b.totalScore - a.totalScore);
+                
+                // Отображаем таблицу
+                let html = `<table class="leaderboard-table"><thead><tr><th>Место</th><th>Игрок</th><th>Очки</th><th>🍵 Чай</th><th>☕ Кофе</th><th>⚛️ Квант</th><th>Всего</th><th>Последняя варка</th></tr></thead><tbody>`;
+                
+                sortedUsers.forEach((user, index) => {
+                    const rankClass = index < 3 ? `rank-${index + 1}` : '';
+                    const lastBrewTime = new Date(user.lastBrew).toLocaleDateString('ru-RU');
+                    
+                    html += `<tr class="${rankClass}">
+                        <td>${index + 1}</td>
+                        <td>${user.username}</td>
+                        <td><strong>${user.totalScore}</strong></td>
+                        <td>${user.teaCount}</td>
+                        <td>${user.coffeeCount}</td>
+                        <td>${user.quantumCount}</td>
+                        <td>${user.teaCount + user.coffeeCount + user.quantumCount}</td>
+                        <td>${lastBrewTime}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                leaderboardDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки leaderboard:', error);
+                leaderboardDiv.innerHTML = '<div style="color:#f00; text-align:center;">Ошибка загрузки таблицы лидеров</div>';
+            }
+        }
+
+        async function loadStatsSummary() {
+            try {
+                const { data: allRecords, error } = await supabase
+                    .from('leaderboard')
+                    .select('drink, score, created_at');
+                
+                if (error) throw error;
+                
+                // Общая статистика
+                const totalBrews = allRecords.length;
+                const totalTea = allRecords.filter(r => r.drink === 'tea').length;
+                const totalCoffee = allRecords.filter(r => r.drink === 'coffee').length;
+                const totalQuantum = allRecords.filter(r => r.drink === 'quantum').length;
+                const totalScore = allRecords.reduce((sum, r) => sum + (r.score || 0), 0);
+                
+                // Статистика за последние 7 дней
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                const recentBrews = allRecords.filter(r => new Date(r.created_at) > weekAgo);
+                const recentCount = recentBrews.length;
+                
+                // Самый активный пользователь
+                const userBrews = {};
+                allRecords.forEach(record => {
+                    userBrews[record.user_id] = (userBrews[record.user_id] || 0) + 1;
+                });
+                const mostActiveUserId = Object.keys(userBrews).reduce((a, b) => userBrews[a] > userBrews[b] ? a : b);
+                const mostActiveCount = userBrews[mostActiveUserId];
+                
+                const statsDiv = document.getElementById('statsSummary');
+                statsDiv.innerHTML = `
+                    <div class="stats-card">
+                        <h3>📊 ОБЩАЯ СТАТИСТИКА</h3>
+                        <div>Всего варок: <strong>${totalBrews}</strong></div>
+                        <div>Общий счёт: <strong>${totalScore}</strong></div>
+                        <div>🍵 Чая сварено: <strong>${totalTea}</strong></div>
+                        <div>☕ Кофе сварено: <strong>${totalCoffee}</strong></div>
+                        <div>⚛️ Квантовых напитков: <strong>${totalQuantum}</strong></div>
+                    </div>
+                    <div class="stats-card">
+                        <h3>🔥 АКТИВНОСТЬ</h3>
+                        <div>За последние 7 дней: <strong>${recentCount} варок</strong></div>
+                        <div>Варок в день: <strong>${Math.round(recentCount / 7)}</strong></div>
+                        <div>Самый активный: <strong>${mostActiveCount} варок</strong></div>
+                        <div>Квантовый шанс: <strong>${(totalQuantum/totalBrews*100).toFixed(2)}%</strong></div>
+                    </div>
+                    <div class="stats-card">
+                        <h3>🎯 СРЕДНИЕ ПОКАЗАТЕЛИ</h3>
+                        <div>Очков за варку: <strong>${(totalScore/totalBrews).toFixed(1)}</strong></div>
+                        <div>Чая на игрока: <strong>${(totalTea/Object.keys(userBrews).length).toFixed(1)}</strong></div>
+                        <div>Кофе на игрока: <strong>${(totalCoffee/Object.keys(userBrews).length).toFixed(1)}</strong></div>
+                        <div>Всего игроков: <strong>${Object.keys(userBrews).length}</strong></div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+            }
+        }
+    </script>
+</body>
+</html>
