@@ -414,19 +414,40 @@
                 createPagination('bookingsPagination', count || 0, page, 'loadBookingsTable');
             } catch (error) {console.error('Ошибка загрузки бронирований:', error); document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>';}
         }
-
+        
         function displayBookingsTable(bookings) {
-            if (!bookings || bookings.length === 0) {document.getElementById('bookingsTable').innerHTML = '<div style="color: #666; text-align: center;">Нет бронирований</div>'; return;}
+            if (!bookings || bookings.length === 0) {
+                document.getElementById('bookingsTable').innerHTML = '<div style="color: #666; text-align: center;">Нет бронирований</div>';
+                return;
+            }
+            
             let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Создано</th><th>Действия</th></tr></thead><tbody>';
+            
             bookings.forEach(booking => {
                 let dateStr = booking.date || booking.formatted_date || 'Нет даты';
                 let userEmail = booking.user_email || booking.email || 'Нет email';
                 let createdStr = booking.created_at ? new Date(booking.created_at).toLocaleString('ru-RU') : 'Нет данных';
-                const statusColors = {'pending': '#ffc107','confirmed': '#00ff00','cancelled': '#ff4444'};
-                const statusTexts = {'pending': 'Ожидание','confirmed': 'Подтверждено','cancelled': 'Отменено'};
+                const statusColors = {'pending': '#ffc107', 'confirmed': '#00ff00', 'cancelled': '#ff4444'};
+                const statusTexts = {'pending': 'Ожидание', 'confirmed': 'Подтверждено', 'cancelled': 'Отменено'};
                 const status = booking.status || 'pending';
-                html += '<tr><td>' + (booking.id || 'N/A') + '</td><td>' + dateStr + '</td><td>' + (booking.hours || 'Нет времени') + '</td><td>' + (booking.people || 1) + '</td><td>' + (booking.phone || 'Нет телефона') + '</td><td>' + userEmail + '</td><td style="color: ' + (statusColors[status] || '#fff') + '">' + (statusTexts[status] || status) + '</td><td>' + createdStr + '</td><td><button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')">✅</button><button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')">❌</button><button class="action-btn delete" onclick="deleteBooking(' + booking.id + ')">🗑️</button></td></tr>';
+                
+                html += '<tr>' +
+                    '<td>' + (booking.id || 'N/A') + '</td>' +
+                    '<td>' + dateStr + '</td>' +
+                    '<td>' + (booking.hours || 'Нет времени') + '</td>' +
+                    '<td>' + (booking.people || 1) + '</td>' +
+                    '<td>' + (booking.phone || 'Нет телефона') + '</td>' +
+                    '<td>' + userEmail + '</td>' +
+                    '<td style="color: ' + (statusColors[status] || '#fff') + '">' + (statusTexts[status] || status) + '</td>' +
+                    '<td>' + createdStr + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')">✅</button>' +
+                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')">❌</button>' +
+                        '<button class="action-btn delete" onclick="deleteBooking(' + booking.id + ')">🗑️</button>' +
+                    '</td>' +
+                '</tr>';
             });
+            
             html += '</tbody></table>';
             document.getElementById('bookingsTable').innerHTML = html;
         }
@@ -466,17 +487,40 @@
         }
 
         function displayUsersTable(profiles, totalCount) {
-            if (!profiles || profiles.length === 0) {document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center;">Нет пользователей в таблице profiles</div>'; return;}
+            if (!profiles || profiles.length === 0) {
+                document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center;">Нет пользователей в таблице profiles</div>';
+                return;
+            }
+            
             let html = '<table class="data-table"><thead><tr><th>ID</th><th>Email</th><th>Username</th><th>Тип</th><th>Создан</th><th>Обновлен</th><th>Действия</th></tr></thead><tbody>';
+            
             profiles.forEach(profile => {
                 const shortId = profile.id ? profile.id.substring(0, 8) + '...' : 'N/A';
-                const username = profile.username || profile.email?.split('@')[0] || 'user';
+                const username = profile.username || (profile.email ? profile.email.split('@')[0] : 'user') || 'user';
                 const userType = profile.user_type || 'user';
                 const userTypeColor = userType === 'admin' ? '#00ff00' : '#8fd493';
                 const created = profile.created_at ? new Date(profile.created_at).toLocaleString('ru-RU') : 'Нет данных';
                 const updated = profile.updated_at ? new Date(profile.updated_at).toLocaleString('ru-RU') : 'Нет данных';
-                html += '<tr><td title="' + (profile.id || '') + '">' + shortId + '</td><td>' + (profile.email || 'Нет email') + '</td><td>' + username + '</td><td style="color: ' + userTypeColor + '">' + userType + '</td><td>' + created + '</td><td>' + updated + '</td><td><button class="action-btn" onclick="makeAdmin(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">👑</button><button class="action-btn" onclick="makeUser(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">👤</button><button class="action-btn warning" onclick="sendPasswordReset(\'' + profile.id + '\', \'' + profile.email + '\')">🔐</button><button class="action-btn" onclick="changeUsername(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">📝</button><button class="action-btn delete" onclick="deleteProfile(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">🗑️</button></td></tr>';
+                const emailForAttr = (profile.email || username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const usernameForAttr = username.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                html += '<tr>' +
+                    '<td title="' + (profile.id || '') + '">' + shortId + '</td>' +
+                    '<td>' + (profile.email || 'Нет email') + '</td>' +
+                    '<td>' + username + '</td>' +
+                    '<td style="color: ' + userTypeColor + '">' + userType + '</td>' +
+                    '<td>' + created + '</td>' +
+                    '<td>' + updated + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn" onclick="makeAdmin(\'' + profile.id + '\', \'' + emailForAttr + '\')">👑</button>' +
+                        '<button class="action-btn" onclick="makeUser(\'' + profile.id + '\', \'' + emailForAttr + '\')">👤</button>' +
+                        '<button class="action-btn warning" onclick="sendPasswordReset(\'' + profile.id + '\', \'' + emailForAttr + '\')">🔐</button>' +
+                        '<button class="action-btn" onclick="changeUsername(\'' + profile.id + '\', \'' + emailForAttr + '\')">📝</button>' +
+                        '<button class="action-btn delete" onclick="deleteProfile(\'' + profile.id + '\', \'' + emailForAttr + '\')">🗑️</button>' +
+                    '</td>' +
+                '</tr>';
             });
+            
             html += '</tbody></table>';
             document.getElementById('usersTable').innerHTML = html;
         }
