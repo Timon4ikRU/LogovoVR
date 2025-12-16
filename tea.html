@@ -501,53 +501,52 @@
         // ==================== ЗАГРУЗКА ГЛОБАЛЬНОГО РЕЙТИНГА ====================
         async function loadGlobalLeaderboard() {
             try {
-                // Получаем статистику всех пользователей
-                const { data: allStats, error } = await supabase
+                // Теперь загружаем из user_stats (агрегированные данные)
+                const { data: userStats, error } = await supabase
                     .from('user_stats')
-                    .select('user_id, username, drink, score');
+                    .select('user_id, username, tea_count, coffee_count, quantum_count, total_points')
+                    .order('total_points', { ascending: false })
+                    .limit(10);
                 
-                if (error) throw error;
-                
-                // Группируем по пользователям
-                const userStats = {};
-                
-                if (allStats && allStats.length > 0) {
-                    allStats.forEach(record => {
-                        if (!userStats[record.user_id]) {
-                            userStats[record.user_id] = {
-                                username: record.username || 'Аноним',
-                                tea: 0,
-                                coffee: 0,
-                                quantum: 0,
-                                totalScore: 0
-                            };
-                        }
-                        
-                        if (record.drink === 'tea') userStats[record.user_id].tea++;
-                        if (record.drink === 'coffee') userStats[record.user_id].coffee++;
-                        if (record.drink === 'quantum') userStats[record.user_id].quantum++;
-                        userStats[record.user_id].totalScore += record.score || 0;
-                    });
+                if (error) {
+                    console.error('Ошибка загрузки из user_stats:', error);
+                    // Если user_stats пустая, покажем сообщение
+                    document.getElementById('leaderboardLoading').textContent = 'Рейтинг формируется...';
+                    document.getElementById('leaderboardBody').innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 20px; color: #666;">
+                                🫖 Рейтинг будет доступен после первых варок
+                            </td>
+                        </tr>
+                    `;
+                    document.getElementById('leaderboardTable').style.display = 'table';
+                    return;
                 }
                 
-                // Преобразуем в массив и сортируем по очкам
-                const leaderboardArray = Object.entries(userStats).map(([userId, stats]) => ({
-                    userId,
-                    ...stats
+                // Если данных нет
+                if (!userStats || userStats.length === 0) {
+                    displayLeaderboard([]);
+                    return;
+                }
+                
+                // Преобразуем данные в нужный формат
+                const leaderboardArray = userStats.map(stats => ({
+                    userId: stats.user_id,
+                    username: stats.username,
+                    tea: stats.tea_count || 0,
+                    coffee: stats.coffee_count || 0,
+                    quantum: stats.quantum_count || 0,
+                    totalScore: stats.total_points || 0
                 }));
                 
-                // Сортируем по убыванию очков
-                leaderboardArray.sort((a, b) => b.totalScore - a.totalScore);
-                
-                // Отображаем топ-10
-                displayLeaderboard(leaderboardArray.slice(0, 10));
+                // Отображаем
+                displayLeaderboard(leaderboardArray);
                 
             } catch (error) {
                 console.error('Ошибка загрузки рейтинга:', error);
                 document.getElementById('leaderboardLoading').textContent = 'Ошибка загрузки рейтинга';
             }
         }
-
         function displayLeaderboard(data) {
             const tbody = document.getElementById('leaderboardBody');
             tbody.innerHTML = '';
