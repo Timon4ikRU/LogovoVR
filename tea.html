@@ -1,27 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Чайник</title>
+    <title>Чайник Logovo VR</title>
     <style>
         body {
             background: #0a0a0a;
             color: #00ff88;
             text-align: center;
             font-family: 'Courier New', monospace;
-            padding: 50px;
+            padding: 20px;
             cursor: default;
             min-height: 100vh;
-            margin: 0;
-            position: relative;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
         }
         .teapot {
             font-size: 10em;
             margin: 20px 0;
             transition: transform 0.3s ease;
             cursor: pointer;
+            position: relative;
+            display: inline-block;
         }
         .teapot:hover {
             transform: scale(1.1) rotate(10deg);
+        }
+        .steam {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .steam.active {
+            animation: steam 2s ease-out forwards;
+        }
+        @keyframes steam {
+            0% { opacity: 0; transform: translateX(-50%) translateY(0); }
+            20% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-100px); }
         }
         .message {
             font-size: 2em;
@@ -45,99 +66,98 @@
         }
         .hidden-btn:hover {
             opacity: 1;
-            background: rgba(0, 255, 136, 0.1);
         }
         .crypto-status {
             font-size: 0.8em;
             color: #666;
             margin-top: 10px;
         }
+        /* Стили для кнопки гемблинга */
         .gamble-btn {
-            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            background: linear-gradient(45deg, #ff00ff, #00ffff, #ffaa00);
+            background-size: 200% 200%;
             color: #000;
             border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
+            padding: 15px 30px;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 1.1em;
             margin: 30px auto;
             display: block;
-            max-width: 400px;
             width: 90%;
+            max-width: 500px;
+            text-align: center;
+            transition: all 0.3s;
             box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
-            animation: pulse 2s infinite;
+            animation: pulse 2s infinite, gradientShift 3s infinite alternate;
         }
         .gamble-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+            animation: pulse-fast 1s infinite, gradientShift 1.5s infinite alternate;
         }
         @keyframes pulse {
             0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 255, 0.5); }
-            50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.8); }
+            50% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.8); }
         }
-        .result-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid #00ff88;
-            border-radius: 15px;
-            padding: 40px;
-            z-index: 2000;
-            min-width: 300px;
-            max-width: 90%;
-            box-shadow: 0 0 50px rgba(0, 255, 136, 0.3);
+        @keyframes pulse-fast {
+            0%, 100% { box-shadow: 0 0 25px rgba(255, 0, 255, 0.7); }
+            50% { box-shadow: 0 0 35px rgba(0, 255, 255, 0.9); }
         }
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #ff4444;
-            font-size: 1.5em;
-            cursor: pointer;
-            padding: 5px 10px;
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
-        .secret-result {
-            margin: 20px 0;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            border: 1px solid #444;
-        }
-        .secret-status {
+        .gamble-warning {
             color: #ffaa00;
-            font-size: 1.5em;
-            margin: 15px 0;
+            font-size: 0.9em;
+            margin-top: 10px;
+            text-align: center;
         }
-        .gamble-info {
-            color: #ff00ff;
-            margin: 20px 0;
-            padding: 15px;
-            background: rgba(255, 0, 255, 0.1);
-            border-radius: 8px;
-            border: 1px solid #ff00ff;
+        /* Стили для таблицы лидеров */
+        .leaderboard-container {
+            margin: 40px auto;
+            max-width: 800px;
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid #00ff88;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
         }
-        .status-message {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 255, 136, 0.9);
-            color: #000;
-            padding: 15px 30px;
-            border-radius: 8px;
+        .leaderboard-title {
+            color: #ffaa00;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        .leaderboard-table th {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 12px;
+            border-bottom: 2px solid #00ff88;
+            color: #ffaa00;
+            text-align: center;
+        }
+        .leaderboard-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+            text-align: center;
+        }
+        .leaderboard-table tr:hover {
+            background: rgba(0, 255, 136, 0.05);
+        }
+        .rank-1 { color: #ffd700; font-weight: bold; }
+        .rank-2 { color: #c0c0c0; font-weight: bold; }
+        .rank-3 { color: #cd7f32; font-weight: bold; }
+        .user-rank {
+            background: rgba(0, 255, 136, 0.2);
+            border-left: 3px solid #00ff88;
             font-weight: bold;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
-            to { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
         .stats-panel {
             margin: 30px auto;
@@ -164,61 +184,206 @@
             color: #00ff88;
             font-weight: bold;
         }
+        .status-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 255, 136, 0.9);
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        .login-prompt {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .login-btn {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .login-btn:hover {
+            background: #00cc66;
+            transform: translateY(-2px);
+        }
+        .user-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: #8fd493;
+            font-size: 0.9em;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #00ff88;
+        }
+        .logout-btn {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid #ff4444;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255, 68, 68, 0.4);
+        }
+        .instructions {
+            margin: 20px auto;
+            padding: 15px;
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px dashed #00ff88;
+            border-radius: 8px;
+            max-width: 600px;
+            text-align: left;
+            color: #8fd493;
+        }
+        .instructions h3 {
+            color: #ffaa00;
+            text-align: center;
+            margin-top: 0;
+        }
+        @media (max-width: 768px) {
+            .teapot { font-size: 8em; }
+            .gamble-btn { width: 95%; padding: 12px 20px; font-size: 1em; }
+            .leaderboard-table { font-size: 0.9em; }
+        }
     </style>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Статус сообщение -->
-    <div class="status-message" id="statusMessage"></div>
-    
-    <div class="teapot" id="teapot">🫖</div>
-    <div class="message">418 - I'm a teapot</div>
-    <div>Кликай на меня и получишь случайный напиток!</div>
-    <div style="margin-top: 20px; font-size: 0.9em; color: #666;">
-        *50% чай (+10), 49.9% кофе (+15), 0.1% квантовый (+50)
-    </div>
+    <div class="container">
+        <!-- Статус сообщение -->
+        <div class="status-message" id="statusMessage"></div>
+        
+        <!-- Информация о пользователе -->
+        <div class="user-info" id="userInfo" style="display:none;">
+            <span id="userEmail"></span>
+            <button onclick="logout()" class="logout-btn">Выйти</button>
+        </div>
+        
+        <!-- Чайник -->
+        <div class="teapot" id="teapot">
+            🫖
+            <div class="steam" id="steam">♨️</div>
+        </div>
+        
+        <div class="message">418 - I'm a teapot</div>
+        <div>Кликай на меня и получишь случайный напиток!</div>
+        <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+            *50% чай (+10), 49.9% кофе (+15), 0.1% квантовый (+50)
+        </div>
 
-    <!-- Секция статистики -->
-    <div id="statsSection" style="display:none;">
-        <div class="stats-panel">
-            <div class="stats-title">📊 ТВОЯ СТАТИСТИКА</div>
-            <div class="stat-item">
-                <span>🍵 Чашек чая:</span>
-                <span class="stat-value" id="teaCount">0</span>
+        <!-- Аудио элементы -->
+        <audio id="boilSound" preload="auto">
+            <source src="sounds/boil.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="successSound" preload="auto">
+            <source src="sounds/success.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="quantumSound" preload="auto">
+            <source src="sounds/quantum.mp3" type="audio/mpeg">
+        </audio>
+
+        <!-- Инструкции -->
+        <div class="instructions">
+            <h3>📜 ПРАВИЛА ИГРЫ</h3>
+            <ul style="padding-left: 20px;">
+                <li>Кликни на чайник - получи случайный напиток</li>
+                <li><strong>50% шанс</strong> - чай 🍵 (+10 очков)</li>
+                <li><strong>49.9% шанс</strong> - кофе ☕ (+15 очков)</li>
+                <li><strong>0.1% шанс</strong> - квантовый напиток ⚛️ (+50 очков)</li>
+                <li>Gambling Mode автоматически кликает каждые 3 секунды</li>
+            </ul>
+        </div>
+
+        <!-- Секция статистики -->
+        <div id="statsSection" style="display:none;">
+            <div class="stats-panel">
+                <div class="stats-title">📊 ТВОЯ СТАТИСТИКА</div>
+                <div class="stat-item">
+                    <span>🍵 Чашек чая:</span>
+                    <span class="stat-value" id="teaCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>☕ Чашек кофе:</span>
+                    <span class="stat-value" id="coffeeCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>⚛️ Квантовых напитков:</span>
+                    <span class="stat-value" id="quantumCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>🔥 Всего очков:</span>
+                    <span class="stat-value" id="totalScore">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>🎯 Средний счёт:</span>
+                    <span class="stat-value" id="avgScore">0</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span>☕ Чашек кофе:</span>
-                <span class="stat-value" id="coffeeCount">0</span>
+
+            <!-- Таблица лидеров -->
+            <div class="leaderboard-container" id="leaderboardContainer">
+                <div class="leaderboard-title">🏆 ГЛОБАЛЬНЫЙ РЕЙТИНГ</div>
+                <div id="leaderboardLoading">Загрузка рейтинга...</div>
+                <table class="leaderboard-table" id="leaderboardTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Игрок</th>
+                            <th>🍵 Чай</th>
+                            <th>☕ Кофе</th>
+                            <th>⚛️ Квант</th>
+                            <th>🔥 Очки</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody">
+                        <!-- Данные загружаются через JS -->
+                    </tbody>
+                </table>
             </div>
-            <div class="stat-item">
-                <span>⚛️ Квантовых напитков:</span>
-                <span class="stat-value" id="quantumCount">0</span>
-            </div>
-            <div class="stat-item">
-                <span>🔥 Всего очков:</span>
-                <span class="stat-value" id="totalScore">0</span>
+        </div>
+
+        <!-- Кнопка гемблинга -->
+        <button class="gamble-btn" onclick="startGamblingMode()" id="gambleBtn">
+            ⚛️ GAMBLING MODE: АВТО-КЛИКЕР (3 сек)
+        </button>
+        <div class="gamble-warning" id="gambleStatus">
+            Нажми для запуска/остановки автоматических кликов
+        </div>
+
+        <!-- Кнопка Secret -->
+        <button class="hidden-btn" onclick="brewCoffeeSecret()">secret</button>
+        
+        <!-- Приглашение войти -->
+        <div class="login-prompt" id="loginPrompt">
+            <div style="color: #ffaa00; margin-bottom: 15px; font-size: 1.1em;">Войдите для участия в рейтинге</div>
+            <button class="login-btn" onclick="window.location.href='login.html'">Войти через Supabase</button>
+            <div style="margin-top: 15px; color: #666; font-size: 0.9em;">
+                Нет аккаунта? <a href="register.html" style="color: #00ff88;">Зарегистрируйтесь</a>
             </div>
         </div>
     </div>
-
-    <!-- Кнопка гемблинга -->
-    <button class="gamble-btn" onclick="startGamblingMode()">
-        ⚛️ GAMBLING MODE: АВТО-КЛИКЕР (3 сек)
-    </button>
-
-    <!-- Кнопка Secret -->
-    <button class="hidden-btn" onclick="brewCoffeeSecret()">secret</button>
-
-    <!-- Аудио элементы -->
-    <audio id="boilSound" preload="auto">
-        <source src="sounds/boil.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="successSound" preload="auto">
-        <source src="sounds/success.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="quantumSound" preload="auto">
-        <source src="sounds/quantum.mp3" type="audio/mpeg">
-    </audio>
 
     <script>
         // ==================== КОНФИГУРАЦИЯ ====================
@@ -229,6 +394,7 @@
         let currentUser = null;
         let currentStats = { tea: 0, coffee: 0, quantum: 0, totalScore: 0 };
         let gambleInterval = null;
+        let isGamblingActive = false;
 
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
@@ -262,7 +428,9 @@
                 "Только не жди, что я буду варить кофе!",
                 "418 - это мой код!",
                 "Случайность - мое второе имя!",
-                "Будь готов к сюрпризам!"
+                "Будь готов к сюрпризам!",
+                "Gambling Mode активирован!",
+                "Авто-кликер активен!"
             ];
             
             teapot.addEventListener('mouseover', function() {
@@ -278,8 +446,13 @@
                 
                 if (session?.user) {
                     currentUser = session.user;
+                    document.getElementById('userEmail').textContent = currentUser.email;
+                    document.getElementById('userInfo').style.display = 'block';
+                    document.getElementById('loginPrompt').style.display = 'none';
                     document.getElementById('statsSection').style.display = 'block';
+                    
                     await loadUserStats();
+                    await loadGlobalLeaderboard();
                 }
             } catch (error) {
                 console.error('Ошибка авторизации:', error);
@@ -291,7 +464,7 @@
             try {
                 const { data: stats, error } = await supabase
                     .from('leaderboard')
-                    .select('drink, score')
+                    .select('drink, score, created_at')
                     .eq('user_id', currentUser.id);
                 
                 if (error) throw error;
@@ -317,14 +490,118 @@
                 document.getElementById('quantumCount').textContent = quantumCount;
                 document.getElementById('totalScore').textContent = totalScore;
                 
+                const totalBrews = teaCount + coffeeCount + quantumCount;
+                const avgScore = totalBrews > 0 ? (totalScore / totalBrews).toFixed(1) : '0';
+                document.getElementById('avgScore').textContent = avgScore;
+                
             } catch (error) {
                 console.error('Ошибка загрузки статистики:', error);
             }
         }
 
+        // ==================== ЗАГРУЗКА ГЛОБАЛЬНОГО РЕЙТИНГА ====================
+        async function loadGlobalLeaderboard() {
+            try {
+                // Получаем статистику всех пользователей
+                const { data: allStats, error } = await supabase
+                    .from('leaderboard')
+                    .select('user_id, username, drink, score');
+                
+                if (error) throw error;
+                
+                // Группируем по пользователям
+                const userStats = {};
+                
+                if (allStats && allStats.length > 0) {
+                    allStats.forEach(record => {
+                        if (!userStats[record.user_id]) {
+                            userStats[record.user_id] = {
+                                username: record.username || 'Аноним',
+                                tea: 0,
+                                coffee: 0,
+                                quantum: 0,
+                                totalScore: 0
+                            };
+                        }
+                        
+                        if (record.drink === 'tea') userStats[record.user_id].tea++;
+                        if (record.drink === 'coffee') userStats[record.user_id].coffee++;
+                        if (record.drink === 'quantum') userStats[record.user_id].quantum++;
+                        userStats[record.user_id].totalScore += record.score || 0;
+                    });
+                }
+                
+                // Преобразуем в массив и сортируем по очкам
+                const leaderboardArray = Object.entries(userStats).map(([userId, stats]) => ({
+                    userId,
+                    ...stats
+                }));
+                
+                // Сортируем по убыванию очков
+                leaderboardArray.sort((a, b) => b.totalScore - a.totalScore);
+                
+                // Отображаем топ-10
+                displayLeaderboard(leaderboardArray.slice(0, 10));
+                
+            } catch (error) {
+                console.error('Ошибка загрузки рейтинга:', error);
+                document.getElementById('leaderboardLoading').textContent = 'Ошибка загрузки рейтинга';
+            }
+        }
+
+        function displayLeaderboard(data) {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                document.getElementById('leaderboardLoading').textContent = 'Рейтинг пуст';
+                return;
+            }
+            
+            data.forEach((user, index) => {
+                const row = document.createElement('tr');
+                
+                // Определяем класс для текущего пользователя
+                const isCurrentUser = currentUser && user.userId === currentUser.id;
+                if (isCurrentUser) {
+                    row.className = 'user-rank';
+                }
+                
+                // Класс для топ-3
+                let rankClass = '';
+                if (index === 0) rankClass = 'rank-1';
+                else if (index === 1) rankClass = 'rank-2';
+                else if (index === 2) rankClass = 'rank-3';
+                
+                row.innerHTML = `
+                    <td><span class="${rankClass}">${index + 1}</span></td>
+                    <td>${user.username} ${isCurrentUser ? '(Вы)' : ''}</td>
+                    <td>${user.tea}</td>
+                    <td>${user.coffee}</td>
+                    <td>${user.quantum}</td>
+                    <td><strong>${user.totalScore}</strong></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('leaderboardLoading').style.display = 'none';
+            document.getElementById('leaderboardTable').style.display = 'table';
+        }
+
         // ==================== ЗВУКИ И АНИМАЦИИ ====================
         function playBoilSound() {
             const audio = document.getElementById('boilSound');
+            const steam = document.getElementById('steam');
+            
+            // Анимация пара
+            if (steam) {
+                steam.classList.remove('active');
+                void steam.offsetWidth;
+                steam.classList.add('active');
+            }
+            
+            // Воспроизведение звука
             if (audio) {
                 audio.currentTime = 0;
                 const playPromise = audio.play();
@@ -390,18 +667,18 @@
                     // Чай
                     await addToLeaderboard('tea', 10);
                     playSound('successSound');
-                    showStatus(`🍵 Чай заварен! +10 очков`, true);
+                    showStatus(`🍵 Чай заварен! +10 очков (${randomValue.toFixed(4)})`, true);
                 } else if (randomValue < 0.999) {
                     // Кофе
                     await addToLeaderboard('coffee', 15);
                     playSound('successSound');
-                    showStatus(`☕ Кофе сварено! +15 очков`, true);
+                    showStatus(`☕ Кофе сварено! +15 очков (${randomValue.toFixed(4)})`, true);
                 } else {
                     // КВАНТОВЫЙ НАПИТОК!
                     await addToLeaderboard('quantum', 50);
                     playSound('quantumSound');
                     
-                    // Специальный экран
+                    // Специальный экран для квантового попадания
                     document.body.innerHTML = `
                         <div style="text-align: center; padding: 50px; background: linear-gradient(135deg, #000, #1a0033); color: #fff; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                             <div style="font-size: 5em; animation: spin 3s linear infinite;">⚛️🫖</div>
@@ -409,6 +686,7 @@
                             <div style="font-size: 1.2em; margin: 10px 0;">Напиток существует и не существует одновременно!</div>
                             <div style="color: #00ffff; font-size: 1.5em; margin: 20px 0;">+50 очков!</div>
                             <div style="color: #666; margin: 10px 0;">Crypto-рандомизация: ${randomValue.toFixed(6)}</div>
+                            <div style="color: #ffaa00; margin: 15px 0; font-size: 1.1em;">Шанс: 0.1% | Ты вошёл в историю!</div>
                             <button onclick="location.reload()" style="margin-top: 30px; background: linear-gradient(45deg, #ff00ff, #00ffff); color: #000; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
                                 🔄 ВЕРНУТЬСЯ В РЕАЛЬНОСТЬ
                             </button>
@@ -424,6 +702,7 @@
                 }
                 
                 await loadUserStats();
+                await loadGlobalLeaderboard();
             }, 800);
         }
 
@@ -457,6 +736,7 @@
                 }
                 
                 await loadUserStats();
+                await loadGlobalLeaderboard();
             }, 800);
         }
 
@@ -467,30 +747,57 @@
                 return;
             }
             
-            if (gambleInterval) {
+            if (isGamblingActive) {
+                // Останавливаем гемблинг
                 clearInterval(gambleInterval);
                 gambleInterval = null;
+                isGamblingActive = false;
+                document.getElementById('gambleBtn').textContent = '⚛️ GAMBLING MODE: АВТО-КЛИКЕР (3 сек)';
+                document.getElementById('gambleStatus').textContent = 'Нажми для запуска автоматических кликов';
                 showStatus('⚡ Gambling mode остановлен', false);
                 return;
             }
             
+            // Запускаем гемблинг
+            isGamblingActive = true;
+            document.getElementById('gambleBtn').textContent = '⏹️ STOP GAMBLING MODE';
+            document.getElementById('gambleStatus').textContent = 'Авто-клики активны (каждые 3 сек)';
             showStatus('🎰 Gambling mode запущен (каждые 3 сек)', true);
             
-            gambleInterval = setInterval(async () => {
+            // Функция автоматического клика
+            const autoClick = async () => {
                 const randomValue = await getCryptoRandom();
+                let drink, score;
                 
                 if (randomValue < 0.5) {
-                    await addToLeaderboard('tea', 10);
+                    drink = 'tea';
+                    score = 10;
                 } else if (randomValue < 0.999) {
-                    await addToLeaderboard('coffee', 15);
+                    drink = 'coffee';
+                    score = 15;
                 } else {
-                    await addToLeaderboard('quantum', 50);
+                    drink = 'quantum';
+                    score = 50;
                 }
                 
+                await addToLeaderboard(drink, score);
                 await loadUserStats();
-                showStatus(`🎲 Авто-клик: ${randomValue < 0.5 ? 'Чай' : randomValue < 0.999 ? 'Кофе' : 'КВАНТ!'}`, true);
                 
-            }, 3000); // Каждые 3 секунды
+                // Обновляем рейтинг каждые 5 кликов
+                if (Math.random() < 0.2) {
+                    await loadGlobalLeaderboard();
+                }
+                
+                // Краткое сообщение о клике
+                const emoji = drink === 'tea' ? '🍵' : drink === 'coffee' ? '☕' : '⚛️';
+                showStatus(`${emoji} Авто-клик: +${score} очков`, true);
+            };
+            
+            // Запускаем сразу первый клик
+            autoClick();
+            
+            // Затем каждые 3 секунды
+            gambleInterval = setInterval(autoClick, 3000);
         }
 
         // ==================== РАБОТА С БАЗОЙ ДАННЫХ ====================
@@ -498,12 +805,12 @@
             try {
                 let username = currentUser.email.split('@')[0];
                 
-                // Получаем username из profiles - ИСПРАВЛЕННАЯ ЧАСТЬ
+                // Получаем username из profiles
                 const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('username')
                     .eq('id', currentUser.id)
-                    .maybeSingle(); // Используем maybeSingle вместо single().catch()
+                    .maybeSingle();
                 
                 if (!profileError && profile?.username) {
                     username = profile.username;
@@ -526,6 +833,15 @@
                 console.error('Ошибка добавления в leaderboard:', error);
                 showStatus('Ошибка сохранения результата', false);
             }
+        }
+
+        function logout() {
+            if (isGamblingActive) {
+                clearInterval(gambleInterval);
+            }
+            localStorage.removeItem('supabase.auth.token');
+            localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
+            window.location.reload();
         }
     </script>
 </body>
