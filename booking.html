@@ -583,17 +583,18 @@
                 const endTime = new Date(selectedDateTime);
                 endTime.setHours(endTime.getHours() + durationHours);
                 
-                if (endTime.getHours() >= CLOSING_TIME){
-                    // Проверяем, не выходит ли за пределы времени закрытия
-                    if (endTime.getHours() > CLOSING_TIME || 
-                        (endTime.getHours() === CLOSING_TIME && endTime.getMinutes() > 0)) {
+                if (endTime.getHours() >= 22) {
+                    // Если ровно 22:00 - можно, если больше - нельзя
+                    if (endTime.getHours() > 22 || 
+                        (endTime.getHours() === 22 && endTime.getMinutes() > 0)) {
                         // Выходит за пределы закрытия
                         option.classList.add('disabled');
                         option.classList.remove('selected');
                     } else {
+                        // Ровно 22:00 - можно
                         option.classList.remove('disabled');
                     }
-                } else{
+                } else {
                     option.classList.remove('disabled');
                 }
             });
@@ -910,9 +911,9 @@
                 // ============ ВАЛИДАЦИЯ 6: Проверка времени окончания ============
                 const endTime = new Date(selectedDateTime);
                 endTime.setHours(endTime.getHours() + duration);
-                
-                if (endTime.getHours() > CLOSING_TIME || 
-                    (endTime.getHours() === CLOSING_TIME && endTime.getMinutes() > 0)) {
+
+                if (endTime.getHours() > 22 || 
+                    (endTime.getHours() === 22 && endTime.getMinutes() > 0)) {
                     showError(`Сеанс закончится после закрытия клуба (22:00). Выберите меньшую длительность или более раннее время.`);
                     return;
                 }
