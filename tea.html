@@ -503,7 +503,7 @@
             try {
                 // Получаем статистику всех пользователей
                 const { data: allStats, error } = await supabase
-                    .from('leaderboard')
+                    .from('user_stats')
                     .select('user_id, username, drink, score');
                 
                 if (error) throw error;
