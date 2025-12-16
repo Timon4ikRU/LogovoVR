@@ -55,8 +55,6 @@
         .invite-form input { flex: 1; padding: 10px; background: #008800; color: #00ff00; border: 1px solid #00ff00; border-radius: 5px; }
         .invite-form button { background: #00c200; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .invite-form button:disabled { background: #666; cursor: not-allowed; }
-        .booking-duration { font-size: 0.9em; color: #ffaa00; margin-top: 2px; }
-        .booking-notes { font-size: 0.85em; color: #8fd493; font-style: italic; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -438,28 +436,13 @@
             try {
                 document.getElementById('bookingsTable').innerHTML = '<div class="loading">Загрузка бронирований...</div>';
                 let query = supabase.from('bookings').select('*', { count: 'exact' });
-                if (search) {
-                    // Пробуем искать как число для ID
-                    const searchNum = parseInt(search);
-                    if (!isNaN(searchNum) && searchNum > 0) {
-                        query = query.or(`id.eq.${searchNum},phone.ilike.%${search}%,user_email.ilike.%${search}%`);
-                    } else {
-                        query = query.or(`phone.ilike.%${search}%,user_email.ilike.%${search}%`);
-                    }
-                }
+                if (search) {query = query.or('phone.ilike.%' + search + '%,user_email.ilike.%' + search + '%,id.eq.' + (parseInt(search) || 0));}
                 const { data: bookings, error, count } = await query.order('created_at', { ascending: false }).range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
-                if (error) {
-                    console.error('Ошибка загрузки бронирований:', error);
-                    document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований: ' + error.message + '</div>';
-                    return;
-                }
+                if (error) {console.error('Ошибка загрузки бронирований:', error); document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>'; return;}
                 currentBookingsPage = page;
                 displayBookingsTable(bookings || []);
                 createPagination('bookingsPagination', count || 0, page, 'loadBookingsTable');
-            } catch (error) {
-                console.error('Ошибка загрузки бронирований:', error);
-                document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований: ' + error.message + '</div>';
-            }
+            } catch (error) {console.error('Ошибка загрузки бронирований:', error); document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>';}
         }
         
         function displayBookingsTable(bookings) {
@@ -468,7 +451,7 @@
                 return;
             }
             
-            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Длит.</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Примечание</th><th>Создано</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Создано</th><th>Действия</th></tr></thead><tbody>';
             
             bookings.forEach(booking => {
                 let dateStr = booking.date || booking.formatted_date || 'Нет даты';
@@ -477,24 +460,20 @@
                 const statusColors = {'pending': '#ffc107', 'confirmed': '#00ff00', 'cancelled': '#ff4444'};
                 const statusTexts = {'pending': 'Ожидание', 'confirmed': 'Подтверждено', 'cancelled': 'Отменено'};
                 const status = booking.status || 'pending';
-                const duration = booking.planned_time || 2;
-                const notes = booking.notes || '';
                 
                 html += '<tr>' +
-                    '<td><strong>' + (booking.id || 'N/A') + '</strong></td>' +
+                    '<td>' + (booking.id || 'N/A') + '</td>' +
                     '<td>' + dateStr + '</td>' +
                     '<td>' + (booking.hours || 'Нет времени') + '</td>' +
-                    '<td class="booking-duration">' + duration + ' ч</td>' +
                     '<td>' + (booking.people || 1) + '</td>' +
                     '<td>' + (booking.phone || 'Нет телефона') + '</td>' +
                     '<td>' + userEmail + '</td>' +
-                    '<td style="color: ' + (statusColors[status] || '#fff') + '; font-weight: bold;">' + (statusTexts[status] || status) + '</td>' +
-                    '<td><div class="booking-notes" title="' + notes + '">' + (notes.substring(0, 30) + (notes.length > 30 ? '...' : '')) + '</div></td>' +
+                    '<td style="color: ' + (statusColors[status] || '#fff') + '">' + (statusTexts[status] || status) + '</td>' +
                     '<td>' + createdStr + '</td>' +
-                    '<td style="white-space: nowrap;">' +
-                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')" title="Подтвердить">✅</button>' +
-                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')" title="Отменить">❌</button>' +
-                        '<button class="action-btn delete" onclick="deleteBooking(' + booking.id + ')" title="Удалить">🗑️</button>' +
+                    '<td>' +
+                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')">✅</button>' +
+                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')">❌</button>' +
+                        '<button class="action-btn delete" onclick="deleteBooking(' + booking.id + ')">🗑️</button>' +
                     '</td>' +
                 '</tr>';
             });
@@ -504,92 +483,23 @@
         }
 
         async function updateBookingStatus(bookingId, status) {
-            const statusText = status === 'confirmed' ? 'подтвержден' : 'отменен';
-            if (!confirm('Изменить статус бронирования #' + bookingId + ' на "' + statusText + '"?')) return;
-            
+            if (!confirm('Изменить статус бронирования #' + bookingId + ' на "' + status + '"?')) return;
             try {
-                console.log('Обновление статуса бронирования #' + bookingId + ' на "' + status + '"');
-                
-                // Проверяем, существует ли бронирование
-                const { data: existingBooking, error: checkError } = await supabase
-                    .from('bookings')
-                    .select('id')
-                    .eq('id', bookingId)
-                    .single();
-                
-                if (checkError || !existingBooking) {
-                    showStatus('❌ Бронирование #' + bookingId + ' не найдено', true);
-                    loadBookingsTable(currentBookingsPage);
-                    return;
-                }
-                
-                // Обновляем статус
-                const { data, error } = await supabase
-                    .from('bookings')
-                    .update({ 
-                        status: status,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', bookingId)
-                    .select();
-                
-                if (error) {
-                    console.error('Ошибка обновления статуса:', error);
-                    throw error;
-                }
-                
-                console.log('Статус обновлен:', data);
-                showStatus('✅ Статус бронирования #' + bookingId + ' изменен на "' + statusText + '"');
-                
-                // Перезагружаем таблицу
+                const { error } = await supabase.from('bookings').update({ status: status }).eq('id', bookingId);
+                if (error) throw error;
+                showStatus('Статус бронирования #' + bookingId + ' обновлен на "' + status + '"');
                 loadBookingsTable(currentBookingsPage);
-                
-            } catch (error) {
-                console.error('❌ Ошибка обновления статуса бронирования:', error);
-                showStatus('❌ Ошибка обновления статуса: ' + error.message, true);
-            }
+            } catch (error) {console.error('Ошибка обновления статуса:', error); showStatus('Ошибка обновления статуса', true);}
         }
 
         async function deleteBooking(bookingId) {
-            if (!confirm('Вы уверены, что хотите удалить бронирование #' + bookingId + '?\n\nЭто действие нельзя отменить.')) return;
-            
+            if (!confirm('Удалить бронирование #' + bookingId + '?')) return;
             try {
-                console.log('Удаление бронирования #' + bookingId);
-                
-                // Проверяем, существует ли бронирование
-                const { data: existingBooking, error: checkError } = await supabase
-                    .from('bookings')
-                    .select('id')
-                    .eq('id', bookingId)
-                    .single();
-                
-                if (checkError || !existingBooking) {
-                    showStatus('❌ Бронирование #' + bookingId + ' не найдено', true);
-                    loadBookingsTable(currentBookingsPage);
-                    return;
-                }
-                
-                // Удаляем бронирование
-                const { error } = await supabase
-                    .from('bookings')
-                    .delete()
-                    .eq('id', bookingId);
-                
-                if (error) {
-                    console.error('Ошибка удаления:', error);
-                    throw error;
-                }
-                
-                console.log('Бронирование удалено');
-                showStatus('✅ Бронирование #' + bookingId + ' удалено');
-                
-                // Перезагружаем таблицу
+                const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+                if (error) throw error;
+                showStatus('Бронирование #' + bookingId + ' удалено');
                 loadBookingsTable(currentBookingsPage);
-                
-            } catch (error) {
-                console.error('❌ Ошибка удаления бронирования:', error);
-                showStatus('❌ Ошибка удаления: ' + error.message, true);
-            }
+            } catch (error) {console.error('Ошибка удаления:', error); showStatus('Ошибка удаления', true);}
         }
 
         // ==================== ПОЛЬЗОВАТЕЛИ ====================
@@ -599,11 +509,7 @@
                 let query = supabase.from('profiles').select('*', { count: 'exact' });
                 if (search) {query = query.or('email.ilike.%' + search + '%,username.ilike.%' + search + '%');}
                 const { data: profiles, error, count } = await query.order('created_at', { ascending: false }).range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
-                if (error) {
-                    console.error('Ошибка загрузки пользователей:', error);
-                    document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Таблица profiles не существует или ошибка загрузки.<br>Запустите SQL для создания таблицы в Supabase SQL Editor.</div>';
-                    return;
-                }
+                if (error) {console.error('Ошибка загрузки пользователей:', error); document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Таблица profiles не существует или ошибка загрузки.<br>Запустите SQL для создания таблицы в Supabase SQL Editor.</div>'; return;}
                 currentUsersPage = page;
                 displayUsersTable(profiles || [], count || 0);
                 createPagination('usersPagination', count || 0, page, 'loadUsersTable');
@@ -632,17 +538,17 @@
                 
                 html += '<tr>' +
                     '<td title="' + (profile.id || '') + '">' + shortId + '</td>' +
-                    '<td>' + username + (profile.email ? '<br><small style="color:#8fd493">' + profile.email + '</small>' : '') + '</td>' +
-                    '<td style="color: ' + userTypeColor + '; font-weight: bold;">' + userType + '</td>' +
+                    '<td>' + username + '</td>' +
+                    '<td style="color: ' + userTypeColor + '">' + userType + '</td>' +
                     '<td>' + created + '</td>' +
                     '<td>' + updated + '</td>' +
                     '<td>' + lastLoginFormatted + '</td>' +
-                    '<td style="white-space: nowrap;">' +
-                        '<button class="action-btn" onclick="makeAdmin(\'' + profile.id + '\', \'' + emailForAttr + '\')" title="Назначить администратором">👑</button>' +
-                        '<button class="action-btn" onclick="makeUser(\'' + profile.id + '\', \'' + emailForAttr + '\')" title="Сделать пользователем">👤</button>' +
-                        '<button class="action-btn warning" onclick="sendPasswordReset(\'' + profile.id + '\', \'' + emailForAttr + '\')" title="Сбросить пароль">🔐</button>' +
-                        '<button class="action-btn" onclick="changeUsername(\'' + profile.id + '\', \'' + emailForAttr + '\')" title="Изменить username">📝</button>' +
-                        '<button class="action-btn delete" onclick="deleteProfile(\'' + profile.id + '\', \'' + emailForAttr + '\')" title="Удалить профиль">🗑️</button>' +
+                    '<td>' +
+                        '<button class="action-btn" onclick="makeAdmin(\'' + profile.id + '\', \'' + emailForAttr + '\')">👑</button>' +
+                        '<button class="action-btn" onclick="makeUser(\'' + profile.id + '\', \'' + emailForAttr + '\')">👤</button>' +
+                        '<button class="action-btn warning" onclick="sendPasswordReset(\'' + profile.id + '\', \'' + emailForAttr + '\')">🔐</button>' +
+                        '<button class="action-btn" onclick="changeUsername(\'' + profile.id + '\', \'' + emailForAttr + '\')">📝</button>' +
+                        '<button class="action-btn delete" onclick="deleteProfile(\'' + profile.id + '\', \'' + emailForAttr + '\')">🗑️</button>' +
                     '</td>' +
                 '</tr>';
             });
@@ -651,26 +557,16 @@
             document.getElementById('usersTable').innerHTML = html;
         }
 
-        function searchBookings() {
-            const search = document.getElementById('searchBookings').value;
-            loadBookingsTable(1, search);
-        }
-        
-        function searchUsers() {
-            const search = document.getElementById('searchUsers').value;
-            loadUsersTable(1, search);
-        }
+        function searchBookings() {const search = document.getElementById('searchBookings').value; loadBookingsTable(1, search);}
+        function searchUsers() {const search = document.getElementById('searchUsers').value; loadUsersTable(1, search);}
 
         function createPagination(elementId, totalCount, currentPage, callbackFunction) {
             const totalPages = Math.ceil(totalCount / itemsPerPage);
             if (totalPages <= 1) {document.getElementById(elementId).innerHTML = ''; return;}
             let html = '';
             for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="' + callbackFunction + '(' + i + ')">' + i + '</button>';
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    html += '<span>...</span>';
-                }
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="' + callbackFunction + '(' + i + ')">' + i + '</button>';}
+                else if (i === currentPage - 3 || i === currentPage + 3) {html += '<span>...</span>';}
             }
             document.getElementById(elementId).innerHTML = html;
         }
@@ -680,7 +576,6 @@
             const statusMessage = document.getElementById('statusMessage');
             statusMessage.textContent = message;
             statusMessage.style.background = isError ? 'rgba(255, 0, 0, 0.9)' : 'rgba(0, 255, 0, 0.9)';
-            statusMessage.style.color = isError ? '#fff' : '#000';
             statusMessage.style.display = 'block';
             setTimeout(() => {statusMessage.style.display = 'none';}, 3000);
         }
@@ -716,26 +611,14 @@
         function stopMusic() {if (audio) {audio.pause(); audio.currentTime = 0; document.getElementById('nowPlaying').textContent = '';}}
 
         async function logoutSupabase() {
-            try {
-                if (supabase && currentUser) {
-                    await supabase.auth.signOut();
-                }
-                localStorage.removeItem('supabase.auth.token');
-                localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
-                window.location.reload();
-            } catch (error) {
-                console.error('Ошибка выхода:', error);
-                window.location.reload();
-            }
+            try {if (supabase && currentUser) {await supabase.auth.signOut();}
+                localStorage.removeItem('supabase.auth.token'); localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token'); window.location.reload();
+            } catch (error) {console.error('Ошибка выхода:', error); window.location.reload();}
         }
 
         document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && document.getElementById('adminLoginSection').style.display === 'block') {
-                checkLogin();
-            }
-            if (e.key === 'Enter' && document.getElementById('inviteEmail') && document.getElementById('inviteEmail').value) {
-                inviteUser();
-            }
+            if (e.key === 'Enter' && document.getElementById('adminLoginSection').style.display === 'block') {checkLogin();}
+            if (e.key === 'Enter' && document.getElementById('inviteEmail') && document.getElementById('inviteEmail').value) {inviteUser();}
         });
     </script>
 </body>
