@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Changer - Logovo VR Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #000000, #00ff00c9);
+            color: #00ff00;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ff00;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+        }
+
+        .hacker-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .status-message {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        .success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            display: block;
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            display: block;
+        }
+
+        .user-info {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 10px;
+            border: 1px solid #00ff00;
+        }
+
+        .user-info span {
+            color: #8fd493;
+        }
+
+        .logout-btn {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+            font-size: 0.9em;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 68, 68, 0.4);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #8fd493;
+            font-size: 0.9em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            background: #008800;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1em;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            background: #009900;
+        }
+
+        .password-strength {
+            height: 5px;
+            margin-top: 5px;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+
+        .strength-weak { background: #ff4444; width: 25%; }
+        .strength-medium { background: #ffc107; width: 50%; }
+        .strength-good { background: #00ff00; width: 75%; }
+        .strength-strong { background: #00ff00; width: 100%; }
+
+        .password-requirements {
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #8fd493;
+        }
+
+        .requirement {
+            margin: 3px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .requirement:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #666;
+        }
+
+        .requirement.met:before {
+            content: "✓";
+            color: #00ff00;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.7);
+        }
+
+        .btn:disabled {
+            background: #333;
+            color: #666;
+            border-color: #666;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+
+        .btn-danger:hover {
+            background: #ff4444;
+            color: #000;
+        }
+
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .user-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0, 255, 0, 0.05);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-item:hover {
+            background: rgba(0, 255, 0, 0.15);
+        }
+
+        .user-item.selected {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+
+        .user-email {
+            font-weight: bold;
+        }
+
+        .user-type {
+            float: right;
+            color: #8fd493;
+            font-size: 0.8em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #8fd493;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #666;
+            border-radius: 5px;
+        }
+
+        .back-link:hover {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        /* Хакерский терминал эффект */
+        .terminal-line {
+            border-right: 2px solid #00ff00;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Хакерский ASCII арт -->
+        <div class="hacker-title">
+<pre style="color:#00ff00; font-size:10px;">
+╔══════════════════════════════════════════════════╗
+║ ██████╗  █████╗ ███████╗███████╗██╗    ██╗      ║
+║ ██╔══██╗██╔══██╗██╔════╝██╔════╝██║    ██║      ║
+║ ██████╔╝███████║███████╗███████╗██║ █╗ ██║      ║
+║ ██╔═══╝ ██╔══██║╚════██║╚════██║██║███╗██║      ║
+║ ██║     ██║  ██║███████║███████║╚███╔███╔╝      ║
+║ ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝ ╚══╝╚══╝       ║
+║    ██████╗██╗  ██╗ █████╗ ███╗   ██╗ ██████╗    ║
+║   ██╔════╝██║  ██║██╔══██╗████╗  ██║██╔════╝    ║
+║   ██║     ███████║███████║██╔██╗ ██║██║         ║
+║   ██║     ██╔══██║██╔══██║██║╚██╗██║██║         ║
+║   ╚██████╗██║  ██║██║  ██║██║ ╚████║╚██████╗    ║
+║    ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝    ║
+╚══════════════════════════════════════════════════╝
+</pre>
+        </div>
+
+        <h1><span class="terminal-line">🔐 PASSWORD CHANGER</span></h1>
+
+        <!-- Статус сообщения -->
+        <div id="statusMessage" class="status-message"></div>
+
+        <!-- Информация о текущем админе -->
+        <div class="user-info" id="userInfo" style="display: none;">
+            <span id="userEmail"></span>
+            <button onclick="logout()" class="logout-btn">🚪 Выйти</button>
+        </div>
+
+        <!-- Форма выбора пользователя -->
+        <div class="form-group">
+            <label>👥 Выберите пользователя для смены пароля:</label>
+            <div class="user-list" id="userList">
+                <div class="loading">Загрузка пользователей...</div>
+            </div>
+        </div>
+
+        <!-- Форма смены пароля -->
+        <div id="passwordForm" style="display: none;">
+            <div class="form-group">
+                <label>📧 Email пользователя:</label>
+                <input type="email" id="selectedEmail" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>🔑 Новый пароль:</label>
+                <input type="password" id="newPassword" placeholder="Введите новый пароль" 
+                       onkeyup="checkPasswordStrength()" autocomplete="new-password">
+                <div class="password-strength" id="passwordStrength"></div>
+                
+                <div class="password-requirements" id="passwordRequirements">
+                    <div class="requirement" id="reqLength">Минимум 8 символов</div>
+                    <div class="requirement" id="reqLowercase">Строчная буква (a-z)</div>
+                    <div class="requirement" id="reqUppercase">Заглавная буква (A-Z)</div>
+                    <div class="requirement" id="reqNumber">Цифра (0-9)</div>
+                    <div class="requirement" id="reqSpecial">Спецсимвол (!@#$%^&*)</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🔒 Подтвердите пароль:</label>
+                <input type="password" id="confirmPassword" placeholder="Повторите пароль" 
+                       onkeyup="checkPasswordMatch()" autocomplete="new-password">
+                <div id="passwordMatch" style="margin-top:5px;font-size:0.8em;"></div>
+            </div>
+
+            <div class="form-group">
+                <label>💡 Подсказка для пользователя (необязательно):</label>
+                <input type="text" id="passwordHint" placeholder="Например: Дата рождения + знак !" 
+                       maxlength="100">
+            </div>
+
+            <button class="btn" onclick="changePassword()" id="changeBtn" disabled>
+                ⚡ ИЗМЕНИТЬ ПАРОЛЬ
+            </button>
+
+            <button class="btn btn-danger" onclick="resetForm()">
+                🗑️ СБРОСИТЬ ВЫБОР
+            </button>
+        </div>
+
+        <!-- Кнопка назад в админку -->
+        <a href="index.html" class="back-link">⬅️ Назад в админ-панель</a>
+    </div>
+
+    <script>
+        // ==================== КОНФИГУРАЦИЯ ====================
+        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        
+        let supabase = null;
+        let currentUser = null;
+        let selectedUserId = null;
+        let selectedUserEmail = null;
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🔐 Инициализация Password Changer...');
+            
+            // Инициализируем Supabase
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true,
+                    storage: localStorage
+                }
+            });
+            
+            // Проверяем авторизацию и права админа
+            await checkAdminAuth();
+        });
+
+        // ==================== ПРОВЕРКА АДМИНА ====================
+        async function checkAdminAuth() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    showError('Ошибка проверки сессии: ' + error.message);
+                    redirectToLogin();
+                    return;
+                }
+                
+                if (!session || !session.user) {
+                    showError('Требуется авторизация');
+                    redirectToLogin();
+                    return;
+                }
+                
+                currentUser = session.user;
+                document.getElementById('userEmail').textContent = `Админ: ${currentUser.email}`;
+                document.getElementById('userInfo').style.display = 'block';
+                
+                // Проверяем права админа
+                await verifyAdminRights();
+                
+            } catch (error) {
+                console.error('Ошибка авторизации:', error);
+                showError('Ошибка авторизации');
+                redirectToLogin();
+            }
+        }
+
+        async function verifyAdminRights() {
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('user_type')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) {
+                    // Если таблицы нет, создаем профиль админа
+                    const { error: createError } = await supabase
+                        .from('profiles')
+                        .upsert({
+                            id: currentUser.id,
+                            email: currentUser.email,
+                            username: currentUser.email.split('@')[0],
+                            user_type: 'admin'
+                        });
+                    
+                    if (createError) {
+                        console.warn('Не удалось создать профиль:', createError);
+                    }
+                    
+                    // Загружаем пользователей
+                    loadUsers();
+                    return;
+                }
+                
+                if (profile.user_type !== 'admin') {
+                    showError('❌ Доступ запрещен. Только для администраторов.');
+                    setTimeout(() => {
+                        window.location.href = '403.html';
+                    }, 2000);
+                    return;
+                }
+                
+                // Все ок, загружаем пользователей
+                loadUsers();
+                
+            } catch (error) {
+                console.error('Ошибка проверки прав:', error);
+                showError('Ошибка проверки прав доступа');
+            }
+        }
+
+        // ==================== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ====================
+        async function loadUsers() {
+            try {
+                // Сначала получаем пользователей из auth.users через Edge Function
+                // Или из таблицы profiles если она есть
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, email, username, user_type')
+                    .order('email');
+                
+                if (error) {
+                    console.warn('Не удалось загрузить профили:', error);
+                    // Пробуем получить из auth.users другим способом
+                    showUsersFallback();
+                    return;
+                }
+                
+                displayUsers(profiles || []);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                showUsersFallback();
+            }
+        }
+
+        async function showUsersFallback() {
+            // Альтернативный способ - показать только текущих пользователей из profiles
+            // или через список приглашенных
+            document.getElementById('userList').innerHTML = `
+                <div style="color: #ffc107; padding: 20px; text-align: center;">
+                    <p>⚠️ Не удалось загрузить список пользователей</p>
+                    <p style="font-size: 0.9em; color: #8fd493;">
+                        Вы можете изменить пароль введя email вручную:
+                    </p>
+                    <input type="email" id="manualEmail" placeholder="email@example.com" 
+                           style="width:100%; margin-top:10px;">
+                    <button onclick="useManualEmail()" class="btn" style="margin-top:10px;">
+                        Использовать этот email
+                    </button>
+                </div>
+            `;
+        }
+
+        function displayUsers(users) {
+            const userList = document.getElementById('userList');
+            
+            if (!users || users.length === 0) {
+                userList.innerHTML = `
+                    <div style="color: #666; text-align: center; padding: 20px;">
+                        Нет пользователей в базе
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            users.forEach(user => {
+                const email = user.email || `user_${user.id.substring(0, 8)}`;
+                const userType = user.user_type === 'admin' ? '👑 Админ' : '👤 Пользователь';
+                const userTypeClass = user.user_type === 'admin' ? 'admin' : 'user';
+                
+                html += `
+                    <div class="user-item ${userTypeClass}" 
+                         onclick="selectUser('${user.id}', '${email}')"
+                         id="user-${user.id}">
+                        <span class="user-email">${email}</span>
+                        <span class="user-type">${userType}</span>
+                        ${user.username ? `<div style="color:#8fd493;font-size:0.8em;">@${user.username}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            userList.innerHTML = html;
+        }
+
+        // ==================== ВЫБОР ПОЛЬЗОВАТЕЛЯ ====================
+        function selectUser(userId, userEmail) {
+            // Снимаем выделение со всех
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Выделяем выбранного
+            const selectedElement = document.getElementById(`user-${userId}`);
+            if (selectedElement) {
+                selectedElement.classList.add('selected');
+            }
+            
+            // Сохраняем данные
+            selectedUserId = userId;
+            selectedUserEmail = userEmail;
+            
+            // Показываем форму
+            document.getElementById('passwordForm').style.display = 'block';
+            document.getElementById('selectedEmail').value = userEmail;
+            
+            // Сбрасываем поля
+            resetPasswordFields();
+            
+            // Фокусируемся на поле пароля
+            setTimeout(() => {
+                document.getElementById('newPassword').focus();
+            }, 100);
+        }
+
+        function useManualEmail() {
+            const manualEmail = document.getElementById('manualEmail').value;
+            if (!manualEmail || !manualEmail.includes('@')) {
+                showError('Введите корректный email');
+                return;
+            }
+            
+            selectedUserId = null;
+            selectedUserEmail = manualEmail;
+            
+            document.getElementById('passwordForm').style.display = 'block';
+            document.getElementById('selectedEmail').value = manualEmail;
+            document.getElementById('selectedEmail').readOnly = false;
+            
+            resetPasswordFields();
+            setTimeout(() => {
+                document.getElementById('newPassword').focus();
+            }, 100);
+        }
+
+        // ==================== ПРОВЕРКА ПАРОЛЯ ====================
+        function checkPasswordStrength() {
+            const password = document.getElementById('newPassword').value;
+            const strengthBar = document.getElementById('passwordStrength');
+            const requirements = document.getElementById('passwordRequirements');
+            
+            // Критерии
+            const hasMinLength = password.length >= 8;
+            const hasLowercase = /[a-z]/.test(password);
+            const hasUppercase = /[A-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecial = /[!@#$%^&*]/.test(password);
+            
+            // Обновляем требования
+            updateRequirement('reqLength', hasMinLength);
+            updateRequirement('reqLowercase', hasLowercase);
+            updateRequirement('reqUppercase', hasUppercase);
+            updateRequirement('reqNumber', hasNumber);
+            updateRequirement('reqSpecial', hasSpecial);
+            
+            // Определяем силу пароля
+            let strength = 0;
+            if (hasMinLength) strength++;
+            if (hasLowercase) strength++;
+            if (hasUppercase) strength++;
+            if (hasNumber) strength++;
+            if (hasSpecial) strength++;
+            
+            // Обновляем индикатор
+            strengthBar.className = 'password-strength';
+            if (strength <= 1) {
+                strengthBar.classList.add('strength-weak');
+            } else if (strength <= 2) {
+                strengthBar.classList.add('strength-medium');
+            } else if (strength <= 4) {
+                strengthBar.classList.add('strength-good');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+            
+            // Проверяем совпадение паролей
+            checkPasswordMatch();
+        }
+
+        function updateRequirement(elementId, isMet) {
+            const element = document.getElementById(elementId);
+            if (isMet) {
+                element.classList.add('met');
+                element.style.color = '#00ff00';
+            } else {
+                element.classList.remove('met');
+                element.style.color = '#8fd493';
+            }
+        }
+
+        function checkPasswordMatch() {
+            const password = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const matchElement = document.getElementById('passwordMatch');
+            const changeBtn = document.getElementById('changeBtn');
+            
+            if (!password) {
+                matchElement.innerHTML = '';
+                changeBtn.disabled = true;
+                return;
+            }
+            
+            if (confirm) {
+                if (password === confirm) {
+                    matchElement.innerHTML = '<span style="color:#00ff00;">✅ Пароли совпадают</span>';
+                    changeBtn.disabled = false;
+                } else {
+                    matchElement.innerHTML = '<span style="color:#ff4444;">❌ Пароли не совпадают</span>';
+                    changeBtn.disabled = true;
+                }
+            } else {
+                matchElement.innerHTML = '';
+                changeBtn.disabled = true;
+            }
+        }
+
+        // ==================== СМЕНА ПАРОЛЯ ====================
+        async function changePassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const passwordHint = document.getElementById('passwordHint').value;
+            
+            // Валидация
+            if (!newPassword || !confirmPassword) {
+                showError('Заполните оба поля пароля');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showError('Пароли не совпадают');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                showError('Пароль должен быть минимум 8 символов');
+                return;
+            }
+            
+            // Проверка сложности
+            const hasLowercase = /[a-z]/.test(newPassword);
+            const hasUppercase = /[A-Z]/.test(newPassword);
+            const hasNumber = /[0-9]/.test(newPassword);
+            
+            if (!hasLowercase || !hasUppercase || !hasNumber) {
+                showError('Пароль должен содержать строчные, заглавные буквы и цифры');
+                return;
+            }
+            
+            // Подтверждение
+            if (!confirm(`Изменить пароль для ${selectedUserEmail}?`)) {
+                return;
+            }
+            
+            showStatus('🔄 Меняем пароль...', 'info');
+            document.getElementById('changeBtn').disabled = true;
+            document.getElementById('changeBtn').innerHTML = '🔄 ОБРАБОТКА...';
+            
+            try {
+                // Способ 1: Через сброс пароля (если у нас есть service_role key)
+                // Способ 2: Отправляем ссылку для сброса
+                
+                const { error } = await supabase.auth.resetPasswordForEmail(selectedUserEmail, {
+                    redirectTo: 'https://timon4ikru.github.io/LogovoVR/reset-password.html',
+                    data: {
+                        new_password: newPassword,
+                        changed_by_admin: true,
+                        admin_email: currentUser.email,
+                        hint: passwordHint || null
+                    }
+                });
+                
+                if (error) throw error;
+                
+                // Если пользователь существует в profiles, обновляем запись
+                if (selectedUserId) {
+                    await supabase
+                        .from('profiles')
+                        .update({
+                            password_changed_by_admin: true,
+                            password_changed_at: new Date().toISOString(),
+                            password_hint: passwordHint || null
+                        })
+                        .eq('id', selectedUserId);
+                }
+                
+                showSuccess(`✅ Ссылка для смены пароля отправлена на ${selectedUserEmail}`);
+                
+                // Отправляем уведомление через EmailJS если настроен
+                try {
+                    if (typeof emailjs !== 'undefined') {
+                        await sendPasswordChangeNotification();
+                    }
+                } catch (emailError) {
+                    console.log('Email уведомление не отправлено:', emailError);
+                }
+                
+                // Сбрасываем форму
+                setTimeout(() => {
+                    resetForm();
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Ошибка смены пароля:', error);
+                showError(`Ошибка: ${error.message}`);
+                document.getElementById('changeBtn').disabled = false;
+                document.getElementById('changeBtn').innerHTML = '⚡ ИЗМЕНИТЬ ПАРОЛЬ';
+            }
+        }
+
+        async function sendPasswordChangeNotification() {
+            // Эта функция требует настройки EmailJS
+            const templateParams = {
+                to_email: selectedUserEmail,
+                to_name: selectedUserEmail.split('@')[0],
+                admin_email: currentUser.email,
+                timestamp: new Date().toLocaleString('ru-RU'),
+                website_url: 'https://timon4ikru.github.io/LogovoVR',
+                login_url: 'https://timon4ikru.github.io/LogovoVR/login.html'
+            };
+            
+            // Здесь нужны твои ключи EmailJS
+            // await emailjs.send('SERVICE_ID', 'TEMPLATE_ID', templateParams);
+        }
+
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+        function resetPasswordFields() {
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('passwordHint').value = '';
+            document.getElementById('passwordStrength').className = 'password-strength';
+            document.getElementById('passwordMatch').innerHTML = '';
+            document.querySelectorAll('.requirement').forEach(req => {
+                req.classList.remove('met');
+                req.style.color = '#8fd493';
+            });
+            document.getElementById('changeBtn').disabled = true;
+        }
+
+        function resetForm() {
+            selectedUserId = null;
+            selectedUserEmail = null;
+            document.getElementById('passwordForm').style.display = 'none';
+            document.getElementById('selectedEmail').value = '';
+            document.getElementById('selectedEmail').readOnly = true;
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+
+        function showSuccess(message) {
+            const status = document.getElementById('statusMessage');
+            status.textContent = message;
+            status.className = 'status-message success';
+            status.style.display = 'block';
+        }
+
+        function showError(message) {
+            const status = document.getElementById('statusMessage');
+            status.textContent = message;
+            status.className = 'status-message error';
+            status.style.display = 'block';
+        }
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('statusMessage');
+            status.textContent = message;
+            status.className = `status-message ${type === 'error' ? 'error' : type === 'success' ? 'success' : ''}`;
+            status.style.display = 'block';
+        }
+
+        function logout() {
+            localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
+            window.location.href = 'login.html';
+        }
+
+        function redirectToLogin() {
+            setTimeout(() => {
+                window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+            }, 1500);
+        }
+
+        // Обработка Enter
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && document.getElementById('passwordForm').style.display === 'block') {
+                if (!document.getElementById('changeBtn').disabled) {
+                    changePassword();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
