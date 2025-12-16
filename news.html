@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новости - Logovo VR</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            background-image: linear-gradient(to bottom, #000000, #003311);
+            color: #00ff88;
+            font-family: monospace;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.7;
+        }
+        
+        a { color: #ffaa00; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #00ff88;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+        }
+        
+        .news-header { 
+            color: #00ff88; 
+            font-size: 2.2em; 
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        .news-date { 
+            color: #8fd493; 
+            margin-bottom: 25px;
+            font-size: 0.9em;
+            padding: 5px 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        .news-content { 
+            color: #c0ffc8; 
+            font-size: 1.1em; 
+            line-height: 1.6;
+        }
+        
+        .news-content p {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Рандомный бэкграунд от background1.jpg до background11.jpg
+        const bgNum = Math.floor(Math.random() * 11) + 1;
+        document.body.style.backgroundImage = `url('background/background${bgNum}.jpg'), linear-gradient(to bottom, #000000, #003311)`;
+    </script>
+
+    <div class="container">
+        <div style="margin-bottom: 30px;">
+            <a href="index.html" class="back-link">← На главную</a>
+        </div>
+
+        <div class="news-header">Сайт восстановлен после масштабного бага</div>
+        <div class="news-date">18 марта 2025, 23:30</div>
+        <div class="news-content">
+            <p>Основной функционал сайта (авторизация, бронирование, админ-панель) полностью восстановлен после критической ошибки с конфликтом имён переменных Supabase.</p>
+            <p>Теперь здесь будет появляться актуальная информация об обновлениях и важных событиях клуба.</p>
+            <p>Следующее обновление: вторая попытка починить баг в админ-панели, из-за которого статус<br> бронирования не изменяется, несмотря на сообщения сайта об изменении.</p>
+            <p>P.S. после первой попытки сайт лёг на ~1 час 30 минут</p>
+        </div>
+    </div>
+</body>
+</html>
