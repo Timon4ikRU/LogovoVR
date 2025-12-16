@@ -190,8 +190,12 @@
                     .from('profiles')
                     .select('user_type')
                     .eq('id', currentUser.id)
-                    .single()
-                    .catch(() => ({ data: null }));
+                    .single();
+
+                    if (error){
+                        console.log('Профиль не найден, продолжаем...');
+                        profile=null;
+                    }
                 
                 console.log('Профиль:', profile);
                 
