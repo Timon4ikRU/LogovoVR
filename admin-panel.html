@@ -176,7 +176,12 @@
         let currentUser = null;
         let isAdmin = false;
         let isLocalAdmin = false;
-        const passwordHashes = ["2db556f27d28be05fc9745c5513f57fc47e59a8eeda5339a6c3b5bce5258b03e","ea613b6918aef7b32e7a875e649c92309eb3a6e0cae10289dc721d74ad2613a5","590ab3a941c688f46e6aba6826f60aa7357d744ad41c2c801264cdc0a3a15806","238146fd103e82c4ff2072c8038193432fc09f376b02642f9eadefa2d5a8203c"];
+        const passwordHashes = [
+            "2db556f27d28be05fc9745c5513f57fc47e59a8eeda5339a6c3b5bce5258b03e",
+            "ea613b6918aef7b32e7a875e649c92309eb3a6e0cae10289dc721d74ad2613a5",
+            "590ab3a941c688f46e6aba6826f60aa7357d744ad41c2c801264cdc0a3a15806",
+            "238146fd103e82c4ff2072c8038193432fc09f376b02642f9eadefa2d5a8203c"
+        ];
         let currentBookingsPage = 1;
         let currentUsersPage = 1;
         const itemsPerPage = 10;
@@ -228,7 +233,7 @@
         function show403Error() {
             console.log('🚫 Пользователь не админ - 403');
             setTimeout(() => {window.location.href = '403.html';}, 1500);
-            document.body.innerHTML = `<div style="text-align: center; padding: 100px; color: #ff4444;"><h1 style="font-size: 3em;">403</h1><h2>Доступ запрещен</h2><p>У вас недостаточно прав для доступа к админ-панели</p><p style="color: #8fd493; margin-top: 20px;">Перенаправление на страницу 403...</p></div>`;
+            document.body.innerHTML = '<div style="text-align: center; padding: 100px; color: #ff4444;"><h1 style="font-size: 3em;">403</h1><h2>Доступ запрещен</h2><p>У вас недостаточно прав для доступа к админ-панели</p><p style="color: #8fd493; margin-top: 20px;">Перенаправление на страницу 403...</p></div>';
         }
 
         async function sha256(message) {
@@ -279,7 +284,7 @@
             const inviteStatus = document.getElementById('inviteStatus');
             const email = emailInput.value.trim();
             if (!email || !email.includes('@')) {showStatus('Введите корректный email', true); return;}
-            if (!confirm(`Отправить приглашение на ${email}?\n\nПользователь получит логин и пароль в хакерском стиле.`)) return;
+            if (!confirm('Отправить приглашение на ' + email + '?\n\nПользователь получит логин и пароль в хакерском стиле.')) return;
             inviteButton.disabled = true;
             inviteButton.textContent = 'Отправка...';
             inviteStatus.style.display = 'block';
@@ -298,9 +303,13 @@
                 if (typeof emailjs === 'undefined') {throw new Error('EmailJS не загружен. Проверьте подключение скрипта.');}
                 const emailResult = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
                 console.log('EmailJS результат:', emailResult);
-                showStatus(`✅ Приглашение отправлено на ${email}`);
+                showStatus('✅ Приглашение отправлено на ' + email);
                 inviteStatus.style.color = '#00ff00';
-                inviteStatus.innerHTML = `✅ <strong>Приглашение отправлено!</strong><br>📧 Email: ${email}<br>👤 Логин: ${userLogin}<br>🔑 Пароль: <span style="color:#ff4444">${userPassword}</span><br>📝 Сообщите пароль пользователю!`;
+                inviteStatus.innerHTML = '✅ <strong>Приглашение отправлено!</strong><br>' +
+                    '📧 Email: ' + email + '<br>' +
+                    '👤 Логин: ' + userLogin + '<br>' +
+                    '🔑 Пароль: <span style="color:#ff4444">' + userPassword + '</span><br>' +
+                    '📝 Сообщите пароль пользователю!';
                 emailInput.value = '';
                 loadUsersTable(currentUsersPage);
             } catch (error) {
@@ -314,7 +323,11 @@
                         const templateParams = {to_email: email, to_name: userLogin, email: email, login: userLogin, password: userPassword, website_url: 'https://timon4ikru.github.io/LogovoVR', login_url: 'https://timon4ikru.github.io/LogovoVR/login.html', current_year: new Date().getFullYear(), timestamp: new Date().toLocaleString('ru-RU'), message_id: 'LOGOVO-' + Date.now()};
                         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
                         inviteStatus.style.color = '#ffc107';
-                        inviteStatus.innerHTML = `⚠️ <strong>Пользователь уже существует</strong><br>📧 Данные отправлены повторно на ${email}<br>👤 Логин: ${userLogin}<br>🔑 Новый пароль: <span style="color:#ff4444">${userPassword}</span><br>💡 Пользователю нужно использовать новый пароль!`;
+                        inviteStatus.innerHTML = '⚠️ <strong>Пользователь уже существует</strong><br>' +
+                            '📧 Данные отправлены повторно на ' + email + '<br>' +
+                            '👤 Логин: ' + userLogin + '<br>' +
+                            '🔑 Новый пароль: <span style="color:#ff4444">' + userPassword + '</span><br>' +
+                            '💡 Пользователю нужно использовать новый пароль!';
                         showStatus('Данные отправлены повторно');
                         emailInput.value = '';
                         return;
@@ -323,7 +336,7 @@
                 else {errorMessage += error.message;}
                 showStatus(errorMessage, true);
                 inviteStatus.style.color = '#ff4444';
-                inviteStatus.innerHTML = `❌ ${errorMessage}`;
+                inviteStatus.innerHTML = '❌ ' + errorMessage;
             } finally {
                 inviteButton.disabled = false;
                 inviteButton.textContent = 'Отправить приглашение';
@@ -339,51 +352,51 @@
 
         // ==================== АДМИНСКИЕ ОПЕРАЦИИ ====================
         async function sendPasswordReset(userId, userEmail) {
-            if (!confirm(`Отправить ссылку для сброса пароля на ${userEmail}?`)) return;
+            if (!confirm('Отправить ссылку для сброса пароля на ' + userEmail + '?')) return;
             try {
                 const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {redirectTo: 'https://timon4ikru.github.io/LogovoVR/reset-password.html'});
                 if (error) throw error;
-                showStatus(`Ссылка для сброса пароля отправлена на ${userEmail}`);
+                showStatus('Ссылка для сброса пароля отправлена на ' + userEmail);
             } catch (error) {console.error('Ошибка отправки ссылки:', error); showStatus('Ошибка отправки ссылки', true);}
         }
 
         async function makeAdmin(userId, userEmail) {
-            if (!confirm(`Назначить пользователя ${userEmail} администратором?`)) return;
+            if (!confirm('Назначить пользователя ' + userEmail + ' администратором?')) return;
             try {
                 const { error } = await supabase.from('profiles').update({ user_type: 'admin' }).eq('id', userId);
                 if (error) throw error;
-                showStatus(`Пользователь ${userEmail} назначен администратором`);
+                showStatus('Пользователь ' + userEmail + ' назначен администратором');
                 loadUsersTable(currentUsersPage);
             } catch (error) {console.error('Ошибка назначения админа:', error); showStatus('Ошибка назначения админа', true);}
         }
 
         async function makeUser(userId, userEmail) {
-            if (!confirm(`Сделать пользователя ${userEmail} обычным пользователем?`)) return;
+            if (!confirm('Сделать пользователя ' + userEmail + ' обычным пользователем?')) return;
             try {
                 const { error } = await supabase.from('profiles').update({ user_type: 'user' }).eq('id', userId);
                 if (error) throw error;
-                showStatus(`Пользователь ${userEmail} стал обычным пользователем`);
+                showStatus('Пользователь ' + userEmail + ' стал обычным пользователем');
                 loadUsersTable(currentUsersPage);
             } catch (error) {console.error('Ошибка изменения типа:', error); showStatus('Ошибка изменения типа', true);}
         }
 
         async function changeUsername(userId, userEmail) {
-            const newUsername = prompt(`Введите новый username для ${userEmail}:`, 'user');
+            const newUsername = prompt('Введите новый username для ' + userEmail + ':', 'user');
             if (!newUsername || newUsername.trim().length < 2) {alert('Username должен быть не менее 2 символов'); return;}
             try {
                 const { error } = await supabase.from('profiles').update({ username: newUsername.trim() }).eq('id', userId);
                 if (error) throw error;
-                showStatus(`Username для ${userEmail} изменен на "${newUsername}"`);
+                showStatus('Username для ' + userEmail + ' изменен на "' + newUsername + '"');
                 loadUsersTable(currentUsersPage);
             } catch (error) {console.error('Ошибка смены username:', error); showStatus('Ошибка смены username', true);}
         }
 
         async function deleteProfile(userId, userEmail) {
-            if (!confirm(`Удалить профиль ${userEmail}?\n\nЭто удалит только профиль из таблицы profiles. Пользователь останется в системе.`)) return;
+            if (!confirm('Удалить профиль ' + userEmail + '?\n\nЭто удалит только профиль из таблицы profiles. Пользователь останется в системе.')) return;
             try {
                 const { error } = await supabase.from('profiles').delete().eq('id', userId);
                 if (error) throw error;
-                showStatus(`Профиль ${userEmail} удален`);
+                showStatus('Профиль ' + userEmail + ' удален');
                 loadUsersTable(currentUsersPage);
             } catch (error) {console.error('Ошибка удаления профиля:', error); showStatus('Ошибка удаления профиля', true);}
         }
@@ -393,7 +406,7 @@
             try {
                 document.getElementById('bookingsTable').innerHTML = '<div class="loading">Загрузка бронирований...</div>';
                 let query = supabase.from('bookings').select('*', { count: 'exact' });
-                if (search) {query = query.or(`phone.ilike.%${search}%,user_email.ilike.%${search}%,id.eq.${parseInt(search) || 0}`);}
+                if (search) {query = query.or('phone.ilike.%' + search + '%,user_email.ilike.%' + search + '%,id.eq.' + (parseInt(search) || 0));}
                 const { data: bookings, error, count } = await query.order('created_at', { ascending: false }).range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
                 if (error) {console.error('Ошибка загрузки бронирований:', error); document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>'; return;}
                 currentBookingsPage = page;
@@ -412,28 +425,28 @@
                 const statusColors = {'pending': '#ffc107','confirmed': '#00ff00','cancelled': '#ff4444'};
                 const statusTexts = {'pending': 'Ожидание','confirmed': 'Подтверждено','cancelled': 'Отменено'};
                 const status = booking.status || 'pending';
-                html += `<tr><td>${booking.id || 'N/A'}</td><td>${dateStr}</td><td>${booking.hours || 'Нет времени'}</td><td>${booking.people || 1}</td><td>${booking.phone || 'Нет телефона'}</td><td>${userEmail}</td><td style="color: ${statusColors[status] || '#fff'}">${statusTexts[status] || status}</td><td>${createdStr}</td><td><button class="action-btn" onclick="updateBookingStatus(${booking.id}, 'confirmed')">✅</button><button class="action-btn" onclick="updateBookingStatus(${booking.id}, 'cancelled')">❌</button><button class="action-btn delete" onclick="deleteBooking(${booking.id})">🗑️</button></td></tr>`;
+                html += '<tr><td>' + (booking.id || 'N/A') + '</td><td>' + dateStr + '</td><td>' + (booking.hours || 'Нет времени') + '</td><td>' + (booking.people || 1) + '</td><td>' + (booking.phone || 'Нет телефона') + '</td><td>' + userEmail + '</td><td style="color: ' + (statusColors[status] || '#fff') + '">' + (statusTexts[status] || status) + '</td><td>' + createdStr + '</td><td><button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')">✅</button><button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')">❌</button><button class="action-btn delete" onclick="deleteBooking(' + booking.id + ')">🗑️</button></td></tr>';
             });
             html += '</tbody></table>';
             document.getElementById('bookingsTable').innerHTML = html;
         }
 
         async function updateBookingStatus(bookingId, status) {
-            if (!confirm(`Изменить статус бронирования #${bookingId} на "${status}"?`)) return;
+            if (!confirm('Изменить статус бронирования #' + bookingId + ' на "' + status + '"?')) return;
             try {
                 const { error } = await supabase.from('bookings').update({ status: status }).eq('id', bookingId);
                 if (error) throw error;
-                showStatus(`Статус бронирования #${bookingId} обновлен на "${status}"`);
+                showStatus('Статус бронирования #' + bookingId + ' обновлен на "' + status + '"');
                 loadBookingsTable(currentBookingsPage);
             } catch (error) {console.error('Ошибка обновления статуса:', error); showStatus('Ошибка обновления статуса', true);}
         }
 
         async function deleteBooking(bookingId) {
-            if (!confirm(`Удалить бронирование #${bookingId}?`)) return;
+            if (!confirm('Удалить бронирование #' + bookingId + '?')) return;
             try {
                 const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
                 if (error) throw error;
-                showStatus(`Бронирование #${bookingId} удалено`);
+                showStatus('Бронирование #' + bookingId + ' удалено');
                 loadBookingsTable(currentBookingsPage);
             } catch (error) {console.error('Ошибка удаления:', error); showStatus('Ошибка удаления', true);}
         }
@@ -443,7 +456,7 @@
             try {
                 document.getElementById('usersTable').innerHTML = '<div class="loading">Загрузка пользователей...</div>';
                 let query = supabase.from('profiles').select('*', { count: 'exact' });
-                if (search) {query = query.or(`email.ilike.%${search}%,username.ilike.%${search}%`);}
+                if (search) {query = query.or('email.ilike.%' + search + '%,username.ilike.%' + search + '%');}
                 const { data: profiles, error, count } = await query.order('created_at', { ascending: false }).range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
                 if (error) {console.error('Ошибка загрузки пользователей:', error); document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Таблица profiles не существует или ошибка загрузки.<br>Запустите SQL для создания таблицы в Supabase SQL Editor.</div>'; return;}
                 currentUsersPage = page;
@@ -462,7 +475,7 @@
                 const userTypeColor = userType === 'admin' ? '#00ff00' : '#8fd493';
                 const created = profile.created_at ? new Date(profile.created_at).toLocaleString('ru-RU') : 'Нет данных';
                 const updated = profile.updated_at ? new Date(profile.updated_at).toLocaleString('ru-RU') : 'Нет данных';
-                html += `<tr><td title="${profile.id || ''}">${shortId}</td><td>${profile.email || 'Нет email'}</td><td>${username}</td><td style="color: ${userTypeColor}">${userType}</td><td>${created}</td><td>${updated}</td><td><button class="action-btn" onclick="makeAdmin('${profile.id}', '${profile.email || username}')">👑</button><button class="action-btn" onclick="makeUser('${profile.id}', '${profile.email || username}')">👤</button><button class="action-btn warning" onclick="sendPasswordReset('${profile.id}', '${profile.email}')">🔐</button><button class="action-btn" onclick="changeUsername('${profile.id}', '${profile.email || username}')">📝</button><button class="action-btn delete" onclick="deleteProfile('${profile.id}', '${profile.email || username}')">🗑️</button></td></tr>`;
+                html += '<tr><td title="' + (profile.id || '') + '">' + shortId + '</td><td>' + (profile.email || 'Нет email') + '</td><td>' + username + '</td><td style="color: ' + userTypeColor + '">' + userType + '</td><td>' + created + '</td><td>' + updated + '</td><td><button class="action-btn" onclick="makeAdmin(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">👑</button><button class="action-btn" onclick="makeUser(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">👤</button><button class="action-btn warning" onclick="sendPasswordReset(\'' + profile.id + '\', \'' + profile.email + '\')">🔐</button><button class="action-btn" onclick="changeUsername(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">📝</button><button class="action-btn delete" onclick="deleteProfile(\'' + profile.id + '\', \'' + (profile.email || username) + '\')">🗑️</button></td></tr>';
             });
             html += '</tbody></table>';
             document.getElementById('usersTable').innerHTML = html;
@@ -476,7 +489,7 @@
             if (totalPages <= 1) {document.getElementById(elementId).innerHTML = ''; return;}
             let html = '';
             for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {html += `<button class="${i === currentPage ? 'active' : ''}" onclick="${callbackFunction}(${i})">${i}</button>`;}
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="' + callbackFunction + '(' + i + ')">' + i + '</button>';}
                 else if (i === currentPage - 3 || i === currentPage + 3) {html += '<span>...</span>';}
             }
             document.getElementById(elementId).innerHTML = html;
@@ -513,11 +526,11 @@
             if (audio) {audio.pause();}
             audio = new Audio(track);
             audio.onerror = function() {document.body.classList.add('error-bg'); setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);};
-            audio.oncanplaythrough = function() {showStatus('Работает!'); audio.play(); document.getElementById('nowPlaying').textContent = `Сейчас играет: ${name}`;};
+            audio.oncanplaythrough = function() {showStatus('Работает!'); audio.play(); document.getElementById('nowPlaying').textContent = 'Сейчас играет: ' + name;};
             audio.load(); currentTrack = { track, name };
         }
 
-        function playMusic() {if (audio && currentTrack) {audio.play(); document.getElementById('nowPlaying').textContent = `Сейчас играет: ${currentTrack.name}`;}}
+        function playMusic() {if (audio && currentTrack) {audio.play(); document.getElementById('nowPlaying').textContent = 'Сейчас играет: ' + currentTrack.name;}}
         function pauseMusic() {if (audio) {audio.pause(); document.getElementById('nowPlaying').textContent = 'Пауза';}}
         function stopMusic() {if (audio) {audio.pause(); audio.currentTime = 0; document.getElementById('nowPlaying').textContent = '';}}
 
