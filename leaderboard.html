@@ -124,6 +124,12 @@
                 
                 if (error) throw error;
                 
+                // Если записей нет
+                if (!records || records.length === 0) {
+                    leaderboardDiv.innerHTML = '<div style="text-align:center; padding:50px; color:#666;">Еще нет записей в таблице лидеров</div>';
+                    return;
+                }
+                
                 // Группируем по пользователю
                 const userStats = {};
                 records.forEach(record => {
@@ -185,9 +191,16 @@
             try {
                 const { data: allRecords, error } = await supabase
                     .from('leaderboard')
-                    .select('drink, score, created_at');
+                    .select('user_id, drink, score, created_at');
                 
                 if (error) throw error;
+                
+                // Если нет записей
+                if (!allRecords || allRecords.length === 0) {
+                    const statsDiv = document.getElementById('statsSummary');
+                    statsDiv.innerHTML = '<div class="stats-card"><h3>📊 СТАТИСТИКА</h3><div>Еще нет записей в таблице лидеров</div></div>';
+                    return;
+                }
                 
                 // Общая статистика
                 const totalBrews = allRecords.length;
@@ -207,8 +220,11 @@
                 allRecords.forEach(record => {
                     userBrews[record.user_id] = (userBrews[record.user_id] || 0) + 1;
                 });
-                const mostActiveUserId = Object.keys(userBrews).reduce((a, b) => userBrews[a] > userBrews[b] ? a : b);
-                const mostActiveCount = userBrews[mostActiveUserId];
+                
+                const userIds = Object.keys(userBrews);
+                const mostActiveUserId = userIds.length > 0 ? 
+                    userIds.reduce((a, b) => userBrews[a] > userBrews[b] ? a : b) : '';
+                const mostActiveCount = mostActiveUserId ? userBrews[mostActiveUserId] : 0;
                 
                 const statsDiv = document.getElementById('statsSummary');
                 statsDiv.innerHTML = `
@@ -225,14 +241,14 @@
                         <div>За последние 7 дней: <strong>${recentCount} варок</strong></div>
                         <div>Варок в день: <strong>${Math.round(recentCount / 7)}</strong></div>
                         <div>Самый активный: <strong>${mostActiveCount} варок</strong></div>
-                        <div>Квантовый шанс: <strong>${(totalQuantum/totalBrews*100).toFixed(2)}%</strong></div>
+                        <div>Квантовый шанс: <strong>${totalBrews > 0 ? (totalQuantum/totalBrews*100).toFixed(2) : '0.00'}%</strong></div>
                     </div>
                     <div class="stats-card">
                         <h3>🎯 СРЕДНИЕ ПОКАЗАТЕЛИ</h3>
-                        <div>Очков за варку: <strong>${(totalScore/totalBrews).toFixed(1)}</strong></div>
-                        <div>Чая на игрока: <strong>${(totalTea/Object.keys(userBrews).length).toFixed(1)}</strong></div>
-                        <div>Кофе на игрока: <strong>${(totalCoffee/Object.keys(userBrews).length).toFixed(1)}</strong></div>
-                        <div>Всего игроков: <strong>${Object.keys(userBrews).length}</strong></div>
+                        <div>Очков за варку: <strong>${totalBrews > 0 ? (totalScore/totalBrews).toFixed(1) : '0'}</strong></div>
+                        <div>Чая на игрока: <strong>${userIds.length > 0 ? (totalTea/userIds.length).toFixed(1) : '0'}</strong></div>
+                        <div>Кофе на игрока: <strong>${userIds.length > 0 ? (totalCoffee/userIds.length).toFixed(1) : '0'}</strong></div>
+                        <div>Всего игроков: <strong>${userIds.length}</strong></div>
                     </div>
                 `;
                 

@@ -448,14 +448,15 @@
             try {
                 // Получаем username из profiles
                 let username = currentUser.email.split('@')[0];
-                const { data: profile } = await supabase
+                
+                // Пробуем получить username из таблицы profiles
+                const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('username')
                     .eq('id', currentUser.id)
-                    .single()
-                    .catch(() => ({ data: null }));
+                    .single();
                 
-                if (profile?.username) {
+                if (!profileError && profile && profile.username) {
                     username = profile.username;
                 }
                 
@@ -470,7 +471,23 @@
                         created_at: new Date().toISOString()
                     });
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Ошибка вставки в leaderboard:', error);
+                    // Если ошибка из-за username, пробуем без него
+                    if (error.message.includes('username')) {
+                        const { error: error2 } = await supabase
+                            .from('leaderboard')
+                            .insert({
+                                user_id: currentUser.id,
+                                drink: drink,
+                                score: score,
+                                created_at: new Date().toISOString()
+                            });
+                        if (error2) {
+                            console.error('Ошибка вставки без username:', error2);
+                        }
+                    }
+                }
                 
             } catch (error) {
                 console.error('Ошибка добавления в leaderboard:', error);
