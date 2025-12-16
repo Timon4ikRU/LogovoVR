@@ -149,7 +149,7 @@
         // Функция обновления last_login_at
         async function updateLastLogin(userId) {
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('profiles')
                     .update({ 
                         last_login_at: new Date().toISOString(),
