@@ -94,87 +94,67 @@
             leaderboardDiv.innerHTML = '<div class="loading">Загрузка таблицы лидеров...</div>';
             
             try {
+                // Теперь загружаем из user_stats
                 let query = supabase
-                    .from('leaderboard')
-                    .select('user_id, username, drink, score, created_at');
+                    .from('user_stats')
+                    .select('*')
+                    .order('total_points', { ascending: false })
+                    .limit(100); // Можно увеличить
                 
-                // Фильтр по периоду
+                // Фильтр по периоду (теперь через last_updated)
                 const now = new Date();
                 if (currentPeriod === 'year') {
                     const yearStart = new Date(now.getFullYear(), 0, 1);
-                    query = query.gte('created_at', yearStart.toISOString());
+                    query = query.gte('last_updated', yearStart.toISOString());
                 } else if (currentPeriod === 'month') {
                     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                    query = query.gte('created_at', monthStart.toISOString());
+                    query = query.gte('last_updated', monthStart.toISOString());
                 } else if (currentPeriod === 'week') {
                     const weekStart = new Date(now);
                     weekStart.setDate(now.getDate() - 7);
-                    query = query.gte('created_at', weekStart.toISOString());
+                    query = query.gte('last_updated', weekStart.toISOString());
                 } else if (currentPeriod === 'today') {
                     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    query = query.gte('created_at', todayStart.toISOString());
+                    query = query.gte('last_updated', todayStart.toISOString());
                 }
                 
-                // Фильтр по напитку
-                if (currentFilter !== 'all') {
-                    query = query.eq('drink', currentFilter);
-                }
-                
-                const { data: records, error } = await query;
+                const { data: userStats, error } = await query;
                 
                 if (error) throw error;
                 
                 // Если записей нет
-                if (!records || records.length === 0) {
+                if (!userStats || userStats.length === 0) {
                     leaderboardDiv.innerHTML = '<div style="text-align:center; padding:50px; color:#666;">Еще нет записей в таблице лидеров</div>';
                     return;
                 }
                 
-                // Группируем по пользователю
-                const userStats = {};
-                records.forEach(record => {
-                    if (!userStats[record.user_id]) {
-                        userStats[record.user_id] = {
-                            username: record.username || 'Аноним',
-                            totalScore: 0,
-                            teaCount: 0,
-                            coffeeCount: 0,
-                            quantumCount: 0,
-                            lastBrew: record.created_at
-                        };
-                    }
-                    
-                    userStats[record.user_id].totalScore += record.score || 0;
-                    if (record.drink === 'tea') userStats[record.user_id].teaCount++;
-                    if (record.drink === 'coffee') userStats[record.user_id].coffeeCount++;
-                    if (record.drink === 'quantum') userStats[record.user_id].quantumCount++;
-                    
-                    if (new Date(record.created_at) > new Date(userStats[record.user_id].lastBrew)) {
-                        userStats[record.user_id].lastBrew = record.created_at;
-                    }
-                });
-                
-                // Преобразуем в массив и сортируем
-                const sortedUsers = Object.entries(userStats)
-                    .map(([userId, stats]) => ({ userId, ...stats }))
-                    .sort((a, b) => b.totalScore - a.totalScore);
-                
                 // Отображаем таблицу
-                let html = `<table class="leaderboard-table"><thead><tr><th>Место</th><th>Игрок</th><th>Очки</th><th>🍵 Чай</th><th>☕ Кофе</th><th>⚛️ Квант</th><th>Всего</th><th>Последняя варка</th></tr></thead><tbody>`;
+                let html = `<table class="leaderboard-table"><thead><tr>
+                    <th>Место</th>
+                    <th>Игрок</th>
+                    <th>Всего варок</th>
+                    <th>🍵 Чай</th>
+                    <th>☕ Кофе</th>
+                    <th>⚛️ Квант</th>
+                    <th>🔥 Очки</th>
+                    <th>🎯 Ср. очки</th>
+                    <th>Обновлено</th>
+                </tr></thead><tbody>`;
                 
-                sortedUsers.forEach((user, index) => {
+                userStats.forEach((user, index) => {
                     const rankClass = index < 3 ? `rank-${index + 1}` : '';
-                    const lastBrewTime = new Date(user.lastBrew).toLocaleDateString('ru-RU');
+                    const lastUpdated = new Date(user.last_updated).toLocaleDateString('ru-RU');
                     
                     html += `<tr class="${rankClass}">
                         <td>${index + 1}</td>
                         <td>${user.username}</td>
-                        <td><strong>${user.totalScore}</strong></td>
-                        <td>${user.teaCount}</td>
-                        <td>${user.coffeeCount}</td>
-                        <td>${user.quantumCount}</td>
-                        <td>${user.teaCount + user.coffeeCount + user.quantumCount}</td>
-                        <td>${lastBrewTime}</td>
+                        <td>${user.total_brews}</td>
+                        <td>${user.tea_count}</td>
+                        <td>${user.coffee_count}</td>
+                        <td>${user.quantum_count}</td>
+                        <td><strong>${user.total_points}</strong></td>
+                        <td>${user.avg_points.toFixed(1)}</td>
+                        <td>${lastUpdated}</td>
                     </tr>`;
                 });
                 

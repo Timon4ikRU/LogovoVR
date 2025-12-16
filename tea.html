@@ -462,37 +462,36 @@
         // ==================== ЗАГРУЗКА СТАТИСТИКИ ====================
         async function loadUserStats() {
             try {
-                const { data: stats, error } = await supabase
-                    .from('leaderboard')
-                    .select('drink, score, created_at')
-                    .eq('user_id', currentUser.id);
+                // Теперь получаем из user_stats
+                const { data: userStat, error } = await supabase
+                    .from('user_stats')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
                 
-                if (error) throw error;
+                if (error && error.code !== 'PGRST116') throw error;
                 
-                let teaCount = 0;
-                let coffeeCount = 0;
-                let quantumCount = 0;
-                let totalScore = 0;
-                
-                if (stats && stats.length > 0) {
-                    stats.forEach(record => {
-                        if (record.drink === 'tea') teaCount++;
-                        if (record.drink === 'coffee') coffeeCount++;
-                        if (record.drink === 'quantum') quantumCount++;
-                        totalScore += record.score || 0;
-                    });
+                if (userStat) {
+                    currentStats = { 
+                        tea: userStat.tea_count, 
+                        coffee: userStat.coffee_count, 
+                        quantum: userStat.quantum_count, 
+                        totalScore: userStat.total_points 
+                    };
+                    
+                    document.getElementById('teaCount').textContent = userStat.tea_count;
+                    document.getElementById('coffeeCount').textContent = userStat.coffee_count;
+                    document.getElementById('quantumCount').textContent = userStat.quantum_count;
+                    document.getElementById('totalScore').textContent = userStat.total_points;
+                    document.getElementById('avgScore').textContent = userStat.avg_points.toFixed(1);
+                } else {
+                    // Если запись еще не создана
+                    document.getElementById('teaCount').textContent = '0';
+                    document.getElementById('coffeeCount').textContent = '0';
+                    document.getElementById('quantumCount').textContent = '0';
+                    document.getElementById('totalScore').textContent = '0';
+                    document.getElementById('avgScore').textContent = '0';
                 }
-                
-                currentStats = { tea: teaCount, coffee: coffeeCount, quantum: quantumCount, totalScore: totalScore };
-                
-                document.getElementById('teaCount').textContent = teaCount;
-                document.getElementById('coffeeCount').textContent = coffeeCount;
-                document.getElementById('quantumCount').textContent = quantumCount;
-                document.getElementById('totalScore').textContent = totalScore;
-                
-                const totalBrews = teaCount + coffeeCount + quantumCount;
-                const avgScore = totalBrews > 0 ? (totalScore / totalBrews).toFixed(1) : '0';
-                document.getElementById('avgScore').textContent = avgScore;
                 
             } catch (error) {
                 console.error('Ошибка загрузки статистики:', error);
@@ -816,9 +815,9 @@
                     username = profile.username;
                 }
                 
-                // Добавляем запись
-                const { error } = await supabase
-                    .from('leaderboard')
+                // 1. ВСТАВЛЯЕМ в историю варок (для логов - опционально)
+                const { error: historyError } = await supabase
+                    .from('brewing_history')  // можно оставить для истории
                     .insert({
                         user_id: currentUser.id,
                         username: username,
@@ -827,10 +826,57 @@
                         created_at: new Date().toISOString()
                     });
                 
-                if (error) throw error;
+                // 2. ОБНОВЛЯЕМ сводную статистику
+                // Сначала получаем текущие данные пользователя
+                const { data: currentStats, error: fetchError } = await supabase
+                    .from('user_stats')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+                
+                if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = не найдено
+                    console.error('Ошибка получения статистики:', fetchError);
+                }
+                
+                // Рассчитываем новые значения
+                const current = currentStats || {
+                    total_brews: 0,
+                    tea_count: 0,
+                    coffee_count: 0,
+                    quantum_count: 0,
+                    total_points: 0,
+                    avg_points: 0
+                };
+                
+                const newTotalBrews = current.total_brews + 1;
+                const newTeaCount = current.tea_count + (drink === 'tea' ? 1 : 0);
+                const newCoffeeCount = current.coffee_count + (drink === 'coffee' ? 1 : 0);
+                const newQuantumCount = current.quantum_count + (drink === 'quantum' ? 1 : 0);
+                const newTotalPoints = current.total_points + score;
+                const newAvgPoints = newTotalBrews > 0 ? newTotalPoints / newTotalBrews : 0;
+                
+                // Обновляем или создаем запись
+                const { error: upsertError } = await supabase
+                    .from('user_stats')
+                    .upsert({
+                        user_id: currentUser.id,
+                        username: username,
+                        total_brews: newTotalBrews,
+                        tea_count: newTeaCount,
+                        coffee_count: newCoffeeCount,
+                        quantum_count: newQuantumCount,
+                        total_points: newTotalPoints,
+                        avg_points: newAvgPoints,
+                        last_updated: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id',
+                        ignoreDuplicates: false
+                    });
+                
+                if (upsertError) throw upsertError;
                 
             } catch (error) {
-                console.error('Ошибка добавления в leaderboard:', error);
+                console.error('Ошибка добавления в статистику:', error);
                 showStatus('Ошибка сохранения результата', false);
             }
         }
