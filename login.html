@@ -246,9 +246,9 @@
         }
         
         // ============== ИНИЦИАЛИЗАЦИЯ ==============
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Проверяем авторизацию при загрузке
-            checkAuth();
+            await checkAuth();
             
             // Enter для входа
             document.addEventListener('keypress', (e) => {
