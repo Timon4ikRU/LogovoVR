@@ -234,7 +234,7 @@
                 console.log('Регистрация пользователя:', email);
                 
                 // Регистрируем пользователя
-                const { data, error } = await supabase.auth.signUp({
+                const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
                     options: {
@@ -329,7 +329,7 @@
         // Проверяем, если пользователь уже авторизован, перенаправляем
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     console.log('Пользователь уже авторизован, перенаправляем...');
                     window.location.href = 'booking.html';
