@@ -483,66 +483,48 @@
         }
 
         async function updateBookingStatus(bookingId, status) {
-            // 1. Проверяем, что у нас есть клиент Supabase
-            if (!window.supabase && !supabase) {
-                console.error('❌ Ошибка: supabase клиент не инициализирован');
-                showStatus('Ошибка: клиент базы данных не загружен', true);
+            const client = window.supabase || supabase;
+            if (!client) {
+                console.error('❌ Нет клиента Supabase');
+                showStatus('Ошибка: клиент базы не загружен', true);
                 return;
             }
             
-            // Используем ту переменную, которая есть
-            const supabase = window.supabase || supabase;
-            
-            // 2. Преобразуем ID в число
-            const bookingIdNum = parseInt(bookingId);
-            if (isNaN(bookingIdNum)) {
-                console.error('❌ Ошибка: bookingId не число:', bookingId);
-                showStatus('Ошибка: неверный ID бронирования', true);
-                return;
-            }
-            
-            // 3. Подтверждение
-            if (!confirm(`Изменить статус бронирования #${bookingIdNum} на "${status}"?`)) return;
+            // Преобразуем ID к строке для точного сравнения с int8
+            const idStr = String(bookingId);
+            if (!confirm(`Изменить статус брони #${idStr} на "${status}"?`)) return;
             
             try {
-                console.log(`🔄 Отправка запроса: bookingId=${bookingIdNum}, status=${status}`);
+                console.log(`🔄 Запрос: bookingId=${idStr} (как строка), status=${status}`);
                 
-                // 4. Делаем запрос
-                const { data, error } = await supabase
+                // Используем строку для сравнения
+                const { data, error } = await client
                     .from('bookings')
-                    .update({ 
-                        status: status,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', bookingIdNum)
-                    .select(); // ← Важно: .select() чтобы получить ответ
+                    .update({ status: status })
+                    .eq('id', idStr) // ← Сравниваем как строку!
+                    .select();
                 
-                // 5. Проверяем ошибку
                 if (error) {
-                    console.error('❌ Ошибка от Supabase:', error);
-                    throw new Error(`Supabase: ${error.message}`);
+                    console.error('❌ Ошибка Supabase:', error);
+                    throw error;
                 }
                 
-                // 6. Проверяем, что что-то обновилось
+                console.log('✅ Ответ:', data);
+                
+                // Если data пустой, возможно, ID не найден или статус уже такой
                 if (!data || data.length === 0) {
-                    console.warn('⚠️ Запрос выполнен, но данные не изменились. Возможно, неверный ID.');
-                    showStatus(`Бронирование #${bookingIdNum} не найдено`, true);
-                    return;
+                    console.warn('⚠️ Пустой ответ. Проверь ID в базе:', idStr);
+                    showStatus(`Бронь #${idStr} не найдена или статус уже "${status}"`, true);
+                } else {
+                    showStatus(`✅ Статус брони #${idStr} изменён`);
                 }
                 
-                console.log('✅ Ответ от Supabase:', data);
-                
-                // 7. Показываем успех
-                showStatus(`✅ Статус бронирования #${bookingIdNum} изменён на "${status}"`);
-                
-                // 8. Перезагружаем таблицу
-                setTimeout(() => {
-                    loadBookingsTable(currentBookingsPage);
-                }, 500);
+                // Всегда обновляем таблицу
+                setTimeout(() => loadBookingsTable(currentBookingsPage), 300);
                 
             } catch (error) {
-                console.error('❌ Общая ошибка:', error);
-                showStatus(`Ошибка: ${error.message}`, true);
+                console.error('❌ Ошибка:', error);
+                showStatus('Ошибка: ' + error.message, true);
             }
         }
 
