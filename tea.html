@@ -309,9 +309,9 @@
             <h3>📜 ПРАВИЛА ИГРЫ</h3>
             <ul style="padding-left: 20px;">
                 <li>Кликни на чайник - получи случайный напиток</li>
-                <li><strong>50% шанс</strong> - чай 🍵 (+10 очков)</li>
+                <li><strong>49.9% шанс</strong> - чай 🍵 (+10 очков)</li>
                 <li><strong>49.9% шанс</strong> - кофе ☕ (+15 очков)</li>
-                <li><strong>0.1% шанс</strong> - квантовый напиток ⚛️ (+50 очков)</li>
+                <li><strong>0.2% шанс</strong> - квантовый напиток ⚛️ (+50 очков)</li>
                 <li>Gambling Mode автоматически кликает каждые 3 секунды</li>
             </ul>
         </div>
@@ -655,13 +655,13 @@
             setTimeout(async () => {
                 const randomValue = await getCryptoRandom();
                 
-                // 50% чай, 49.9% кофе, 0.1% квантовый напиток
-                if (randomValue < 0.5) {
+                // 49.9% чай, 49.9% кофе, 0.2% квантовый напиток
+                if (randomValue < 0.49) {
                     // Чай
                     await addToLeaderboard('tea', 10);
                     playSound('successSound');
                     showStatus(`🍵 Чай заварен! +10 очков (${randomValue.toFixed(4)})`, true);
-                } else if (randomValue < 0.999) {
+                } else if (randomValue > 0.51) {
                     // Кофе
                     await addToLeaderboard('coffee', 15);
                     playSound('successSound');
