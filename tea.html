@@ -390,20 +390,15 @@
         const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
-        let supabase = null;
         let currentUser = null;
         let currentStats = { tea: 0, coffee: 0, quantum: 0, totalScore: 0 };
         let gambleInterval = null;
         let isGamblingActive = false;
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🫖 Инициализация чайника...');
-            
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, storage: localStorage }
-            });
-            
+            console.log('🫖 Инициализация чайника...');            
             await checkAuth();
             setupTeapot();
         });
@@ -442,7 +437,7 @@
         // ==================== АВТОРИЗАЦИЯ ====================
         async function checkAuth() {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session } } = await client.auth.getSession();
                 
                 if (session?.user) {
                     currentUser = session.user;
@@ -463,7 +458,7 @@
         async function loadUserStats() {
             try {
                 // Теперь получаем из user_stats
-                const { data: userStat, error } = await supabase
+                const { data: userStat, error } = await client
                     .from('user_stats')
                     .select('*')
                     .eq('user_id', currentUser.id)
@@ -502,7 +497,7 @@
         async function loadGlobalLeaderboard() {
             try {
                 // Теперь загружаем из user_stats (агрегированные данные)
-                const { data: userStats, error } = await supabase
+                const { data: userStats, error } = await client
                     .from('user_stats')
                     .select('user_id, username, tea_count, coffee_count, quantum_count, total_points')
                     .order('total_points', { ascending: false })
@@ -804,7 +799,7 @@
                 let username = currentUser.email.split('@')[0];
                 
                 // Получаем username из profiles
-                const { data: profile, error: profileError } = await supabase
+                const { data: profile, error: profileError } = await client
                     .from('profiles')
                     .select('username')
                     .eq('id', currentUser.id)
@@ -815,7 +810,7 @@
                 }
                 
                 // 1. ВСТАВЛЯЕМ в историю варок (для логов - опционально)
-                const { error: historyError } = await supabase
+                const { error: historyError } = await client
                     .from('brewing_history')  // можно оставить для истории
                     .insert({
                         user_id: currentUser.id,
@@ -827,7 +822,7 @@
                 
                 // 2. ОБНОВЛЯЕМ сводную статистику
                 // Сначала получаем текущие данные пользователя
-                const { data: currentStats, error: fetchError } = await supabase
+                const { data: currentStats, error: fetchError } = await client
                     .from('user_stats')
                     .select('*')
                     .eq('user_id', currentUser.id)
@@ -855,7 +850,7 @@
                 const newAvgPoints = newTotalBrews > 0 ? newTotalPoints / newTotalBrews : 0;
                 
                 // Обновляем или создаем запись
-                const { error: upsertError } = await supabase
+                const { error: upsertError } = await client
                     .from('user_stats')
                     .upsert({
                         user_id: currentUser.id,
@@ -884,7 +879,7 @@
             if (isGamblingActive) {
                 clearInterval(gambleInterval);
             }
-            localStorage.removeItem('supabase.auth.token');
+            localStorage.removeItem('client.auth.token');
             localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
             window.location.reload();
         }
