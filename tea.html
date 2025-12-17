@@ -658,12 +658,12 @@
                 const randomValue = await getCryptoRandom();
                 
                 // 49.5% чай, 49.5% кофе, 1% квантовый напиток
-                if (randomValue < 0.49) {
+                if (randomValue < 0.495) {
                     // Чай
                     await addToLeaderboard('tea', 10);
                     playSound('successSound');
                     showStatus(`🍵 Чай заварен! +10 очков (${randomValue.toFixed(4)})`, true);
-                } else if (randomValue > 0.50) {
+                } else if (randomValue > 0.505) {
                     // Кофе
                     await addToLeaderboard('coffee', 20);
                     playSound('successSound');
@@ -681,7 +681,7 @@
                             <div style="font-size: 1.2em; margin: 10px 0;">Напиток существует и не существует одновременно!</div>
                             <div style="color: #00ffff; font-size: 1.5em; margin: 20px 0;">+50 очков!</div>
                             <div style="color: #666; margin: 10px 0;">Crypto-рандомизация: ${randomValue.toFixed(6)}</div>
-                            <div style="color: #ffaa00; margin: 15px 0; font-size: 1.1em;">Шанс: 0.1% | Ты вошёл в историю!</div>
+                            <div style="color: #ffaa00; margin: 15px 0; font-size: 1.1em;">Шанс: 1% | Ты вошёл в историю!</div>
                             <button onclick="location.reload()" style="margin-top: 30px; background: linear-gradient(45deg, #ff00ff, #00ffff); color: #000; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
                                 🔄 ВЕРНУТЬСЯ В РЕАЛЬНОСТЬ
                             </button>
@@ -713,21 +713,21 @@
             setTimeout(async () => {
                 const randomValue = await getCryptoRandom();
                 
-                if (randomValue < 0.5) {
+                if (randomValue < 0.495) {
                     // Чай
                     await addToLeaderboard('tea', 10);
                     playSound('successSound');
                     showStatus(`🔐 Секретный чай! +10 очков (${randomValue.toFixed(4)})`, true);
-                } else if (randomValue < 0.999) {
+                } else if (randomValue > 0.505) {
                     // Кофе
                     await addToLeaderboard('coffee', 20); // +20 очков за секрет
                     playSound('successSound');
                     showStatus(`🔐 Секретный кофе! +20 очков (${randomValue.toFixed(4)})`, true);
                 } else {
                     // Квантовый
-                    await addToLeaderboard('quantum', 100); // +100 очков за секрет
+                    await addToLeaderboard('quantum', 200); // +200 очков за секрет
                     playSound('quantumSound');
-                    showStatus(`🔐 СЕКРЕТНЫЙ КВАНТ! +100 очков (${randomValue.toFixed(6)})`, true);
+                    showStatus(`🔐 СЕКРЕТНЫЙ КВАНТ! +200 очков (${randomValue.toFixed(6)})`, true);
                 }
                 
                 await loadUserStats();
@@ -764,10 +764,10 @@
                 const randomValue = await getCryptoRandom();
                 let drink, score;
                 
-                if (randomValue < 0.5) {
+                if (randomValue < 0.495) {
                     drink = 'tea';
                     score = 10;
-                } else if (randomValue < 0.999) {
+                } else if (randomValue > 0.505) {
                     drink = 'coffee';
                     score = 15;
                 } else {
