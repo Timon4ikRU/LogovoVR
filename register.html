@@ -190,7 +190,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
         // Инициализируем Supabase сразу
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: {
                 autoRefreshToken: true,
                 persistSession: true,
@@ -234,7 +234,7 @@
                 console.log('Регистрация пользователя:', email);
                 
                 // Регистрируем пользователя
-                const { data, error } = await supabaseClient.auth.signUp({
+                const { data, error } = await client.auth.signUp({
                     email: email,
                     password: password,
                     options: {
@@ -329,7 +329,7 @@
         // Проверяем, если пользователь уже авторизован, перенаправляем
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
+                const { data: { session } } = await client.auth.getSession();
                 if (session) {
                     console.log('Пользователь уже авторизован, перенаправляем...');
                     window.location.href = 'booking.html';
