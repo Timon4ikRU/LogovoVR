@@ -157,10 +157,11 @@
         // ==================== ПРОВЕРКА АДМИНА ====================
         async function checkAdminAuth() {
             try {
-                const { data: { session }, error } = await client.auth.getSession();
+                // 1. Получаем сессию
+                const { data: { session }, error: sessionError } = await client.auth.getSession();
                 
-                if (error) {
-                    showError('Ошибка проверки сессии: ' + error.message);
+                if (sessionError) {
+                    showError('Ошибка проверки сессии: ' + sessionError.message);
                     redirectToLogin();
                     return;
                 }
@@ -172,33 +173,41 @@
                 }
                 
                 currentUser = session.user;
-                document.getElementById('userEmail').textContent = `Админ: ${currentUser.email}`;
-                document.getElementById('userInfo').style.display = 'block';
                 
-                // Простая проверка - если есть профиль в таблице profiles
-                const { data: profile } = await client
+                // 2. Проверяем, есть ли профиль и является ли пользователь админом
+                const { data: profile, error: profileError } = await client
                     .from('profiles')
-                    .select('user_type')
+                    .select('user_type, username')
                     .eq('id', currentUser.id)
                     .single();
-
-                    if (error){
-                        console.log('Профиль не найден, продолжаем...');
-                        profile=null;
-                    }
                 
-                console.log('Профиль:', profile);
+                // Если профиль не найден ИЛИ user_type не 'admin' — доступ запрещён
+                if (profileError || !profile || profile.user_type !== 'admin') {
+                    console.warn('Доступ запрещён. Профиль:', profile, 'Ошибка:', profileError);
+                    showError('❌ Доступ разрешён только администраторам');
+                    
+                    // Даём 3 секунды на чтение сообщения, затем редирект
+                    setTimeout(() => {
+                        window.location.href = '403.html'; // Или на index.html
+                    }, 3000);
+                    return;
+                }
                 
-                // Загружаем пользователей
+                // 3. Если дошёл сюда — пользователь админ
+                console.log('✅ Админ авторизован:', currentUser.email);
+                document.getElementById('userEmail').textContent = `Админ: ${profile.username || currentUser.email}`;
+                document.getElementById('userInfo').style.display = 'block';
+                
+                // 4. Загружаем данные
+                loadBookingsTable();
                 loadUsers();
                 
             } catch (error) {
-                console.error('Ошибка авторизации:', error);
-                showError('Ошибка авторизации');
-                redirectToLogin();
+                console.error('Критическая ошибка авторизации:', error);
+                showError('Системная ошибка');
+                setTimeout(() => window.location.href = 'index.html', 3000);
             }
         }
-
         // ==================== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ====================
         async function loadUsers() {
             try {
