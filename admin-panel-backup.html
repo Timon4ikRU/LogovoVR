@@ -483,13 +483,49 @@
         }
 
         async function updateBookingStatus(bookingId, status) {
-            if (!confirm('Изменить статус бронирования #' + bookingId + ' на "' + status + '"?')) return;
+            const client = window.supabase || supabase;
+            if (!client) {
+                console.error('❌ Нет клиента Supabase');
+                showStatus('Ошибка: клиент базы не загружен', true);
+                return;
+            }
+            
+            // Преобразуем ID к строке для точного сравнения с int8
+            const idStr = String(bookingId);
+            if (!confirm(`Изменить статус брони #${idStr} на "${status}"?`)) return;
+            
             try {
-                const { error } = await supabase.from('bookings').update({ status: status }).eq('id', bookingId);
-                if (error) throw error;
-                showStatus('Статус бронирования #' + bookingId + ' обновлен на "' + status + '"');
-                loadBookingsTable(currentBookingsPage);
-            } catch (error) {console.error('Ошибка обновления статуса:', error); showStatus('Ошибка обновления статуса', true);}
+                console.log(`🔄 Запрос: bookingId=${idStr} (как строка), status=${status}`);
+                
+                // Используем строку для сравнения
+                const { data, error } = await client
+                    .from('bookings')
+                    .update({ status: status })
+                    .eq('id', idStr) // ← Сравниваем как строку!
+                    .select();
+                
+                if (error) {
+                    console.error('❌ Ошибка Supabase:', error);
+                    throw error;
+                }
+                
+                console.log('✅ Ответ:', data);
+                
+                // Если data пустой, возможно, ID не найден или статус уже такой
+                if (!data || data.length === 0) {
+                    console.warn('⚠️ Пустой ответ. Проверь ID в базе:', idStr);
+                    showStatus(`Бронь #${idStr} не найдена или статус уже "${status}"`, true);
+                } else {
+                    showStatus(`✅ Статус брони #${idStr} изменён`);
+                }
+                
+                // Всегда обновляем таблицу
+                setTimeout(() => loadBookingsTable(currentBookingsPage), 300);
+                
+            } catch (error) {
+                console.error('❌ Ошибка:', error);
+                showStatus('Ошибка: ' + error.message, true);
+            }
         }
 
         async function deleteBooking(bookingId) {

@@ -1111,7 +1111,7 @@
         };
         
         // Инициализация Supabase
-        const supabaseClient = window.supabase.createClient(
+        const client = window.supabase.createClient(
             SUPABASE_CONFIG.url, 
             SUPABASE_CONFIG.key
         );
@@ -1148,7 +1148,7 @@
         // Проверка авторизации
         async function checkAuth() {
             try {
-                const { data: { user }, error } = await supabaseClient.auth.getUser();
+                const { data: { user }, error } = await client.auth.getUser();
                 
                 if (error) throw error;
                 
@@ -1222,7 +1222,7 @@
         // Проверяем, является ли пользователь админом
         async function checkAdminStatus(userId) {
             try {
-                const { data, error } = await supabaseClient
+                const { data, error } = await client
                     .from('profiles')
                     .select('user_type')
                     .eq('id', userId)
@@ -1244,7 +1244,7 @@
         // Выход из системы
         async function logout() {
             try {
-                const { error } = await supabaseClient.auth.signOut();
+                const { error } = await client.auth.signOut();
                 
                 if (error) throw error;
                 
@@ -1262,7 +1262,7 @@
             checkAuth();
             
             // Слушаем изменения авторизации (real-time)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
+            client.auth.onAuthStateChange((event, session) => {
                 console.log('Статус авторизации изменился:', event);
                 
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
