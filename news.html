@@ -5,25 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новости - Logovo VR</title>
     <style>
+        :root {
+            --bg-image: none;
+        }
+        
         body {
-            background: #0a0a0a;
-            background-image: linear-gradient(to bottom, #000000, #003311);
+            background: 
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 51, 17, 0.8)),
+                var(--bg-image),
+                #0a0a0a;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             color: #00ff88;
             font-family: monospace;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
-            position: relative;
-        }
-        
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: -1;
-            background-size: cover;
-            background-position: center;
-            opacity: 0.7;
         }
         
         a { color: #ffaa00; text-decoration: none; }
@@ -36,6 +34,7 @@
             padding: 30px;
             border-radius: 10px;
             border: 1px solid #00ff88;
+            backdrop-filter: blur(10px);
         }
         
         .back-link {
@@ -79,7 +78,14 @@
     <script>
         // Рандомный бэкграунд от background1.jpg до background11.jpg
         const bgNum = Math.floor(Math.random() * 11) + 1;
-        document.body.style.backgroundImage = `url('background/background${bgNum}.jpg'), linear-gradient(to bottom, #000000, #003311)`;
+        const bgUrl = `url('background/background${bgNum}.jpg')`;
+        
+        // Устанавливаем CSS переменную
+        document.documentElement.style.setProperty('--bg-image', bgUrl);
+        
+        // Предзагрузка картинки для плавности
+        const img = new Image();
+        img.src = `background/background${bgNum}.jpg`;
     </script>
 
     <div class="container">
