@@ -483,13 +483,67 @@
         }
 
         async function updateBookingStatus(bookingId, status) {
-            if (!confirm('Изменить статус бронирования #' + bookingId + ' на "' + status + '"?')) return;
+            // 1. Проверяем, что у нас есть клиент Supabase
+            if (!window.supabase && !supabase) {
+                console.error('❌ Ошибка: supabase клиент не инициализирован');
+                showStatus('Ошибка: клиент базы данных не загружен', true);
+                return;
+            }
+            
+            // Используем ту переменную, которая есть
+            const supabaseClient = window.supabase || supabase;
+            
+            // 2. Преобразуем ID в число
+            const bookingIdNum = parseInt(bookingId);
+            if (isNaN(bookingIdNum)) {
+                console.error('❌ Ошибка: bookingId не число:', bookingId);
+                showStatus('Ошибка: неверный ID бронирования', true);
+                return;
+            }
+            
+            // 3. Подтверждение
+            if (!confirm(`Изменить статус бронирования #${bookingIdNum} на "${status}"?`)) return;
+            
             try {
-                const { error } = await supabase.from('bookings').update({ status: status }).eq('id', bookingId);
-                if (error) throw error;
-                showStatus('Статус бронирования #' + bookingId + ' обновлен на "' + status + '"');
-                loadBookingsTable(currentBookingsPage);
-            } catch (error) {console.error('Ошибка обновления статуса:', error); showStatus('Ошибка обновления статуса', true);}
+                console.log(`🔄 Отправка запроса: bookingId=${bookingIdNum}, status=${status}`);
+                
+                // 4. Делаем запрос
+                const { data, error } = await supabaseClient
+                    .from('bookings')
+                    .update({ 
+                        status: status,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', bookingIdNum)
+                    .select(); // ← Важно: .select() чтобы получить ответ
+                
+                // 5. Проверяем ошибку
+                if (error) {
+                    console.error('❌ Ошибка от Supabase:', error);
+                    throw new Error(`Supabase: ${error.message}`);
+                }
+                
+                // 6. Проверяем, что что-то обновилось
+                if (!data || data.length === 0) {
+                    console.warn('⚠️ Запрос выполнен, но данные не изменились. Возможно, неверный ID.');
+                    showStatus(`Бронирование #${bookingIdNum} не найдено`, true);
+                    return;
+                }
+                
+                console.log('✅ Ответ от Supabase:', data);
+                
+                // 7. Показываем успех
+                showStatus(`✅ Статус бронирования #${bookingIdNum} изменён на "${status}"`);
+                
+                // 8. Перезагружаем таблицу
+                setTimeout(() => {
+                    loadBookingsTable(currentBookingsPage);
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ Общая ошибка:', error);
+                showStatus(`Ошибка: ${error.message}`, true);
+            }
         }
 
         async function deleteBooking(bookingId) {
