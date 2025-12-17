@@ -491,7 +491,7 @@
             }
             
             // Используем ту переменную, которая есть
-            const supabaseClient = window.supabase || supabase;
+            const supabase = window.supabase || supabase;
             
             // 2. Преобразуем ID в число
             const bookingIdNum = parseInt(bookingId);
@@ -508,7 +508,7 @@
                 console.log(`🔄 Отправка запроса: bookingId=${bookingIdNum}, status=${status}`);
                 
                 // 4. Делаем запрос
-                const { data, error } = await supabaseClient
+                const { data, error } = await supabase
                     .from('bookings')
                     .update({ 
                         status: status,
