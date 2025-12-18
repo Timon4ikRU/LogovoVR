@@ -453,7 +453,8 @@
         let currentUser = null;
         const MAX_TOTAL_PEOPLE = 6;
         const MIN_HOURS_BEFORE = 2;
-        const CLOSING_TIME = 21; // До 21:00 через сайт, после 21:00 - по телефону
+        const CLOSING_TIME_START = 21; // Начало до 21:00 для онлайн-бронирования
+        const CLOSING_TIME_END = 22; // Окончание до 22:00 (время закрытия)
         
         // Временные слоты с шагом 30 минут
         const TIME_SLOTS = [
@@ -608,7 +609,7 @@
                 const { error } = await client.auth.signOut();
                 if (error) throw error;
                 
-                localStorage.removeItem('client.auth.token');
+                localStorage.removeItem('supabaseClient.auth.token');
                 localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
                 
                 showAuthRequired();
@@ -678,25 +679,34 @@
             // Преобразуем время начала в минуты
             const [hours, minutes] = bookingTime.split(':').map(Number);
             
-            // ПРОВЕРКА ТОЛЬКО ВРЕМЕНИ НАЧАЛА: если 21:00 или позже - нельзя бронировать онлайн
-            if (hours >= CLOSING_TIME) {
+            // ПРОВЕРКА 1: Время начала должно быть до 21:00 для онлайн-бронирования
+            if (hours >= CLOSING_TIME_START) {
                 timeWarning.innerHTML = `<span class="time-error">❌ Время начала (${hours}:${minutes.toString().padStart(2, '0')}) - выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
                 timeWarning.style.display = 'block';
                 document.getElementById('bookButton').disabled = true;
                 return false;
-            } else {
-                // Вычисляем время окончания только для информации
-                const startMinutes = hours * 60 + minutes;
-                const endMinutes = startMinutes + totalMinutes;
-                const endHours = Math.floor(endMinutes / 60);
-                const endMins = endMinutes % 60;
-                
-                const endTimeStr = endHours.toString().padStart(2, '0') + ':' + endMins.toString().padStart(2, '0');
-                timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${endTimeStr}</span>`;
-                timeWarning.style.display = 'block';
-                document.getElementById('bookButton').disabled = false;
-                return true;
             }
+            
+            // ПРОВЕРКА 2: Время окончания не должно быть позже 22:00 (время закрытия)
+            const startMinutes = hours * 60 + minutes;
+            const endMinutes = startMinutes + totalMinutes;
+            const endHours = Math.floor(endMinutes / 60);
+            const endMins = endMinutes % 60;
+            
+            // Если время окончания после 22:00 - нельзя бронировать
+            if (endHours > CLOSING_TIME_END || (endHours === CLOSING_TIME_END && endMins > 0)) {
+                timeWarning.innerHTML = `<span class="time-error">❌ Время окончания: ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')} - выходит за время закрытия (22:00). Выберите более раннее время начала или сократите длительность.</span>`;
+                timeWarning.style.display = 'block';
+                document.getElementById('bookButton').disabled = true;
+                return false;
+            }
+            
+            // Всё ок
+            const endTimeStr = endHours.toString().padStart(2, '0') + ':' + endMins.toString().padStart(2, '0');
+            timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${endTimeStr}</span>`;
+            timeWarning.style.display = 'block';
+            document.getElementById('bookButton').disabled = false;
+            return true;
         }
         
         function updateTimeLimit() {
@@ -737,7 +747,7 @@
                     const [hours, minutes] = timeSlot.split(':').map(Number);
                     
                     // Слоты 21:00 показываем как недоступные для онлайн-бронирования
-                    if (hours >= CLOSING_TIME) {
+                    if (hours >= CLOSING_TIME_START) {
                         const option = document.createElement('option');
                         option.value = timeSlot;
                         option.textContent = `${timeSlot} (только по телефону)`;
@@ -863,9 +873,9 @@
                 
                 hideMessages();
                 
-                // Проверяем лимит времени (только время начала)
+                // Проверяем лимит времени (время начала и окончания)
                 if (!checkTimeLimit()) {
-                    showError('Время начала выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните по телефону.');
+                    // Сообщение уже показано в checkTimeLimit()
                     return;
                 }
                 
@@ -915,7 +925,18 @@
                     totalTime += extraTime;
                 }
                 
-                // Проверка конфликтов с учетом времени (теперь с точностью до минут)
+                // Дополнительная проверка времени окончания (на всякий случай)
+                const [hours, minutes] = time.split(':').map(Number);
+                const startMinutes = hours * 60 + minutes;
+                const endMinutes = startMinutes + totalTime;
+                const endHours = Math.floor(endMinutes / 60);
+                
+                if (endHours > CLOSING_TIME_END || (endHours === CLOSING_TIME_END && (endMinutes % 60) > 0)) {
+                    showError('Время окончания выходит за рамки рабочего времени (до 22:00). Выберите более раннее время начала или сократите длительность.');
+                    return;
+                }
+                
+                // Проверка конфликтов с учетом времени
                 const { data: existingBookings, error: bookingsError } = await client
                     .from('bookings')
                     .select('*')
