@@ -344,14 +344,23 @@
                         <select id="bookingTime" onchange="checkTimeLimit()" required>
                             <option value="">Выберите время</option>
                             <option value="12:00">12:00</option>
-                            <option value="13:00">13:00</option>
+                            <option value="12:30">12:30</option>
+                             <option value="13:00">13:00</option>
+                            <option value="13:30">13:30</option>
                             <option value="14:00">14:00</option>
+                            <option value="14:30">14:30</option>
                             <option value="15:00">15:00</option>
+                            <option value="15:30">15:30</option>
                             <option value="16:00">16:00</option>
+                            <option value="16:30">16:30</option>
                             <option value="17:00">17:00</option>
+                            <option value="17:30">17:30</option>
                             <option value="18:00">18:00</option>
+                            <option value="18:30">18:30</option>
                             <option value="19:00">19:00</option>
+                            <option value="19:30">19:30</option>
                             <option value="20:00">20:00</option>
+                            <option value="20:30">20:30</option>
                             <option value="21:00">21:00</option>
                         </select>
                         <div class="time-warning" id="timeWarning"></div>
@@ -445,6 +454,14 @@
         const MAX_TOTAL_PEOPLE = 6;
         const MIN_HOURS_BEFORE = 2;
         const CLOSING_TIME = 21; // До 21:00 через сайт, после 21:00 - по телефону
+        
+        // Временные слоты с шагом 30 минут
+        const TIME_SLOTS = [
+            '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+            '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+            '18:00', '18:30', '19:00', '19:30', '20:00', '20:30',
+            '21:00'
+        ];
         
         // Прайс-лист из твоего сайта
         const PRICE_LIST = {
@@ -674,7 +691,9 @@
                 document.getElementById('bookButton').disabled = true;
                 return false;
             } else {
-                timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}</span>`;
+                // Показываем точное время окончания с минутами
+                const endTimeStr = endHours.toString().padStart(2, '0') + ':' + endMins.toString().padStart(2, '0');
+                timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${endTimeStr}</span>`;
                 timeWarning.style.display = 'block';
                 document.getElementById('bookButton').disabled = false;
                 return true;
@@ -707,22 +726,15 @@
                 const now = new Date();
                 const selectedDate = new Date(date);
                 
-                // Все доступные временные слоты (до 21:00 включительно)
-                const timeSlots = [
-                    '12:00', '13:00', '14:00', '15:00', 
-                    '16:00', '17:00', '18:00', '19:00', 
-                    '20:00', '21:00'
-                ];
-                
                 // Обновляем опции в select
                 const timeSelect = document.getElementById('bookingTime');
                 timeSelect.innerHTML = '<option value="">Выберите время</option>';
                 
                 let availableSlots = 0;
-                let totalSlots = timeSlots.length;
+                let totalSlots = TIME_SLOTS.length;
                 
                 // Проверяем каждый временной слот
-                for (const timeSlot of timeSlots) {
+                for (const timeSlot of TIME_SLOTS) {
                     // Проверка 1: Не прошлое время
                     const slotDateTime = new Date(selectedDate);
                     const [hours, minutes] = timeSlot.split(':').map(Number);
@@ -819,7 +831,7 @@
                     infoEl.innerHTML = `<span style="color: #ff4444;">⚠️ Нет доступных временных слотов на эту дату. Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
                     timeSelect.disabled = true;
                 } else {
-                    infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalSlots} временных слотов</span>`;
+                    infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalSlots} временных слотов (с шагом 30 минут)</span>`;
                     timeSelect.disabled = false;
                 }
                 
@@ -890,7 +902,7 @@
                     totalTime += extraTime;
                 }
                 
-                // Проверка конфликтов с учетом времени
+                // Проверка конфликтов с учетом времени (теперь с точностью до минут)
                 const { data: existingBookings, error: bookingsError } = await supabaseClient
                     .from('bookings')
                     .select('*')
@@ -954,7 +966,8 @@
                 
                 console.log('✅ Все проверки пройдены, создаем бронирование...');
                 console.log('План:', plan.name);
-                console.log('Время:', totalTime, 'минут');
+                console.log('Начало:', time);
+                console.log('Длительность:', totalTime, 'минут');
                 console.log('Люди:', people);
                 console.log('Суммарно людей в это время:', totalAfterBooking);
                 
@@ -1068,7 +1081,7 @@
                 const created = new Date(booking.created_at);
                 const createdFormatted = created.toLocaleString('ru-RU');
                 
-                // Время окончания
+                // Время окончания (с учетом минут)
                 let endTime = '';
                 if (booking.hours && booking.ttime) {
                     const [hours, minutes] = booking.hours.split(':').map(Number);
