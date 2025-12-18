@@ -693,22 +693,34 @@
             const endHours = Math.floor(endMinutes / 60);
             const endMins = endMinutes % 60;
             
+            // Форматируем время окончания для отображения
+            let displayEndHours = endHours;
+            let nextDay = false;
+            
+            // Если 24 часа или больше, показываем как следующий день
+            if (endHours >= 24) {
+                displayEndHours = endHours % 24; // Остаток от деления на 24
+                nextDay = true;
+            }
+            
+            const displayEndTime = displayEndHours.toString().padStart(2, '0') + ':' + endMins.toString().padStart(2, '0');
+            const displayEndTimeWithDay = nextDay ? `${displayEndTime} (следующий день)` : displayEndTime;
+            
             // Если время окончания после 22:00 - нельзя бронировать
-            if (endHours > CLOSING_TIME_END || (endHours === CLOSING_TIME_END && endMins > 0)) {
-                timeWarning.innerHTML = `<span class="time-error">❌ Время окончания: ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')} - выходит за время закрытия (22:00). Выберите более раннее время начала или сократите длительность.</span>`;
+            // Но учитываем, что если nextDay = true, то это точно после 22:00
+            if (nextDay || endHours > CLOSING_TIME_END || (endHours === CLOSING_TIME_END && endMins > 0)) {
+                timeWarning.innerHTML = `<span class="time-error">❌ Время окончания: ${displayEndTimeWithDay} - выходит за время закрытия (22:00). Выберите более раннее время начала или сократите длительность.</span>`;
                 timeWarning.style.display = 'block';
                 document.getElementById('bookButton').disabled = true;
                 return false;
             }
             
             // Всё ок
-            const endTimeStr = endHours.toString().padStart(2, '0') + ':' + endMins.toString().padStart(2, '0');
-            timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${endTimeStr}</span>`;
+            timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${displayEndTimeWithDay}</span>`;
             timeWarning.style.display = 'block';
             document.getElementById('bookButton').disabled = false;
             return true;
         }
-        
         function updateTimeLimit() {
             checkTimeLimit();
         }
@@ -1089,6 +1101,7 @@
             }
         }
         
+        // ==================== DISPLAY BOOKINGS ====================
         function displayBookings(bookings) {
             const bookingsList = document.getElementById('bookingsList');
             
@@ -1102,7 +1115,7 @@
             bookings.forEach(booking => {
                 const statusClass = `status-${booking.status || 'pending'}`;
                 const statusText = booking.status === 'pending' ? 'Ожидание' :
-                                  booking.status === 'confirmed' ? 'Подтверждено' : 'Отменено';
+                                booking.status === 'confirmed' ? 'Подтверждено' : 'Отменено';
                 
                 // Форматируем дату
                 const date = new Date(booking.date);
@@ -1115,14 +1128,22 @@
                 const created = new Date(booking.created_at);
                 const createdFormatted = created.toLocaleString('ru-RU');
                 
-                // Время окончания (с учетом минут)
+                // Время окончания (с учетом минут и перехода через полночь)
                 let endTime = '';
                 if (booking.hours && booking.ttime) {
                     const [hours, minutes] = booking.hours.split(':').map(Number);
                     const totalMinutes = hours * 60 + minutes + (parseInt(booking.ttime) || 60);
-                    const endHours = Math.floor(totalMinutes / 60);
+                    let endHours = Math.floor(totalMinutes / 60);
                     const endMins = totalMinutes % 60;
-                    endTime = ` - ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+                    
+                    let nextDayText = '';
+                    // Если время переходит на следующий день
+                    if (endHours >= 24) {
+                        endHours = endHours % 24; // Остаток от деления на 24
+                        nextDayText = ' (следующий день)';
+                    }
+                    
+                    endTime = ` - ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}${nextDayText}`;
                 }
                 
                 // Проверяем, можно ли отменить бронирование
