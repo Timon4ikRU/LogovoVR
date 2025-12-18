@@ -440,7 +440,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
         // Инициализация Supabase
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: {
                 autoRefreshToken: true,
                 persistSession: true,
@@ -563,7 +563,7 @@
             try {
                 console.log('🔐 Проверка авторизации...');
                 
-                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                const { data: { session }, error } = await client.auth.getSession();
                 
                 if (error) {
                     console.error('Ошибка получения сессии:', error);
@@ -605,10 +605,10 @@
         
         async function logout() {
             try {
-                const { error } = await supabaseClient.auth.signOut();
+                const { error } = await client.auth.signOut();
                 if (error) throw error;
                 
-                localStorage.removeItem('supabaseClient.auth.token');
+                localStorage.removeItem('client.auth.token');
                 localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
                 
                 showAuthRequired();
@@ -677,21 +677,20 @@
             
             // Преобразуем время начала в минуты
             const [hours, minutes] = bookingTime.split(':').map(Number);
-            const startMinutes = hours * 60 + minutes;
             
-            // Вычисляем время окончания
-            const endMinutes = startMinutes + totalMinutes;
-            const endHours = Math.floor(endMinutes / 60);
-            const endMins = endMinutes % 60;
-            
-            // Проверяем, не выходит ли за 21:00
-            if (endHours > CLOSING_TIME || (endHours === CLOSING_TIME && endMins > 0)) {
-                timeWarning.innerHTML = `<span class="time-error">❌ Время окончания: ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')} - выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
+            // ПРОВЕРКА ТОЛЬКО ВРЕМЕНИ НАЧАЛА: если 21:00 или позже - нельзя бронировать онлайн
+            if (hours >= CLOSING_TIME) {
+                timeWarning.innerHTML = `<span class="time-error">❌ Время начала (${hours}:${minutes.toString().padStart(2, '0')}) - выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
                 timeWarning.style.display = 'block';
                 document.getElementById('bookButton').disabled = true;
                 return false;
             } else {
-                // Показываем точное время окончания с минутами
+                // Вычисляем время окончания только для информации
+                const startMinutes = hours * 60 + minutes;
+                const endMinutes = startMinutes + totalMinutes;
+                const endHours = Math.floor(endMinutes / 60);
+                const endMins = endMinutes % 60;
+                
                 const endTimeStr = endHours.toString().padStart(2, '0') + ':' + endMins.toString().padStart(2, '0');
                 timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${endTimeStr}</span>`;
                 timeWarning.style.display = 'block';
@@ -711,7 +710,7 @@
                 if (!date) return;
                 
                 // Получаем ВСЕ бронирования на эту дату
-                const { data: existingBookings, error } = await supabaseClient
+                const { data: existingBookings, error } = await client
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
@@ -731,13 +730,27 @@
                 timeSelect.innerHTML = '<option value="">Выберите время</option>';
                 
                 let availableSlots = 0;
-                let totalSlots = TIME_SLOTS.length;
+                let totalAvailableSlots = 0; // Только слоты до 21:00
                 
                 // Проверяем каждый временной слот
                 for (const timeSlot of TIME_SLOTS) {
+                    const [hours, minutes] = timeSlot.split(':').map(Number);
+                    
+                    // Слоты 21:00 показываем как недоступные для онлайн-бронирования
+                    if (hours >= CLOSING_TIME) {
+                        const option = document.createElement('option');
+                        option.value = timeSlot;
+                        option.textContent = `${timeSlot} (только по телефону)`;
+                        option.disabled = true;
+                        option.style.color = '#ffaa00';
+                        timeSelect.appendChild(option);
+                        continue;
+                    }
+                    
+                    totalAvailableSlots++; // Считаем только доступные для онлайн-бронирования
+                    
                     // Проверка 1: Не прошлое время
                     const slotDateTime = new Date(selectedDate);
-                    const [hours, minutes] = timeSlot.split(':').map(Number);
                     slotDateTime.setHours(hours, minutes, 0, 0);
                     
                     // Если выбран сегодня, проверяем что время не прошлое
@@ -831,7 +844,7 @@
                     infoEl.innerHTML = `<span style="color: #ff4444;">⚠️ Нет доступных временных слотов на эту дату. Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
                     timeSelect.disabled = true;
                 } else {
-                    infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalSlots} временных слотов</span>`;
+                    infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalAvailableSlots} временных слотов (до 21:00)</span>`;
                     timeSelect.disabled = false;
                 }
                 
@@ -850,9 +863,9 @@
                 
                 hideMessages();
                 
-                // Проверяем лимит времени
+                // Проверяем лимит времени (только время начала)
                 if (!checkTimeLimit()) {
-                    showError('Время окончания выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните по телефону.');
+                    showError('Время начала выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните по телефону.');
                     return;
                 }
                 
@@ -903,7 +916,7 @@
                 }
                 
                 // Проверка конфликтов с учетом времени (теперь с точностью до минут)
-                const { data: existingBookings, error: bookingsError } = await supabaseClient
+                const { data: existingBookings, error: bookingsError } = await client
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
@@ -972,7 +985,7 @@
                 console.log('Суммарно людей в это время:', totalAfterBooking);
                 
                 // Создаём бронирование
-                const { data, error } = await supabaseClient
+                const { data, error } = await client
                     .from('bookings')
                     .insert([{
                         date: date,
@@ -1033,7 +1046,7 @@
                 
                 console.log('📋 Загрузка бронирований...');
                 
-                const { data: bookings, error } = await supabaseClient
+                const { data: bookings, error } = await client
                     .from('bookings')
                     .select('*')
                     .eq('user_id', currentUser.id)
@@ -1131,7 +1144,7 @@
             if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
             
             try {
-                const { error } = await supabaseClient
+                const { error } = await client
                     .from('bookings')
                     .update({ status: 'cancelled' })
                     .eq('id', bookingId)
@@ -1197,7 +1210,7 @@
         });
         
         // Слушаем изменения авторизации
-        supabaseClient.auth.onAuthStateChange((event, session) => {
+        client.auth.onAuthStateChange((event, session) => {
             console.log('Auth state changed:', event);
             
             if (event === 'SIGNED_IN') {
@@ -1210,4 +1223,4 @@
         });
     </script>
 </body>
-</html> <!--1200 строк ровно, вот что называется хард-кодинг-->
+</html>
