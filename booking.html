@@ -463,7 +463,7 @@
             '21:00'
         ];
         
-        // Прайс-лист из твоего сайта
+        // Прайс-лист
         const PRICE_LIST = {
             // VR-сеансы
             'vr_standard_30': {
@@ -831,7 +831,7 @@
                     infoEl.innerHTML = `<span style="color: #ff4444;">⚠️ Нет доступных временных слотов на эту дату. Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
                     timeSelect.disabled = true;
                 } else {
-                    infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalSlots} временных слотов (с шагом 30 минут)</span>`;
+                    infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalSlots} временных слотов</span>`;
                     timeSelect.disabled = false;
                 }
                 
