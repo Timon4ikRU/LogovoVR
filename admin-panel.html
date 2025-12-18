@@ -451,7 +451,7 @@
                 return;
             }
             
-            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Создано</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Создано</th><th>Длительность</th><th>План</th><th>Действия</th></tr></thead><tbody>';
             
             bookings.forEach(booking => {
                 let dateStr = booking.date || booking.formatted_date || 'Нет даты';
@@ -470,6 +470,8 @@
                     '<td>' + userEmail + '</td>' +
                     '<td style="color: ' + (statusColors[status] || '#fff') + '">' + (statusTexts[status] || status) + '</td>' +
                     '<td>' + createdStr + '</td>' +
+                    '<td>' + (booking.ttime || 'N/A') + '</td>'+
+                    '<td>' + (booking.plan || 'N/A') + '</td>'+
                     '<td>' +
                         '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')">✅</button>' +
                         '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')">❌</button>' +

@@ -224,45 +224,48 @@
             margin-left: 10px;
         }
         
-        .time-slot {
-            padding: 8px 12px;
-            margin: 5px;
-            border: 1px solid #333;
-            border-radius: 5px;
-            cursor: pointer;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-        
-        .time-slot:hover {
+        .plan-info {
+            padding: 15px;
             background: rgba(0, 255, 136, 0.1);
-            border-color: #00ff88;
-        }
-        
-        .time-slot.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: rgba(255, 68, 68, 0.1);
-            border-color: #ff4444;
-        }
-        
-        .time-slot.selected {
-            background: #00ff88;
-            color: #000;
-            border-color: #00ff88;
-        }
-        
-        .time-slots-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .time-slot-info {
-            font-size: 0.9em;
-            color: #8fd493;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
             margin-top: 10px;
+            display: none;
+        }
+        
+        .plan-title {
+            color: #ffaa00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .plan-price {
+            color: #00ff88;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .time-warning {
+            color: #ffaa00;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .time-error {
+            color: #ff4444;
+            font-weight: bold;
+        }
+        
+        .late-booking-note {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #ffc107;
+            text-align: center;
         }
         
         @media (max-width: 768px) {
@@ -277,10 +280,6 @@
             
             h1 {
                 font-size: 2em;
-            }
-            
-            .time-slots-container {
-                justify-content: center;
             }
         }
     </style>
@@ -308,6 +307,32 @@
         <!-- Форма бронирования -->
         <div id="bookingForm" class="booking-form">
             <form id="bookingFormElement">
+                <!-- Выбор услуги -->
+                <div class="form-group">
+                    <label for="serviceType">🎮 Выберите услугу</label>
+                    <select id="serviceType" onchange="updatePlanInfo()" required>
+                        <option value="">-- Выберите услугу --</option>
+                        <!-- VR-сеансы -->
+                        <option value="vr_standard_30">VR Стандарт (30 мин)</option>
+                        <option value="vr_standard_60">VR Стандарт (60 мин)</option>
+                        <option value="vr_premium_60">VR Премиум (60 мин)</option>
+                        <!-- PlayStation -->
+                        <option value="ps5_lounge_60">PS5 Lounge (60 мин)</option>
+                        <!-- Дни рождения -->
+                        <option value="birthday_prazdnik">День рождения "Праздник"</option>
+                        <option value="birthday_vecherinka">День рождения "Вечеринка"</option>
+                        <option value="birthday_festival">День рождения "Фестиваль"</option>
+                        <!-- Свидание -->
+                        <option value="date_special">Свидание (индивидуально)</option>
+                    </select>
+                    <div id="planInfo" class="plan-info">
+                        <div class="plan-title" id="planTitle">Название плана</div>
+                        <div class="plan-price" id="planPrice">0 ₽</div>
+                        <div id="planDuration">Длительность: 0 мин</div>
+                        <div id="planDescription" style="margin-top: 5px; font-size: 0.9em;">Описание</div>
+                    </div>
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="bookingDate">📅 Дата</label>
@@ -315,8 +340,8 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="bookingTime">⏰ Время</label>
-                        <select id="bookingTime" required>
+                        <label for="bookingTime">⏰ Время начала</label>
+                        <select id="bookingTime" onchange="checkTimeLimit()" required>
                             <option value="">Выберите время</option>
                             <option value="12:00">12:00</option>
                             <option value="13:00">13:00</option>
@@ -329,6 +354,7 @@
                             <option value="20:00">20:00</option>
                             <option value="21:00">21:00</option>
                         </select>
+                        <div class="time-warning" id="timeWarning"></div>
                         <div class="time-slot-info" id="timeSlotInfo"></div>
                     </div>
                 </div>
@@ -352,18 +378,38 @@
                     </div>
                 </div>
                 
+                <!-- Дополнительное время для дней рождений -->
+                <div class="form-group" id="extraTimeContainer" style="display: none;">
+                    <label for="extraTime">⏱️ Дополнительное время (для дней рождений)</label>
+                    <select id="extraTime" onchange="updateTimeLimit()">
+                        <option value="0">Без дополнительного времени</option>
+                        <option value="60">+1 час (60 мин)</option>
+                        <option value="120">+2 часа (120 мин)</option>
+                        <option value="180">+3 часа (180 мин)</option>
+                    </select>
+                    <div style="font-size: 0.9em; color: #8fd493; margin-top: 5px;">
+                        * Дни рождения включают 4 часа основного времени
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label for="notes">📝 Дополнительные пожелания (необязательно)</label>
                     <textarea id="notes" rows="3" placeholder="Особые пожелания, поздравление и т.д."></textarea>
                 </div>
                 
-                <button type="button" onclick="createBooking()" class="btn">
+                <button type="button" onclick="createBooking()" class="btn" id="bookButton">
                     🚀 Забронировать сеанс
                 </button>
                 
                 <div id="errorMessage" class="error-message"></div>
                 <div id="successMessage" class="success-message"></div>
             </form>
+            
+            <!-- Примечание про поздние брони -->
+            <div class="late-booking-note">
+                <strong>📞 Для бронирования после 21:00 звоните по телефону:</strong><br>
+                <a href="tel:+73466490070" style="color: #00ff88; font-weight: bold;">+7 (3466) 49-00-70</a>
+            </div>
             
             <!-- Мои бронирования -->
             <div class="my-bookings">
@@ -396,9 +442,73 @@
         
         // ==================== ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
-        const Z_HOURS = 2; // Длительность сеанса в часах
-        const MAX_TOTAL_PEOPLE = 6; // Максимальное количество людей суммарно
-        const MIN_HOURS_BEFORE = 2; // Минимальное время до бронирования в часах
+        const MAX_TOTAL_PEOPLE = 6;
+        const MIN_HOURS_BEFORE = 2;
+        const CLOSING_TIME = 21; // До 21:00 через сайт, после 21:00 - по телефону
+        
+        // Прайс-лист из твоего сайта
+        const PRICE_LIST = {
+            // VR-сеансы
+            'vr_standard_30': {
+                name: 'VR Стандарт (30 минут)',
+                price: 450,
+                duration: 30,
+                description: '1 человек',
+                type: 'vr'
+            },
+            'vr_standard_60': {
+                name: 'VR Стандарт (60 минут)',
+                price: 800,
+                duration: 60,
+                description: '1 человек',
+                type: 'vr'
+            },
+            'vr_premium_60': {
+                name: 'VR Премиум (60 минут)',
+                price: 1000,
+                duration: 60,
+                description: 'Описания пока нет.',
+                type: 'vr'
+            },
+            // PlayStation
+            'ps5_lounge_60': {
+                name: 'PS5 Lounge (60 минут)',
+                price: 450,
+                duration: 60,
+                description: 'Описания пока нет.',
+                type: 'ps'
+            },
+            // Дни рождения
+            'birthday_prazdnik': {
+                name: 'День рождения "Праздник"',
+                price: 14000,
+                duration: 240, // 4 часа
+                description: 'Описания пока нет.',
+                type: 'birthday'
+            },
+            'birthday_vecherinka': {
+                name: 'День рождения "Вечеринка"',
+                price: 18000,
+                duration: 240,
+                description: 'Описания пока нет.',
+                type: 'birthday'
+            },
+            'birthday_festival': {
+                name: 'День рождения "Фестиваль"',
+                price: 22000,
+                duration: 240,
+                description: 'Описания пока нет.',
+                type: 'birthday'
+            },
+            // Свидание
+            'date_special': {
+                name: 'Свидание (индивидуально)',
+                price: 0,
+                duration: 120,
+                description: 'По запросу. Свяжитесь с нами для уточнения деталей.',
+                type: 'date'
+            }
+        };
         
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
@@ -436,7 +546,6 @@
             try {
                 console.log('🔐 Проверка авторизации...');
                 
-                // Получаем текущую сессию
                 const { data: { session }, error } = await supabaseClient.auth.getSession();
                 
                 if (error) {
@@ -446,25 +555,20 @@
                 }
                 
                 if (session && session.user) {
-                    // Пользователь авторизован
                     currentUser = session.user;
                     console.log('✅ Пользователь авторизован:', currentUser.email);
                     
-                    // Обновляем интерфейс
                     document.getElementById('userEmail').textContent = currentUser.email;
                     document.getElementById('authRequired').style.display = 'none';
                     document.getElementById('bookingForm').style.display = 'block';
                     
-                    // Загружаем бронирования
                     loadUserBookings();
                     
-                    // Убираем хеш из URL если есть
                     if (window.location.hash) {
                         window.history.replaceState(null, null, window.location.pathname);
                     }
                     
                 } else {
-                    // Не авторизован
                     console.log('❌ Пользователь не авторизован');
                     showAuthRequired();
                 }
@@ -487,11 +591,9 @@
                 const { error } = await supabaseClient.auth.signOut();
                 if (error) throw error;
                 
-                // Очищаем localStorage
                 localStorage.removeItem('supabaseClient.auth.token');
                 localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
                 
-                // Обновляем интерфейс
                 showAuthRequired();
                 
             } catch (error) {
@@ -499,6 +601,88 @@
                 localStorage.clear();
                 showAuthRequired();
             }
+        }
+        
+        // ==================== ОБНОВЛЕНИЕ ИНФОРМАЦИИ О ПЛАНЕ ====================
+        function updatePlanInfo() {
+            const serviceType = document.getElementById('serviceType').value;
+            const planInfo = document.getElementById('planInfo');
+            
+            if (!serviceType) {
+                planInfo.style.display = 'none';
+                document.getElementById('extraTimeContainer').style.display = 'none';
+                return;
+            }
+            
+            const plan = PRICE_LIST[serviceType];
+            if (!plan) return;
+            
+            // Обновляем информацию о плане
+            document.getElementById('planTitle').textContent = plan.name;
+            document.getElementById('planPrice').textContent = plan.price === 0 ? 'По запросу' : `${plan.price} ₽`;
+            document.getElementById('planDuration').textContent = `Длительность: ${plan.duration} мин`;
+            document.getElementById('planDescription').textContent = plan.description;
+            planInfo.style.display = 'block';
+            
+            // Показываем доп. время для дней рождений
+            if (plan.type === 'birthday') {
+                document.getElementById('extraTimeContainer').style.display = 'block';
+            } else {
+                document.getElementById('extraTimeContainer').style.display = 'none';
+            }
+            
+            // Проверяем лимит времени
+            checkTimeLimit();
+        }
+        
+        // ==================== ПРОВЕРКА ЛИМИТА ВРЕМЕНИ ====================
+        function checkTimeLimit() {
+            const serviceType = document.getElementById('serviceType').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const timeWarning = document.getElementById('timeWarning');
+            
+            if (!serviceType || !bookingTime) {
+                timeWarning.style.display = 'none';
+                return true;
+            }
+            
+            const plan = PRICE_LIST[serviceType];
+            if (!plan) return true;
+            
+            // Базовое время
+            let totalMinutes = plan.duration;
+            
+            // Добавляем доп. время для дней рождений
+            if (plan.type === 'birthday') {
+                const extraTime = parseInt(document.getElementById('extraTime').value) || 0;
+                totalMinutes += extraTime;
+            }
+            
+            // Преобразуем время начала в минуты
+            const [hours, minutes] = bookingTime.split(':').map(Number);
+            const startMinutes = hours * 60 + minutes;
+            
+            // Вычисляем время окончания
+            const endMinutes = startMinutes + totalMinutes;
+            const endHours = Math.floor(endMinutes / 60);
+            const endMins = endMinutes % 60;
+            
+            // Проверяем, не выходит ли за 21:00
+            if (endHours > CLOSING_TIME || (endHours === CLOSING_TIME && endMins > 0)) {
+                timeWarning.innerHTML = `<span class="time-error">❌ Время окончания: ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')} - выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
+                timeWarning.style.display = 'block';
+                document.getElementById('bookButton').disabled = true;
+                return false;
+            } else {
+                timeWarning.innerHTML = `<span style="color: #00ff88;">✅ Время окончания: ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}</span>`;
+                timeWarning.style.display = 'block';
+                document.getElementById('bookButton').disabled = false;
+                return true;
+            }
+        }
+        
+        function updateTimeLimit() {
+            checkTimeLimit();
         }
         
         // ==================== ПРОВЕРКА ДОСТУПНОСТИ ВРЕМЕНИ ====================
@@ -512,7 +696,7 @@
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
-                    .in('status', ['pending', 'confirmed']); // Оба статуса!
+                    .in('status', ['pending', 'confirmed']);
                 
                 if (error) {
                     console.error('Ошибка загрузки бронирований:', error);
@@ -523,7 +707,7 @@
                 const now = new Date();
                 const selectedDate = new Date(date);
                 
-                // Все доступные временные слоты
+                // Все доступные временные слоты (до 21:00 включительно)
                 const timeSlots = [
                     '12:00', '13:00', '14:00', '15:00', 
                     '16:00', '17:00', '18:00', '19:00', 
@@ -534,7 +718,6 @@
                 const timeSelect = document.getElementById('bookingTime');
                 timeSelect.innerHTML = '<option value="">Выберите время</option>';
                 
-                // Информация о доступности
                 let availableSlots = 0;
                 let totalSlots = timeSlots.length;
                 
@@ -547,9 +730,8 @@
                     
                     // Если выбран сегодня, проверяем что время не прошлое
                     if (selectedDate.toDateString() === now.toDateString()) {
-                        const timeDiff = (slotDateTime - now) / (1000 * 60 * 60); // Разница в часах
+                        const timeDiff = (slotDateTime - now) / (1000 * 60 * 60);
                         if (timeDiff < MIN_HOURS_BEFORE) {
-                            // Пропускаем это время - меньше 2 часов осталось
                             continue;
                         }
                     }
@@ -561,7 +743,7 @@
                     
                     if (existingBookings && existingBookings.length > 0) {
                         for (const booking of existingBookings) {
-                            // Нормализуем время брони (убираем секунды если есть)
+                            // Нормализуем время брони
                             let bookingHours = booking.hours;
                             if (bookingHours.includes(':')) {
                                 const timeParts = bookingHours.split(':');
@@ -570,11 +752,25 @@
                             
                             const bookingStart = new Date(`${booking.date}T${bookingHours}`);
                             const bookingEnd = new Date(bookingStart);
-                            bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
+                            
+                            // Получаем длительность бронирования из ttime
+                            let bookingDuration = parseInt(booking.ttime) || 60;
+                            bookingEnd.setMinutes(bookingEnd.getMinutes() + bookingDuration);
                             
                             const slotStart = slotDateTime;
                             const slotEnd = new Date(slotStart);
-                            slotEnd.setHours(slotEnd.getHours() + Z_HOURS);
+                            
+                            // Получаем длительность текущего бронирования
+                            const serviceType = document.getElementById('serviceType').value;
+                            let currentDuration = 60;
+                            if (serviceType && PRICE_LIST[serviceType]) {
+                                currentDuration = PRICE_LIST[serviceType].duration;
+                                if (serviceType.startsWith('birthday')) {
+                                    const extraTime = parseInt(document.getElementById('extraTime').value) || 0;
+                                    currentDuration += extraTime;
+                                }
+                            }
+                            slotEnd.setMinutes(slotEnd.getMinutes() + currentDuration);
                             
                             // Проверяем пересечение временных интервалов
                             if (slotStart < bookingEnd && slotEnd > bookingStart) {
@@ -620,7 +816,7 @@
                 // Обновляем информацию о доступных слотах
                 const infoEl = document.getElementById('timeSlotInfo');
                 if (availableSlots === 0) {
-                    infoEl.innerHTML = `<span style="color: #ff4444;">⚠️ Нет доступных временных слотов на эту дату</span>`;
+                    infoEl.innerHTML = `<span style="color: #ff4444;">⚠️ Нет доступных временных слотов на эту дату. Для бронирования после 21:00 звоните: <a href="tel:+73466490070" style="color: #ff4444;">+7 (3466) 49-00-70</a></span>`;
                     timeSelect.disabled = true;
                 } else {
                     infoEl.innerHTML = `<span style="color: #00ff88;">✅ Доступно ${availableSlots} из ${totalSlots} временных слотов</span>`;
@@ -635,36 +831,37 @@
         // ==================== СОЗДАНИЕ БРОНИРОВАНИЯ ====================
         async function createBooking() {
             try {
-                // Проверяем авторизацию
                 if (!currentUser) {
                     showError('Требуется авторизация. Пожалуйста, войдите в систему.');
                     return;
                 }
                 
-                // Сбрасываем сообщения
                 hideMessages();
                 
-                // Получаем данные формы
+                // Проверяем лимит времени
+                if (!checkTimeLimit()) {
+                    showError('Время окончания выходит за рамки онлайн-бронирования (до 21:00). Для бронирования после 21:00 звоните по телефону.');
+                    return;
+                }
+                
                 const date = document.getElementById('bookingDate').value;
                 const time = document.getElementById('bookingTime').value;
                 const people = parseInt(document.getElementById('peopleCount').value);
                 const phone = document.getElementById('phoneNumber').value;
                 const notes = document.getElementById('notes').value;
+                const serviceType = document.getElementById('serviceType').value;
                 
-                // ============ ВАЛИДАЦИЯ 1: Проверка заполненности ============
-                if (!date || !time || !phone) {
+                if (!date || !time || !phone || !serviceType) {
                     showError('Заполните все обязательные поля');
                     return;
                 }
                 
-                // ============ ВАЛИДАЦИЯ 2: Проверка телефона ============
                 const phoneDigits = phone.replace(/\D/g, '');
                 if (phoneDigits.length < 11) {
                     showError('Введите корректный номер телефона (минимум 11 цифр)');
                     return;
                 }
                 
-                // ============ ВАЛИДАЦИЯ 3: Проверка на прошлое ============
                 const selectedDateTime = new Date(`${date}T${time}`);
                 const now = new Date();
                 
@@ -673,20 +870,32 @@
                     return;
                 }
                 
-                // ============ ВАЛИДАЦИЯ 4: Проверка за 2 часа ============
-                const timeDiff = (selectedDateTime - now) / (1000 * 60 * 60); // Разница в часах
+                const timeDiff = (selectedDateTime - now) / (1000 * 60 * 60);
                 if (timeDiff < MIN_HOURS_BEFORE) {
                     showError(`Бронирование возможно не менее чем за ${MIN_HOURS_BEFORE} часа до начала сеанса`);
                     return;
                 }
                 
-                // ============ ВАЛИДАЦИЯ 5: Проверка конфликтов ============
-                // Получаем ВСЕ бронирования на эту дату (включая pending, confirmed)
+                // Проверяем план
+                const plan = PRICE_LIST[serviceType];
+                if (!plan) {
+                    showError('Выберите корректный план');
+                    return;
+                }
+                
+                // Получаем общее время
+                let totalTime = plan.duration;
+                if (plan.type === 'birthday') {
+                    const extraTime = parseInt(document.getElementById('extraTime').value) || 0;
+                    totalTime += extraTime;
+                }
+                
+                // Проверка конфликтов с учетом времени
                 const { data: existingBookings, error: bookingsError } = await supabaseClient
                     .from('bookings')
                     .select('*')
                     .eq('date', date)
-                    .in('status', ['pending', 'confirmed']); // И pending И confirmed!
+                    .in('status', ['pending', 'confirmed']);
                 
                 if (bookingsError) {
                     console.error('Ошибка проверки бронирований:', bookingsError);
@@ -694,54 +903,49 @@
                     return;
                 }
                 
-                // Проверяем конфликты
                 let totalPeople = 0;
                 let hasSpecialConflict = false;
                 const slotStart = selectedDateTime;
                 const slotEnd = new Date(slotStart);
-                slotEnd.setHours(slotEnd.getHours() + Z_HOURS);
+                slotEnd.setMinutes(slotEnd.getMinutes() + totalTime);
                 
                 if (existingBookings && existingBookings.length > 0) {
                     for (const booking of existingBookings) {
-                        // Парсим время брони (может быть с секундами "12:00:00")
                         let bookingHours = booking.hours;
                         if (bookingHours.includes(':')) {
-                            // Оставляем только часы:минуты
                             const timeParts = bookingHours.split(':');
                             bookingHours = `${timeParts[0]}:${timeParts[1]}`;
                         }
                         
                         const bookingStart = new Date(`${booking.date}T${bookingHours}`);
                         const bookingEnd = new Date(bookingStart);
-                        bookingEnd.setHours(bookingEnd.getHours() + Z_HOURS);
                         
-                        // Проверяем пересечение временных интервалов
+                        // Получаем длительность существующего бронирования из ttime
+                        let bookingDuration = parseInt(booking.ttime) || 60;
+                        bookingEnd.setMinutes(bookingEnd.getMinutes() + bookingDuration);
+                        
                         const isTimeConflict = slotStart < bookingEnd && slotEnd > bookingStart;
                         
                         if (isTimeConflict) {
                             console.log('Найдено пересечение времени с бронированием:', booking.id, booking.hours);
                             
-                            // Проверка на special пометку
                             if (booking.notes && booking.notes.toLowerCase().includes('special')) {
                                 hasSpecialConflict = true;
                                 console.log('Обнаружена special пометка');
                                 break;
                             }
                             
-                            // Суммируем количество людей
                             totalPeople += parseInt(booking.people) || 0;
                             console.log('Текущая сумма людей:', totalPeople, '+', booking.people);
                         }
                     }
                 }
                 
-                // Проверка на special
                 if (hasSpecialConflict) {
                     showError('В это время уже есть специальное бронирование');
                     return;
                 }
                 
-                // Проверка на максимальное количество людей
                 const totalAfterBooking = totalPeople + people;
                 if (totalAfterBooking > MAX_TOTAL_PEOPLE) {
                     showError(`В это время уже забронировано ${totalPeople} человек. Максимально допустимо ${MAX_TOTAL_PEOPLE} человек. Вы пытаетесь добавить еще ${people}.`);
@@ -749,8 +953,8 @@
                 }
                 
                 console.log('✅ Все проверки пройдены, создаем бронирование...');
-                console.log('Дата:', date);
-                console.log('Время:', time);
+                console.log('План:', plan.name);
+                console.log('Время:', totalTime, 'минут');
                 console.log('Люди:', people);
                 console.log('Суммарно людей в это время:', totalAfterBooking);
                 
@@ -765,7 +969,9 @@
                         notes: notes || null,
                         status: 'pending',
                         user_id: currentUser.id,
-                        user_email: currentUser.email
+                        user_email: currentUser.email,
+                        plan: plan.name, // text поле
+                        ttime: totalTime // int4 поле (минуты)
                     }])
                     .select();
                 
@@ -787,6 +993,8 @@
                 
                 // Сбрасываем форму
                 document.getElementById('bookingFormElement').reset();
+                document.getElementById('planInfo').style.display = 'none';
+                document.getElementById('extraTimeContainer').style.display = 'none';
                 
                 // Устанавливаем дату по умолчанию (завтра)
                 const tomorrow = new Date();
@@ -804,7 +1012,6 @@
                 showError(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
             }
         }
-
         
         // ==================== ЗАГРУЗКА БРОНИРОВАНИЙ ====================
         async function loadUserBookings() {
@@ -861,7 +1068,17 @@
                 const created = new Date(booking.created_at);
                 const createdFormatted = created.toLocaleString('ru-RU');
                 
-                // Проверяем, можно ли отменить бронирование (за 2 часа до начала)
+                // Время окончания
+                let endTime = '';
+                if (booking.hours && booking.ttime) {
+                    const [hours, minutes] = booking.hours.split(':').map(Number);
+                    const totalMinutes = hours * 60 + minutes + (parseInt(booking.ttime) || 60);
+                    const endHours = Math.floor(totalMinutes / 60);
+                    const endMins = totalMinutes % 60;
+                    endTime = ` - ${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+                }
+                
+                // Проверяем, можно ли отменить бронирование
                 const bookingDateTime = new Date(`${booking.date}T${booking.hours}`);
                 const now = new Date();
                 const hoursUntilBooking = (bookingDateTime - now) / (1000 * 60 * 60);
@@ -875,8 +1092,10 @@
                         </div>
                         
                         <div style="margin-bottom: 10px;">
+                            <p><strong>🎮 Услуга:</strong> ${booking.plan || 'Не указано'}</p>
                             <p><strong>📅 Дата:</strong> ${formattedDate}</p>
-                            <p><strong>⏰ Время:</strong> ${booking.hours}</p>
+                            <p><strong>⏰ Время:</strong> ${booking.hours}${endTime}</p>
+                            <p><strong>⏱️ Длительность:</strong> ${booking.ttime || 60} мин</p>
                             <p><strong>👥 Людей:</strong> ${booking.people} чел.</p>
                             <p><strong>📱 Телефон:</strong> ${booking.phone}</p>
                             ${booking.notes ? `<p><strong>📝 Примечание:</strong> ${booking.notes}</p>` : ''}
@@ -947,7 +1166,6 @@
             let value = e.target.value.replace(/\D/g, '');
             
             if (value.length > 0) {
-                // Формат: +7 (XXX) XXX-XX-XX
                 let formatted = '+7';
                 if (value.length > 1) {
                     formatted += ' (' + value.substring(1, 4);
@@ -979,4 +1197,4 @@
         });
     </script>
 </body>
-</html>
+</html> <!--1200 строк ровно, вот что называется хард-кодинг-->
