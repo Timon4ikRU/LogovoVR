@@ -6,14 +6,13 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             background: #0a0a0a;
             color: #00ff88;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
         }
         .container {
             width: 100%;
@@ -36,7 +35,6 @@
             display: block;
             margin-bottom: 8px;
             color: #00ff88;
-            font-weight: bold;
         }
         input {
             width: 100%;
@@ -52,24 +50,6 @@
             outline: none;
             border-color: #00ff88;
             box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
-        }
-        .phone-input-group {
-            display: flex;
-            gap: 10px;
-        }
-        .phone-prefix {
-            flex: 0 0 70px;
-            padding: 12px;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 5px;
-            color: white;
-            text-align: center;
-            font-family: monospace;
-            font-weight: bold;
-        }
-        .phone-number {
-            flex: 1;
         }
         button {
             width: 100%;
@@ -90,12 +70,6 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
         }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
         .error {
             color: #ff4444;
             margin-top: 15px;
@@ -104,9 +78,19 @@
             border: 1px solid #ff4444;
             border-radius: 5px;
             display: none;
-            font-size: 0.9em;
         }
-        .success {
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        a {
+            color: #ffaa00;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .status {
             color: #00ff88;
             margin-top: 15px;
             padding: 10px;
@@ -114,68 +98,7 @@
             border: 1px solid #00ff88;
             border-radius: 5px;
             display: none;
-            font-size: 0.9em;
-        }
-        .links {
             text-align: center;
-            margin-top: 20px;
-            color: #8fd493;
-        }
-        a {
-            color: #ffaa00;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
-        }
-        .auth-tab {
-            flex: 1;
-            padding: 10px;
-            background: none;
-            border: none;
-            color: #8fd493;
-            font-family: monospace;
-            font-size: 16px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-        }
-        .auth-tab.active {
-            color: #00ff88;
-            border-bottom: 3px solid #00ff88;
-            font-weight: bold;
-        }
-        .auth-form {
-            display: none;
-        }
-        .auth-form.active {
-            display: block;
-        }
-        .info {
-            color: #ffaa00;
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(255, 170, 0, 0.1);
-            border: 1px solid #ffaa00;
-            border-radius: 5px;
-            display: none;
-            font-size: 0.9em;
-        }
-        @media (max-width: 480px) {
-            .container {
-                padding: 20px;
-            }
-            .phone-input-group {
-                flex-direction: column;
-            }
-            .phone-prefix {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -183,48 +106,19 @@
     <div class="container">
         <h1>Вход в систему</h1>
         
-        <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchAuth('email')">📧 Email</button>
-            <button class="auth-tab" onclick="switchAuth('phone')">📱 Телефон</button>
+        <div class="input-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="your@email.com" required>
         </div>
         
-        <!-- Форма входа по Email -->
-        <form id="emailForm" class="auth-form active">
-            <div class="input-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" placeholder="your@email.com" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="password">Пароль</label>
-                <input type="password" id="password" placeholder="Введите пароль" required>
-            </div>
-            
-            <button onclick="loginByEmail()" id="emailBtn">Войти</button>
-        </form>
+        <div class="input-group">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" placeholder="Введите пароль" required>
+        </div>
         
-        <!-- Форма входа по Телефону -->
-        <form id="phoneForm" class="auth-form">
-            <div class="input-group">
-                <label for="phone">📱 Телефон</label>
-                <div class="phone-input-group">
-                    <div class="phone-prefix">+7</div>
-                    <input type="tel" id="phone" class="phone-number" 
-                           placeholder="900 123-45-67" 
-                           required 
-                           pattern="[0-9\s\-]{10,15}"
-                           title="Введите 10 цифр номера телефона">
-                </div>
-                <small style="color: #8fd493; display: block; margin-top: 5px;">
-                    Формат: 900 123-45-67
-                </small>
-            </div>
-            
-            <button onclick="loginByPhone()" id="phoneBtn">Войти по телефону</button>
-        </form>
+        <button onclick="login()" id="loginBtn">Войти</button>
         
-        <div id="info" class="info"></div>
-        <div id="success" class="success"></div>
+        <div id="status" class="status"></div>
         <div id="error" class="error"></div>
         
         <div class="links">
@@ -238,252 +132,133 @@
         const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
+        // ИНИЦИАЛИЗАЦИЯ SUPABASE (ГЛОБАЛЬНО)
         const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let currentAuthMethod = 'email';
         
-        // ============== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==============
-        function switchAuth(method) {
-            currentAuthMethod = method;
-            
-            // Обновляем табы
-            document.querySelectorAll('.auth-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelector(`.auth-tab[onclick="switchAuth('${method}')"]`).classList.add('active');
-            
-            // Обновляем формы
-            document.querySelectorAll('.auth-form').forEach(form => {
-                form.classList.remove('active');
-            });
-            document.getElementById(`${method}Form`).classList.add('active');
-            
-            // Сбрасываем сообщения
-            hideMessages();
+        // ============== ФУНКЦИИ ==============
+        async function checkAuth() {
+            try {
+                const { data: { user }, error } = await client.auth.getUser();
+                if (error) throw error;
+                if (user) window.location.href = 'index.html';
+            } catch (error) {
+                console.log('Пользователь не авторизован');
+            }
         }
         
-        function hideMessages() {
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('success').style.display = 'none';
-            document.getElementById('info').style.display = 'none';
+        // Функция обновления last_login_at
+        async function updateLastLogin(userId) {
+            try {
+                const { error } = await client
+                    .from('profiles')
+                    .update({ 
+                        last_login_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', userId);
+                
+                if (error) {
+                    console.error('Ошибка обновления last_login:', error);
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Ошибка в updateLastLogin:', error);
+                return false;
+            }
         }
         
-        function showError(message) {
-            hideMessages();
-            const errorEl = document.getElementById('error');
-            errorEl.textContent = message;
-            errorEl.style.display = 'block';
-        }
-        
-        function showSuccess(message) {
-            hideMessages();
-            const successEl = document.getElementById('success');
-            successEl.textContent = message;
-            successEl.style.display = 'block';
-        }
-        
-        function showInfo(message) {
-            hideMessages();
-            const infoEl = document.getElementById('info');
-            infoEl.textContent = message;
-            infoEl.style.display = 'block';
-        }
-        
-        // ============== ВХОД ПО EMAIL ==============
-        async function loginByEmail() {
-            const email = document.getElementById('email').value.trim();
+        async function login() {
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const btn = document.getElementById('emailBtn');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('status').style.display = 'none';
             
             if (!email || !password) {
                 showError('Заполните все поля');
                 return;
             }
             
-            if (!email.includes('@')) {
-                showError('Введите корректный email');
-                return;
-            }
-            
-            btn.disabled = true;
-            btn.textContent = 'Вход...';
-            showInfo('Входим...');
+            // Блокируем кнопку чтобы не спамили
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Вход...';
+            loginBtn.style.opacity = '0.7';
             
             try {
+                // 1. Пробуем войти
                 const { data, error } = await client.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
                 
                 if (error) {
-                    if (error.message.includes('Invalid login credentials')) {
-                        showError('Неверный email или пароль');
-                    } else {
-                        showError(error.message);
-                    }
-                    btn.disabled = false;
-                    btn.textContent = 'Войти';
+                    showError(error.message);
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Войти';
+                    loginBtn.style.opacity = '1';
                     return;
                 }
                 
-                showSuccess('✅ Вход выполнен! Перенаправляем...');
+                // 2. Если вход успешен, показываем статус
+                showStatus('Вход выполнен, обновляем данные...');
                 
-                // Обновляем last_login
+                // 3. Обновляем last_login_at в профиле
                 if (data.user) {
-                    try {
-                        await client
-                            .from('users')
-                            .update({ 
-                                last_login_at: new Date().toISOString(),
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', data.user.id);
-                    } catch (e) {
-                        console.log('Не удалось обновить last_login');
+                    const updateSuccess = await updateLastLogin(data.user.id);
+                    
+                    if (updateSuccess) {
+                        showStatus('Данные обновлены! Перенаправление...');
+                        // 4. Ждем 1 секунду и редирект
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    } else {
+                        showStatus('Вход выполнен, но данные не обновлены. Перенаправление...');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
                     }
+                } else {
+                    window.location.href = 'index.html';
                 }
                 
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-                
             } catch (error) {
-                showError('Ошибка подключения');
-                btn.disabled = false;
-                btn.textContent = 'Войти';
+                showError('Ошибка подключения к серверу');
+                console.error('Login error:', error);
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Войти';
+                loginBtn.style.opacity = '1';
             }
         }
         
-        // ============== ВХОД ПО ТЕЛЕФОНУ (БЕЗ ПАРОЛЯ) ==============
-        async function loginByPhone() {
-            const phoneInput = document.getElementById('phone').value.trim();
-            const btn = document.getElementById('phoneBtn');
-            
-            // Очищаем номер от лишних символов
-            const cleanedPhone = phoneInput.replace(/\D/g, '');
-            
-            if (!cleanedPhone || cleanedPhone.length !== 10) {
-                showError('Введите корректный номер телефона (10 цифр)');
-                return;
-            }
-            
-            const formattedPhone = `+7${cleanedPhone}`;
-            
-            btn.disabled = true;
-            btn.textContent = 'Вход...';
-            showInfo(`Ищем пользователя с номером ${formattedPhone}...`);
-            
-            try {
-                // Шаг 1: Ищем пользователя в таблице users по номеру телефона
-                const { data: usersData, error: usersError } = await client
-                    .from('users')
-                    .select('email, phone')
-                    .eq('phone', formattedPhone)
-                    .single();
-                
-                if (usersError || !usersData) {
-                    showError('Пользователь с таким номером телефона не найден');
-                    btn.disabled = false;
-                    btn.textContent = 'Войти по телефону';
-                    return;
-                }
-                
-                showInfo(`Найден пользователь ${usersData.email}. Входим...`);
-                
-                // Шаг 2: Получаем пользователя из Auth по email
-                const { data: authData, error: authError } = await client.auth.signInWithPassword({
-                    email: usersData.email,
-                    password: 'temporary_password' // Заглушка
-                });
-                
-                if (authError) {
-                    // Если пароль не подошел, пытаемся войти через OTP (Magic Link)
-                    showInfo('Пробуем альтернативный способ входа...');
-                    
-                    const { error: otpError } = await client.auth.signInWithOtp({
-                        email: usersData.email,
-                        options: {
-                            emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/index.html'
-                        }
-                    });
-                    
-                    if (otpError) {
-                        showError('Ошибка входа. Попробуйте войти по email');
-                        btn.disabled = false;
-                        btn.textContent = 'Войти по телефону';
-                        return;
-                    }
-                    
-                    showSuccess('✅ Отправили ссылку для входа на вашу почту');
-                    btn.disabled = false;
-                    btn.textContent = 'Войти по телефону';
-                    
-                } else {
-                    // Если удалось войти
-                    showSuccess('✅ Вход по телефону выполнен! Перенаправляем...');
-                    
-                    // Обновляем last_login
-                    if (authData.user) {
-                        try {
-                            await client
-                                .from('users')
-                                .update({ 
-                                    last_login_at: new Date().toISOString(),
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', authData.user.id);
-                        } catch (e) {
-                            console.log('Не удалось обновить last_login');
-                        }
-                    }
-                    
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1000);
-                }
-                
-            } catch (error) {
-                console.error('Ошибка:', error);
-                showError('Ошибка входа по телефону');
-                btn.disabled = false;
-                btn.textContent = 'Войти по телефону';
-            }
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
         }
         
-        // ============== ОБРАБОТЧИКИ СОБЫТИЙ ==============
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                if (currentAuthMethod === 'email') {
-                    loginByEmail();
-                } else {
-                    loginByPhone();
-                }
-            }
-        });
+        function showStatus(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.style.display = 'block';
+        }
         
-        // Автоформатирование телефона
-        document.getElementById('phone').addEventListener('input', function(e) {
-            let value = this.value.replace(/\D/g, '');
+        // ============== ИНИЦИАЛИЗАЦИЯ ==============
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем авторизацию при загрузке
+            checkAuth();
             
-            if (value.length > 0) {
-                let formatted = '';
-                if (value.length > 0) formatted = value.substring(0, 3);
-                if (value.length > 3) formatted += ' ' + value.substring(3, 6);
-                if (value.length > 6) formatted += '-' + value.substring(6, 8);
-                if (value.length > 8) formatted += '-' + value.substring(8, 10);
-                this.value = formatted;
-            }
-        });
-        
-        // Проверка авторизации при загрузке
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                const { data: { session } } = await client.auth.getSession();
-                if (session) {
-                    window.location.href = 'index.html';
+            // Enter для входа
+            document.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    login();
                 }
-            } catch (error) {
-                console.log('Проверка авторизации:', error);
-            }
+            });
+            
+            // Фокус на email поле
+            document.getElementById('email').focus();
         });
     </script>
 </body>

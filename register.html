@@ -11,7 +11,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             background: #0a0a0a;
             color: #00ff88;
             min-height: 100vh;
@@ -67,27 +67,6 @@
             box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
         }
         
-        .phone-input-group {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .phone-prefix {
-            flex: 0 0 70px;
-            padding: 15px;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 8px;
-            color: white;
-            text-align: center;
-            font-family: monospace;
-            font-weight: bold;
-        }
-        
-        .phone-number {
-            flex: 1;
-        }
-        
         .btn {
             background: #00ff88;
             color: #000;
@@ -111,6 +90,16 @@
             box-shadow: 0 10px 20px rgba(0, 255, 136, 0.4);
         }
         
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
         .error-message {
             color: #ff4444;
             margin-top: 15px;
@@ -128,17 +117,6 @@
             padding: 15px;
             background: rgba(0, 255, 136, 0.1);
             border: 1px solid #00ff88;
-            border-radius: 8px;
-            display: none;
-            font-size: 0.9em;
-        }
-        
-        .info-message {
-            color: #ffaa00;
-            margin-top: 15px;
-            padding: 15px;
-            background: rgba(255, 170, 0, 0.1);
-            border: 1px solid #ffaa00;
             border-radius: 8px;
             display: none;
             font-size: 0.9em;
@@ -168,14 +146,6 @@
             h1 {
                 font-size: 2em;
             }
-            
-            .phone-input-group {
-                flex-direction: column;
-            }
-            
-            .phone-prefix {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -187,21 +157,6 @@
             <div class="form-group">
                 <label for="email">📧 Email</label>
                 <input type="email" id="email" placeholder="your@email.com" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="phone">📱 Телефон (обязательно)</label>
-                <div class="phone-input-group">
-                    <div class="phone-prefix">+7</div>
-                    <input type="tel" id="phone" class="phone-number" 
-                           placeholder="900 123-45-67" 
-                           required 
-                           pattern="[0-9\s\-]{10,15}"
-                           title="Введите 10 цифр номера телефона">
-                </div>
-                <small style="color: #8fd493; display: block; margin-top: 5px;">
-                    Формат: 900 123-45-67 (10 цифр)
-                </small>
             </div>
             
             <div class="form-group">
@@ -220,7 +175,6 @@
             
             <div id="errorMessage" class="error-message"></div>
             <div id="successMessage" class="success-message"></div>
-            <div id="infoMessage" class="info-message"></div>
         </form>
         
         <div class="links">
@@ -231,9 +185,11 @@
 
     <script>
         // ==================== SUPABASE НАСТРОЙКА ====================
+        // ОБЯЗАТЕЛЬНО объявляем переменные ДО их использования!
         const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
+        // Инициализируем Supabase сразу
         const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: {
                 autoRefreshToken: true,
@@ -246,15 +202,16 @@
         // ==================== РЕГИСТРАЦИЯ ====================
         async function register() {
             try {
+                // Сбрасываем сообщения
                 hideMessages();
-                showInfo('🔐 Регистрируем пользователя...');
                 
+                // Получаем данные
                 const email = document.getElementById('email').value.trim();
-                const phoneInput = document.getElementById('phone').value.trim();
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 
-                if (!email || !phoneInput || !password || !confirmPassword) {
+                // Валидация
+                if (!email || !password || !confirmPassword) {
                     showError('Заполните все поля');
                     return;
                 }
@@ -263,14 +220,6 @@
                     showError('Введите корректный email');
                     return;
                 }
-                
-                const cleanedPhone = phoneInput.replace(/\D/g, '');
-                if (cleanedPhone.length !== 10) {
-                    showError('Введите корректный номер телефона (ровно 10 цифр)');
-                    return;
-                }
-                
-                const formattedPhone = `+7${cleanedPhone}`;
                 
                 if (password.length < 6) {
                     showError('Пароль должен быть не менее 6 символов');
@@ -282,211 +231,102 @@
                     return;
                 }
                 
-                console.log('=== НАЧАЛО РЕГИСТРАЦИИ ===');
-                console.log('Email:', email);
-                console.log('Телефон:', formattedPhone);
-                console.log('Длина пароля:', password.length);
+                console.log('Регистрация пользователя:', email);
                 
-                // ШАГ 1: Регистрируем в Auth
+                // Регистрируем пользователя
                 const { data, error } = await client.auth.signUp({
                     email: email,
                     password: password,
                     options: {
-                        emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/booking.html',
-                        data: { phone: formattedPhone }
+                        emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/booking.html'
                     }
                 });
                 
                 if (error) {
-                    handleAuthError(error);
+                    console.error('Ошибка регистрации:', error);
+                    
+                    if (error.message.includes('User already registered')) {
+                        showError('Пользователь с таким email уже существует');
+                    } else if (error.message.includes('Password')) {
+                        showError('Слишком слабый пароль. Пароль должен содержать: заглавные и строчные латинские буквы, цифры, спецсимволы (минимум 1)');
+                    } else if (error.message.includes('rate limit')) {
+                        showError('Слишком много попыток. Попробуйте позже.');
+                    } else {
+                        showError(`Ошибка: ${error.message}`);
+                    }
                     return;
                 }
                 
-                console.log('✅ Auth регистрация успешна');
-                console.log('User ID:', data.user.id);
+                // Успех
+                console.log('Регистрация успешна:', data);
                 
                 if (data.user && data.user.identities && data.user.identities.length === 0) {
                     showError('Пользователь с таким email уже существует');
                     return;
                 }
                 
-                // ШАГ 2: Сохраняем телефон в таблицу PROFILES (не users!)
-                if (data.user) {
-                    showInfo('💾 Сохраняем телефон в базу...');
-                    
-                    console.log('Пытаемся сохранить в таблицу profiles...');
-                    
-                    try {
-                        // Пробуем вставить запись в PROFILES
-                        const { data: insertData, error: insertError } = await client
-                            .from('profiles')
-                            .insert({
-                                id: data.user.id,
-                                email: email,
-                                phone: formattedPhone,
-                                created_at: new Date().toISOString(),
-                                updated_at: new Date().toISOString()
-                            });
-                        
-                        if (insertError) {
-                            console.log('❌ Ошибка при INSERT в profiles:', insertError);
-                            
-                            // Если ошибка что запись уже существует, пробуем обновить
-                            if (insertError.message.includes('duplicate key') || insertError.message.includes('already exists')) {
-                                console.log('Запись уже существует, пробуем UPDATE...');
-                                
-                                const { error: updateError } = await client
-                                    .from('profiles')
-                                    .update({
-                                        phone: formattedPhone,
-                                        email: email,
-                                        updated_at: new Date().toISOString()
-                                    })
-                                    .eq('id', data.user.id);
-                                
-                                if (updateError) {
-                                    console.log('❌ Ошибка при UPDATE profiles:', updateError);
-                                } else {
-                                    console.log('✅ UPDATE profiles успешен');
-                                }
-                            }
-                        } else {
-                            console.log('✅ INSERT в profiles успешен');
-                        }
-                        
-                        // Проверяем что сохранилось
-                        const { data: checkData, error: checkError } = await client
-                            .from('profiles')
-                            .select('*')
-                            .eq('id', data.user.id);
-                        
-                        if (checkError) {
-                            console.log('❌ Ошибка проверки profiles:', checkError);
-                        } else {
-                            console.log('✅ Проверка данных profiles:', checkData);
-                        }
-                        
-                    } catch (profileError) {
-                        console.error('❌ Ошибка при работе с профилем:', profileError);
-                    }
-                }
-                
-                // ШАГ 3: Показываем результат
                 if (data.user && !data.session) {
-                    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения. Телефон сохранен.');
+                    // Требуется подтверждение email
+                    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
                     
+                    // Очищаем форму
                     document.getElementById('registerForm').reset();
                     
+                    // Перенаправляем на страницу входа через 3 секунды
                     setTimeout(() => {
                         window.location.href = 'login.html';
                     }, 10000);
                     
                 } else if (data.session) {
-                    showSuccess('✅ Регистрация и вход успешны! Телефон сохранен.');
+                    // Автоматически вошли
+                    showSuccess('✅ Регистрация и вход успешны!');
                     
-                    localStorage.setItem('user_phone', formattedPhone);
-                    
+                    // Перенаправляем на страницу бронирования
                     setTimeout(() => {
                         window.location.href = 'booking.html';
                     }, 2000);
                 }
                 
-                console.log('=== КОНЕЦ РЕГИСТРАЦИИ ===');
-                
             } catch (error) {
-                console.error('❌ Неизвестная ошибка:', error);
+                console.error('Неизвестная ошибка:', error);
                 showError('Неизвестная ошибка. Попробуйте еще раз.');
-            } finally {
-                hideInfo();
             }
         }
         
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-        function handleAuthError(error) {
-            console.error('❌ Ошибка аутентификации:', error);
-            
-            if (error.message.includes('User already registered')) {
-                showError('Пользователь с таким email уже существует');
-            } else if (error.message.includes('Password')) {
-                showError('Слишком слабый пароль. Используйте буквы, цифры и спецсимволы');
-            } else if (error.message.includes('rate limit')) {
-                showError('Слишком много попыток. Попробуйте позже.');
-            } else {
-                showError(`Ошибка: ${error.message}`);
-            }
-        }
-        
         function showError(message) {
             const errorEl = document.getElementById('errorMessage');
             errorEl.textContent = message;
             errorEl.style.display = 'block';
-            hideInfo();
+            
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
         }
         
         function showSuccess(message) {
             const successEl = document.getElementById('successMessage');
             successEl.textContent = message;
             successEl.style.display = 'block';
-            hideInfo();
-        }
-        
-        function showInfo(message) {
-            const infoEl = document.getElementById('infoMessage');
-            infoEl.textContent = message;
-            infoEl.style.display = 'block';
-        }
-        
-        function hideInfo() {
-            document.getElementById('infoMessage').style.display = 'none';
+            
+            setTimeout(() => {
+                successEl.style.display = 'none';
+            }, 5000);
         }
         
         function hideMessages() {
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('successMessage').style.display = 'none';
-            document.getElementById('infoMessage').style.display = 'none';
         }
         
-        // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
-        
+        // Авто-ввод при нажатии Enter
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 register();
             }
         });
         
-        document.getElementById('phone').addEventListener('input', function(e) {
-            let value = this.value.replace(/\D/g, '');
-            
-            if (value.length > 0) {
-                let formatted = '';
-                
-                if (value.length > 0) formatted = value.substring(0, 3);
-                if (value.length > 3) formatted += ' ' + value.substring(3, 6);
-                if (value.length > 6) formatted += '-' + value.substring(6, 8);
-                if (value.length > 8) formatted += '-' + value.substring(8, 10);
-                
-                this.value = formatted;
-                
-                if (value.length === 10) {
-                    this.style.borderColor = '#00ff88';
-                    this.style.boxShadow = '0 0 5px rgba(0, 255, 136, 0.3)';
-                } else {
-                    this.style.borderColor = '#ff4444';
-                    this.style.boxShadow = '0 0 5px rgba(255, 68, 68, 0.3)';
-                }
-            } else {
-                this.style.borderColor = '#333';
-                this.style.boxShadow = 'none';
-            }
-        });
-        
-        document.getElementById('phone').addEventListener('blur', function() {
-            const value = this.value.replace(/\D/g, '');
-            if (value && value.length !== 10) {
-                showError('Номер телефона должен содержать 10 цифр');
-            }
-        });
-        
+        // Проверяем, если пользователь уже авторизован, перенаправляем
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 const { data: { session } } = await client.auth.getSession();
@@ -496,30 +336,6 @@
                 }
             } catch (error) {
                 console.log('Проверка авторизации:', error);
-            }
-        });
-        
-        document.getElementById('password').addEventListener('input', function() {
-            if (this.value.length > 0 && this.value.length < 6) {
-                this.style.borderColor = '#ff4444';
-            } else if (this.value.length >= 6) {
-                this.style.borderColor = '#00ff88';
-            }
-        });
-        
-        document.getElementById('confirmPassword').addEventListener('input', function() {
-            const password = document.getElementById('password').value;
-            const confirm = this.value;
-            
-            if (confirm && password !== confirm) {
-                this.style.borderColor = '#ff4444';
-                this.style.boxShadow = '0 0 5px rgba(255, 68, 68, 0.3)';
-            } else if (confirm && password === confirm) {
-                this.style.borderColor = '#00ff88';
-                this.style.boxShadow = '0 0 5px rgba(0, 255, 136, 0.3)';
-            } else {
-                this.style.borderColor = '#333';
-                this.style.boxShadow = 'none';
             }
         });
     </script>
