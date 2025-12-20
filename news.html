@@ -80,10 +80,9 @@
         const bgNum = Math.floor(Math.random() * 11) + 1;
         const bgUrl = `url('background/background${bgNum}.jpg')`;
         
-        // Устанавливаем CSS переменную
         document.documentElement.style.setProperty('--bg-image', bgUrl);
         
-        // Предзагрузка картинки для плавности
+        // Предзагрузка для плавности
         const img = new Image();
         img.src = `background/background${bgNum}.jpg`;
     </script>
@@ -91,9 +90,19 @@
     <div class="container">
         <div style="margin-bottom: 30px;">
             <a href="index.html" class="back-link">← На главную</a>
-        </div>        
+        </div>
         <div class="news-header">Обновление</div>
-        <div class="news-date">18 декабря, 17:00</div>
+        <div class="news-date">20 декабря 2025, 9:25</div>
+        <div class="news-content">
+            <p>Обновлены шрифты. Теперь вместо Courier New monospace используется системный моноширный, что выглядит более подходяще.</p>
+            <p></p>
+            <p>Просьба по всем багам сообщать через "Предложить правки" написав тему "Баги".</p>
+            <p>С любовью к пользователям, ваш Logovo VR</p>
+        </div>
+    </div>
+    <div class="container">     
+        <div class="news-header">Обновление</div>
+        <div class="news-date">18 декабря 2025, 17:00</div>
         <div class="news-content">
             <p>Обновлена: форма бронирования. Теперь у вас есть возможность выбирать тарифный план в соответствии с price-list.html.</p>
             <p>В соответствии с этим была обновлена админ-панель часть, отвечающая за контроль бронирований.</p>
