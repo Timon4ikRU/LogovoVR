@@ -310,16 +310,16 @@
                     return;
                 }
                 
-                // ШАГ 2: Сохраняем телефон в таблицу users
+                // ШАГ 2: Сохраняем телефон в таблицу PROFILES (не users!)
                 if (data.user) {
                     showInfo('💾 Сохраняем телефон в базу...');
                     
-                    console.log('Пытаемся сохранить в таблицу users...');
+                    console.log('Пытаемся сохранить в таблицу profiles...');
                     
                     try {
-                        // Пробуем вставить запись
+                        // Пробуем вставить запись в PROFILES
                         const { data: insertData, error: insertError } = await client
-                            .from('users')
+                            .from('profiles')
                             .insert({
                                 id: data.user.id,
                                 email: email,
@@ -329,14 +329,14 @@
                             });
                         
                         if (insertError) {
-                            console.log('❌ Ошибка при INSERT:', insertError);
+                            console.log('❌ Ошибка при INSERT в profiles:', insertError);
                             
                             // Если ошибка что запись уже существует, пробуем обновить
                             if (insertError.message.includes('duplicate key') || insertError.message.includes('already exists')) {
                                 console.log('Запись уже существует, пробуем UPDATE...');
                                 
                                 const { error: updateError } = await client
-                                    .from('users')
+                                    .from('profiles')
                                     .update({
                                         phone: formattedPhone,
                                         email: email,
@@ -345,25 +345,25 @@
                                     .eq('id', data.user.id);
                                 
                                 if (updateError) {
-                                    console.log('❌ Ошибка при UPDATE:', updateError);
+                                    console.log('❌ Ошибка при UPDATE profiles:', updateError);
                                 } else {
-                                    console.log('✅ UPDATE успешен');
+                                    console.log('✅ UPDATE profiles успешен');
                                 }
                             }
                         } else {
-                            console.log('✅ INSERT успешен');
+                            console.log('✅ INSERT в profiles успешен');
                         }
                         
                         // Проверяем что сохранилось
                         const { data: checkData, error: checkError } = await client
-                            .from('users')
+                            .from('profiles')
                             .select('*')
                             .eq('id', data.user.id);
                         
                         if (checkError) {
-                            console.log('❌ Ошибка проверки:', checkError);
+                            console.log('❌ Ошибка проверки profiles:', checkError);
                         } else {
-                            console.log('✅ Проверка данных:', checkData);
+                            console.log('✅ Проверка данных profiles:', checkData);
                         }
                         
                     } catch (profileError) {
