@@ -282,8 +282,12 @@
                     return;
                 }
                 
-                console.log('Регистрация:', { email, phone: formattedPhone });
+                console.log('=== НАЧАЛО РЕГИСТРАЦИИ ===');
+                console.log('Email:', email);
+                console.log('Телефон:', formattedPhone);
+                console.log('Длина пароля:', password.length);
                 
+                // ШАГ 1: Регистрируем в Auth
                 const { data, error } = await client.auth.signUp({
                     email: email,
                     password: password,
@@ -298,58 +302,78 @@
                     return;
                 }
                 
-                console.log('Регистрация в Auth успешна:', data);
+                console.log('✅ Auth регистрация успешна');
+                console.log('User ID:', data.user.id);
                 
                 if (data.user && data.user.identities && data.user.identities.length === 0) {
                     showError('Пользователь с таким email уже существует');
                     return;
                 }
                 
+                // ШАГ 2: Сохраняем телефон в таблицу users
                 if (data.user) {
-                    showInfo('💾 Сохраняем телефон в профиль...');
+                    showInfo('💾 Сохраняем телефон в базу...');
+                    
+                    console.log('Пытаемся сохранить в таблицу users...');
                     
                     try {
-                        const { error: profileError } = await client
+                        // Пробуем вставить запись
+                        const { data: insertData, error: insertError } = await client
                             .from('users')
-                            .upsert({
+                            .insert({
                                 id: data.user.id,
                                 email: email,
                                 phone: formattedPhone,
-                                full_name: '',
-                                avatar_url: '',
                                 created_at: new Date().toISOString(),
                                 updated_at: new Date().toISOString()
-                            }, { onConflict: 'id' });
+                            });
                         
-                        if (profileError) {
-                            console.error('Ошибка сохранения профиля:', profileError);
+                        if (insertError) {
+                            console.log('❌ Ошибка при INSERT:', insertError);
                             
-                            const { error: insertError } = await client
-                                .from('users')
-                                .insert({
-                                    id: data.user.id,
-                                    email: email,
-                                    phone: formattedPhone,
-                                    created_at: new Date().toISOString(),
-                                    updated_at: new Date().toISOString()
-                                });
-                            
-                            if (insertError) {
-                                console.error('Ошибка вставки профиля:', insertError);
-                            } else {
-                                console.log('Профиль создан (insert)');
+                            // Если ошибка что запись уже существует, пробуем обновить
+                            if (insertError.message.includes('duplicate key') || insertError.message.includes('already exists')) {
+                                console.log('Запись уже существует, пробуем UPDATE...');
+                                
+                                const { error: updateError } = await client
+                                    .from('users')
+                                    .update({
+                                        phone: formattedPhone,
+                                        email: email,
+                                        updated_at: new Date().toISOString()
+                                    })
+                                    .eq('id', data.user.id);
+                                
+                                if (updateError) {
+                                    console.log('❌ Ошибка при UPDATE:', updateError);
+                                } else {
+                                    console.log('✅ UPDATE успешен');
+                                }
                             }
                         } else {
-                            console.log('Профиль сохранен успешно (upsert)');
+                            console.log('✅ INSERT успешен');
+                        }
+                        
+                        // Проверяем что сохранилось
+                        const { data: checkData, error: checkError } = await client
+                            .from('users')
+                            .select('*')
+                            .eq('id', data.user.id);
+                        
+                        if (checkError) {
+                            console.log('❌ Ошибка проверки:', checkError);
+                        } else {
+                            console.log('✅ Проверка данных:', checkData);
                         }
                         
                     } catch (profileError) {
-                        console.error('Ошибка при работе с профилем:', profileError);
+                        console.error('❌ Ошибка при работе с профилем:', profileError);
                     }
                 }
                 
+                // ШАГ 3: Показываем результат
                 if (data.user && !data.session) {
-                    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения. Номер телефона сохранен.');
+                    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения. Телефон сохранен.');
                     
                     document.getElementById('registerForm').reset();
                     
@@ -358,7 +382,7 @@
                     }, 10000);
                     
                 } else if (data.session) {
-                    showSuccess('✅ Регистрация и вход успешны! Номер телефона сохранен.');
+                    showSuccess('✅ Регистрация и вход успешны! Телефон сохранен.');
                     
                     localStorage.setItem('user_phone', formattedPhone);
                     
@@ -367,8 +391,10 @@
                     }, 2000);
                 }
                 
+                console.log('=== КОНЕЦ РЕГИСТРАЦИИ ===');
+                
             } catch (error) {
-                console.error('Неизвестная ошибка:', error);
+                console.error('❌ Неизвестная ошибка:', error);
                 showError('Неизвестная ошибка. Попробуйте еще раз.');
             } finally {
                 hideInfo();
@@ -377,7 +403,7 @@
         
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
         function handleAuthError(error) {
-            console.error('Ошибка аутентификации:', error);
+            console.error('❌ Ошибка аутентификации:', error);
             
             if (error.message.includes('User already registered')) {
                 showError('Пользователь с таким email уже существует');
@@ -385,8 +411,6 @@
                 showError('Слишком слабый пароль. Используйте буквы, цифры и спецсимволы');
             } else if (error.message.includes('rate limit')) {
                 showError('Слишком много попыток. Попробуйте позже.');
-            } else if (error.message.includes('invalid phone')) {
-                showError('Некорректный номер телефона');
             } else {
                 showError(`Ошибка: ${error.message}`);
             }
