@@ -181,56 +181,70 @@
                 return;
             }
             
-            // Блокируем кнопку чтобы не спамили
+            // Блокируем кнопку
             loginBtn.disabled = true;
             loginBtn.textContent = 'Вход...';
             loginBtn.style.opacity = '0.7';
             
-            try {
-                // 1. Пробуем войти
-                const { data, error } = await client.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-                
-                if (error) {
-                    showError(error.message);
+            // Функция для повторных попыток
+            async function tryLogin(attempt = 1, maxAttempts = 3) {
+                try {
+                    // Пробуем войти
+                    const { data, error } = await client.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+                    
+                    if (error) {
+                        // Если это сетевая ошибка и есть попытки - повторяем
+                        if ((error.message.includes('fetch') || 
+                            error.message.includes('network') ||
+                            error.message.includes('Failed to fetch')) && 
+                            attempt < maxAttempts) {
+                            
+                            showStatus(`Повторная попытка ${attempt}/${maxAttempts}...`);
+                            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                            return tryLogin(attempt + 1, maxAttempts);
+                        }
+                        throw error;
+                    }
+                    
+                    // Если вход успешен
+                    showStatus('Вход выполнен, обновляем данные...');
+                    
+                    if (data.user) {
+                        const updateSuccess = await updateLastLogin(data.user.id);
+                        if (updateSuccess) {
+                            showStatus('Данные обновлены! Перенаправление...');
+                        } else {
+                            showStatus('Вход выполнен! Перенаправление...');
+                        }
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                    
+                } catch (error) {
+                    // Специфичные сообщения для разных ошибок
+                    if (error.message.includes('fetch') || 
+                        error.message.includes('network') ||
+                        error.message.includes('Failed to fetch')) {
+                        
+                        showError('Проблема с сетью. Попробуйте:<br>1. Переключить сеть (Wi-Fi/4G)<br>2. Отключить VPN<br>3. Проверить настройки APN (IPv4)');
+                    } else {
+                        showError(error.message);
+                    }
+                    
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'Войти';
                     loginBtn.style.opacity = '1';
-                    return;
+                    console.error('Login error:', error);
                 }
-                
-                // 2. Если вход успешен, показываем статус
-                showStatus('Вход выполнен, обновляем данные...');
-                
-                // 3. Обновляем last_login_at в профиле
-                if (data.user) {
-                    const updateSuccess = await updateLastLogin(data.user.id);
-                    
-                    if (updateSuccess) {
-                        showStatus('Данные обновлены! Перенаправление...');
-                        // 4. Ждем 1 секунду и редирект
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 1000);
-                    } else {
-                        showStatus('Вход выполнен, но данные не обновлены. Перенаправление...');
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 1000);
-                    }
-                } else {
-                    window.location.href = 'index.html';
-                }
-                
-            } catch (error) {
-                showError('Ошибка подключения к серверу');
-                console.error('Login error:', error);
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Войти';
-                loginBtn.style.opacity = '1';
             }
+            
+            // Запускаем первую попытку
+            await tryLogin();
         }
         
         function showError(message) {

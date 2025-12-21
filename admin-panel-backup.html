@@ -451,7 +451,7 @@
                 return;
             }
             
-            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Создано</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Создано</th><th>Длительность</th><th>План</th><th>Действия</th></tr></thead><tbody>';
             
             bookings.forEach(booking => {
                 let dateStr = booking.date || booking.formatted_date || 'Нет даты';
@@ -470,6 +470,8 @@
                     '<td>' + userEmail + '</td>' +
                     '<td style="color: ' + (statusColors[status] || '#fff') + '">' + (statusTexts[status] || status) + '</td>' +
                     '<td>' + createdStr + '</td>' +
+                    '<td>' + (booking.ttime || 'N/A') + '</td>'+
+                    '<td>' + (booking.plan || 'N/A') + '</td>'+
                     '<td>' +
                         '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')">✅</button>' +
                         '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')">❌</button>' +
@@ -558,26 +560,26 @@
                 return;
             }
             
-            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Username</th><th>Тип</th><th>Создан</th><th>Обновлен</th><th>Последний логин</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="data-table"><thead><tr><th>Почта</th><th>Телефон</th><th>Имя пользователя</th><th>Тип</th><th>Создан</th><th>Последний логин</th><th>Действия</th></tr></thead><tbody>';
             
             profiles.forEach(profile => {
-                const shortId = profile.id ? profile.id.substring(0, 8) + '...' : 'N/A';
+                const email = profile.email || 'N/A';
+                const phone = profile.phone || 'N/A';
                 const username = profile.username || (profile.email ? profile.email.split('@')[0] : 'user') || 'user';
                 const userType = profile.user_type || 'user';
                 const userTypeColor = userType === 'admin' ? '#00ff00' : '#8fd493';
                 const created = profile.created_at ? new Date(profile.created_at).toLocaleString('ru-RU') : 'Нет данных';
-                const updated = profile.updated_at ? new Date(profile.updated_at).toLocaleString('ru-RU') : 'Нет данных';
                 const emailForAttr = (profile.email || username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const lastLogin = profile.last_login_at || profile.last_sign_in_at || 'Never';
                 const usernameForAttr = username.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const lastLoginFormatted  = lastLogin !== 'Never' ? new Date(lastLogin).toLocaleString('ru-RU'): 'Никогда';
                 
                 html += '<tr>' +
-                    '<td title="' + (profile.id || '') + '">' + shortId + '</td>' +
+                    '<td>' + email + '</td>' +
+                    '<td>' + phone + '</td>' +
                     '<td>' + username + '</td>' +
                     '<td style="color: ' + userTypeColor + '">' + userType + '</td>' +
                     '<td>' + created + '</td>' +
-                    '<td>' + updated + '</td>' +
                     '<td>' + lastLoginFormatted + '</td>' +
                     '<td>' +
                         '<button class="action-btn" onclick="makeAdmin(\'' + profile.id + '\', \'' + emailForAttr + '\')">👑</button>' +
