@@ -560,10 +560,10 @@
                 return;
             }
             
-            let html = '<table class="data-table"><thead><tr><th>ID</th><th>Телефон</th><th>Username</th><th>Тип</th><th>Создан</th><th>Последний логин</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="data-table"><thead><tr><th>Почта</th><th>Телефон</th><th>Username</th><th>Тип</th><th>Создан</th><th>Последний логин</th><th>Действия</th></tr></thead><tbody>';
             
             profiles.forEach(profile => {
-                const shortId = profile.id ? profile.id.substring(0, 8) + '...' : 'N/A';
+                const email = profile.email || 'N/A';
                 const phone = profile.phone || 'N/A';
                 const username = profile.username || (profile.email ? profile.email.split('@')[0] : 'user') || 'user';
                 const userType = profile.user_type || 'user';
@@ -575,7 +575,7 @@
                 const lastLoginFormatted  = lastLogin !== 'Never' ? new Date(lastLogin).toLocaleString('ru-RU'): 'Никогда';
                 
                 html += '<tr>' +
-                    '<td title="' + (profile.id || '') + '">' + shortId + '</td>' +
+                    '<td>' + email + '</td>' +
                     '<td>' + phone + '</td>' +
                     '<td>' + username + '</td>' +
                     '<td style="color: ' + userTypeColor + '">' + userType + '</td>' +
