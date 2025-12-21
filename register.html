@@ -11,7 +11,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: 'Courier New', monospace;
+            font-family: monospace;
             background: #0a0a0a;
             color: #00ff88;
             min-height: 100vh;
@@ -160,6 +160,11 @@
             </div>
             
             <div class="form-group">
+                <label for="phone">📱 Телефон (обязательно)</label>
+                <input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required>
+            </div>
+            
+            <div class="form-group">
                 <label for="password">🔑 Пароль</label>
                 <input type="password" id="password" placeholder="Минимум 6 символов" required minlength="6">
             </div>
@@ -185,11 +190,9 @@
 
     <script>
         // ==================== SUPABASE НАСТРОЙКА ====================
-        // ОБЯЗАТЕЛЬНО объявляем переменные ДО их использования!
         const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
         
-        // Инициализируем Supabase сразу
         const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: {
                 autoRefreshToken: true,
@@ -202,22 +205,25 @@
         // ==================== РЕГИСТРАЦИЯ ====================
         async function register() {
             try {
-                // Сбрасываем сообщения
                 hideMessages();
                 
-                // Получаем данные
                 const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 
-                // Валидация
-                if (!email || !password || !confirmPassword) {
+                if (!email || !phone || !password || !confirmPassword) {
                     showError('Заполните все поля');
                     return;
                 }
                 
                 if (!email.includes('@')) {
                     showError('Введите корректный email');
+                    return;
+                }
+                
+                if (phone.length < 5) {
+                    showError('Введите корректный номер телефона');
                     return;
                 }
                 
@@ -231,57 +237,73 @@
                     return;
                 }
                 
-                console.log('Регистрация пользователя:', email);
+                console.log('Регистрация пользователя:', email, phone);
                 
-                // Регистрируем пользователя
-                const { data, error } = await client.auth.signUp({
+                // Регистрация в Supabase Auth
+                const { data: authData, error: authError } = await client.auth.signUp({
                     email: email,
                     password: password,
                     options: {
-                        emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/booking.html'
+                        emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/booking.html',
+                        data: {
+                            phone: phone
+                        }
                     }
                 });
                 
-                if (error) {
-                    console.error('Ошибка регистрации:', error);
+                if (authError) {
+                    console.error('Ошибка регистрации:', authError);
                     
-                    if (error.message.includes('User already registered')) {
+                    if (authError.message.includes('User already registered')) {
                         showError('Пользователь с таким email уже существует');
-                    } else if (error.message.includes('Password')) {
-                        showError('Слишком слабый пароль. Пароль должен содержать: заглавные и строчные латинские буквы, цифры, спецсимволы (минимум 1)');
-                    } else if (error.message.includes('rate limit')) {
+                    } else if (authError.message.includes('Password')) {
+                        showError('Слишком слабый пароль');
+                    } else if (authError.message.includes('rate limit')) {
                         showError('Слишком много попыток. Попробуйте позже.');
                     } else {
-                        showError(`Ошибка: ${error.message}`);
+                        showError(`Ошибка: ${authError.message}`);
                     }
                     return;
                 }
                 
-                // Успех
-                console.log('Регистрация успешна:', data);
-                
-                if (data.user && data.user.identities && data.user.identities.length === 0) {
-                    showError('Пользователь с таким email уже существует');
-                    return;
+                // Создание профиля в таблице public.profiles
+                if (authData.user) {
+                    const { error: profileError } = await client
+                        .from('profiles')
+                        .insert({
+                            id: authData.user.id,
+                            email: email,
+                            phone: phone,
+                            created_at: new Date().toISOString()
+                        });
+                    
+                    if (profileError) {
+                        console.error('Ошибка создания профиля:', profileError);
+                        
+                        if (profileError.code === '23505') {
+                            showError('Пользователь с таким email уже существует');
+                        } else {
+                            showError(`Ошибка создания профиля: ${profileError.message}`);
+                        }
+                        return;
+                    }
                 }
                 
-                if (data.user && !data.session) {
-                    // Требуется подтверждение email
+                // Успех
+                console.log('Регистрация успешна:', authData);
+                
+                if (authData.user && !authData.session) {
                     showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
                     
-                    // Очищаем форму
                     document.getElementById('registerForm').reset();
                     
-                    // Перенаправляем на страницу входа через 3 секунды
                     setTimeout(() => {
                         window.location.href = 'login.html';
                     }, 10000);
                     
-                } else if (data.session) {
-                    // Автоматически вошли
+                } else if (authData.session) {
                     showSuccess('✅ Регистрация и вход успешны!');
                     
-                    // Перенаправляем на страницу бронирования
                     setTimeout(() => {
                         window.location.href = 'booking.html';
                     }, 2000);
