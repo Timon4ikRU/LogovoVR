@@ -238,12 +238,48 @@ function playStatusSound(type) {
 1. Система отзывов
 2. Галерея фото/видео
 
+### Список музыки
+1. 8 Bit Era - Super Mario
+2. Александр Рыбак - Fairytale
+3. AP$ENT - Можно я с тобой
+4. C418:
+  - Area Math
+  - Wet Hands
+5. Тимофей Якубов - Contraption
+6. Half-Life - тема Альянса
+7. Dyan Dxxdy - Cute Depressed (+Slowed версия)
+8. Imagine Dragons:
+  - Believer
+  - Bones
+  - Natural
+  - Thunder
+9. Король и Шут: 
+  - Ели мясо мужики
+  - Кукла колдуна (версия из фильма)
+  - Прыгну со скалы
+10. Любэ - Конь
+11. Manowar - Warriors of the World
+12. Need for Speed Underground - Doomsday
+13. ReLogic:
+  - Alternate Day
+  - Dungeon
+  - Eclipse
+  - Ice
+  - Mushrooms
+  - Ocean
+  - Overworld Day
+  - Overworld Night
+  - Title Screen
+14. Sheet Music Boss - Rush E♭
+15. Star Wars - The Imperial March
+16. W&W - OIIA Cat
+
 ---
 
 ## Контакты и поддержка
 
 ### Техническая информация
-- **Версия**: 1.26.0
+- **Версия**: 1.27.0
 - **Дата создания версии**: 2026
 - **Автор**: Timon4ik
 - **Техподдержка**: через форму правок
@@ -276,7 +312,7 @@ function playStatusSound(type) {
   - *Пример: исправление вёрстки на мобильных*
 
 - **Суффикс -x** — обновление документации
-  - *Пример: 1.26.0-1*
+  - *Пример: 1.10.0-1*
 
 
 ---
