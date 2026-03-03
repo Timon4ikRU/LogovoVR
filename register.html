@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация - Logovo VR</title>
     
-    <!-- Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -160,6 +163,11 @@
             </div>
             
             <div class="form-group">
+                <label for="username">👤 Имя пользователя</label>
+                <input type="text" id="username" placeholder="username" required minlength="3">
+            </div>
+            
+            <div class="form-group">
                 <label for="phone">📱 Телефон (обязательно)</label>
                 <input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required>
             </div>
@@ -189,18 +197,24 @@
     </div>
 
     <script>
-        // ==================== SUPABASE НАСТРОЙКА ====================
-        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        // ==================== FIREBASE КОНФИГ ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
+        };
         
-        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: true,
-                storage: localStorage
-            }
-        });
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const analytics = firebase.analytics();
+        
+        console.log("🔥 Firebase подключён!");
         
         // ==================== РЕГИСТРАЦИЯ ====================
         async function register() {
@@ -208,11 +222,12 @@
                 hideMessages();
                 
                 const email = document.getElementById('email').value.trim();
+                const username = document.getElementById('username').value.trim();
                 const phone = document.getElementById('phone').value.trim();
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 
-                if (!email || !phone || !password || !confirmPassword) {
+                if (!email || !username || !phone || !password || !confirmPassword) {
                     showError('Заполните все поля');
                     return;
                 }
@@ -222,7 +237,12 @@
                     return;
                 }
                 
-                if (phone.length < 5) {
+                if (username.length < 3) {
+                    showError('Имя пользователя должно быть не менее 3 символов');
+                    return;
+                }
+                
+                if (phone.replace(/\D/g, '').length < 10) {
                     showError('Введите корректный номер телефона');
                     return;
                 }
@@ -237,81 +257,72 @@
                     return;
                 }
                 
-                console.log('Регистрация пользователя:', email, phone);
+                console.log('Регистрация пользователя:', email, username, phone);
                 
-                // Регистрация в Supabase Auth
-                const { data: authData, error: authError } = await client.auth.signUp({
+                // Регистрация в Firebase Auth
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                console.log('✅ Пользователь создан в Auth:', user.uid);
+                
+                // Создание профиля в Realtime Database
+                // ВАЖНО: пишем в profiles/[uid], а не в profiles/
+                await database.ref('profiles/' + user.uid).set({
+                    id: user.uid,
                     email: email,
-                    password: password,
-                    options: {
-                        emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/booking.html',
-                        data: {
-                            phone: phone
-                        }
-                    }
+                    username: username,
+                    phone: phone,
+                    user_type: 'user',
+                    created_at: new Date().toISOString(),
+                    last_login_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                 });
                 
-                if (authError) {
-                    console.error('Ошибка регистрации:', authError);
-                    
-                    if (authError.message.includes('User already registered')) {
-                        showError('Пользователь с таким email уже существует');
-                    } else if (authError.message.includes('Password')) {
-                        showError('Слишком слабый пароль');
-                    } else if (authError.message.includes('rate limit')) {
-                        showError('Слишком много попыток. Попробуйте позже.');
-                    } else {
-                        showError(`Ошибка: ${authError.message}`);
-                    }
-                    return;
-                }
+                console.log('✅ Профиль создан в Realtime Database');
                 
-                // Создание профиля в таблице public.profiles
-                if (authData.user) {
-                    const { error: profileError } = await client
-                        .from('profiles')
-                        .insert({
-                            id: authData.user.id,
-                            email: email,
-                            phone: phone,
-                            created_at: new Date().toISOString()
-                        });
-                    
-                    if (profileError) {
-                        console.error('Ошибка создания профиля:', profileError);
-                        
-                        if (profileError.code === '23505') {
-                            showError('Пользователь с таким email уже существует');
-                        } else {
-                            showError(`Ошибка создания профиля: ${profileError.message}`);
-                        }
-                        return;
-                    }
-                }
+                // Отправка письма с подтверждением email
+                await user.sendEmailVerification({
+                    url: 'https://timon4ikru.github.io/LogovoVR/login.html'
+                });
+                
+                console.log('✅ Письмо подтверждения отправлено');
                 
                 // Успех
-                console.log('Регистрация успешна:', authData);
+                showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
                 
-                if (authData.user && !authData.session) {
-                    showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
-                    
-                    document.getElementById('registerForm').reset();
-                    
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 10000);
-                    
-                } else if (authData.session) {
-                    showSuccess('✅ Регистрация и вход успешны!');
-                    
-                    setTimeout(() => {
-                        window.location.href = 'booking.html';
-                    }, 2000);
-                }
+                document.getElementById('registerForm').reset();
+                
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 5000);
                 
             } catch (error) {
-                console.error('Неизвестная ошибка:', error);
-                showError('Неизвестная ошибка. Попробуйте еще раз.');
+                console.error('❌ Ошибка регистрации:', error);
+                
+                // Обработка ошибок Firebase
+                let errorMessage = 'Ошибка регистрации';
+                
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Пользователь с таким email уже существует';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Неверный формат email';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Слишком слабый пароль. Используйте минимум 6 символов';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage = 'Проблема с сетью. Проверьте подключение';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Слишком много попыток. Попробуйте позже';
+                        break;
+                    default:
+                        errorMessage = error.message;
+                }
+                
+                showError(errorMessage);
             }
         }
         
@@ -328,7 +339,7 @@
         
         function showSuccess(message) {
             const successEl = document.getElementById('successMessage');
-            successEl.textContent = message;
+            successEl.innerHTML = message;
             successEl.style.display = 'block';
             
             setTimeout(() => {
@@ -341,6 +352,28 @@
             document.getElementById('successMessage').style.display = 'none';
         }
         
+        // Маска для телефона
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 0) {
+                let formatted = '+7';
+                if (value.length > 1) {
+                    formatted += ' (' + value.substring(1, 4);
+                }
+                if (value.length >= 4) {
+                    formatted += ') ' + value.substring(4, 7);
+                }
+                if (value.length >= 7) {
+                    formatted += '-' + value.substring(7, 9);
+                }
+                if (value.length >= 9) {
+                    formatted += '-' + value.substring(9, 11);
+                }
+                e.target.value = formatted;
+            }
+        });
+        
         // Авто-ввод при нажатии Enter
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -350,15 +383,12 @@
         
         // Проверяем, если пользователь уже авторизован, перенаправляем
         document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                const { data: { session } } = await client.auth.getSession();
-                if (session) {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
                     console.log('Пользователь уже авторизован, перенаправляем...');
                     window.location.href = 'booking.html';
                 }
-            } catch (error) {
-                console.log('Проверка авторизации:', error);
-            }
+            });
         });
     </script>
 </body>

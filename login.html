@@ -2,7 +2,10 @@
 <html>
 <head>
     <title>Вход - Logovo VR</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -128,19 +131,32 @@
     </div>
 
     <script>
-        // ============== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==============
-        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        // ============== FIREBASE КОНФИГ ==============
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
+        };
         
-        // ИНИЦИАЛИЗАЦИЯ SUPABASE (ГЛОБАЛЬНО)
-        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // ИНИЦИАЛИЗАЦИЯ FIREBASE
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        console.log("🔥 Firebase подключён!");
         
         // ============== ФУНКЦИИ ==============
         async function checkAuth() {
             try {
-                const { data: { user }, error } = await client.auth.getUser();
-                if (error) throw error;
-                if (user) window.location.href = 'index.html';
+                firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        window.location.href = 'index.html';
+                    }
+                });
             } catch (error) {
                 console.log('Пользователь не авторизован');
             }
@@ -149,21 +165,13 @@
         // Функция обновления last_login_at
         async function updateLastLogin(userId) {
             try {
-                const { error } = await client
-                    .from('profiles')
-                    .update({ 
-                        last_login_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', userId);
-                
-                if (error) {
-                    console.error('Ошибка обновления last_login:', error);
-                    return false;
-                }
+                await database.ref('profiles/' + userId).update({
+                    last_login_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
                 return true;
             } catch (error) {
-                console.error('Ошибка в updateLastLogin:', error);
+                console.error('Ошибка обновления last_login:', error);
                 return false;
             }
         }
@@ -190,30 +198,14 @@
             async function tryLogin(attempt = 1, maxAttempts = 3) {
                 try {
                     // Пробуем войти
-                    const { data, error } = await client.auth.signInWithPassword({
-                        email: email,
-                        password: password
-                    });
-                    
-                    if (error) {
-                        // Если это сетевая ошибка и есть попытки - повторяем
-                        if ((error.message.includes('fetch') || 
-                            error.message.includes('network') ||
-                            error.message.includes('Failed to fetch')) && 
-                            attempt < maxAttempts) {
-                            
-                            showStatus(`Повторная попытка ${attempt}/${maxAttempts}...`);
-                            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-                            return tryLogin(attempt + 1, maxAttempts);
-                        }
-                        throw error;
-                    }
+                    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
                     
                     // Если вход успешен
                     showStatus('Вход выполнен, обновляем данные...');
                     
-                    if (data.user) {
-                        const updateSuccess = await updateLastLogin(data.user.id);
+                    if (user) {
+                        const updateSuccess = await updateLastLogin(user.uid);
                         if (updateSuccess) {
                             showStatus('Данные обновлены! Перенаправление...');
                         } else {
@@ -226,20 +218,45 @@
                     }, 1000);
                     
                 } catch (error) {
-                    // Специфичные сообщения для разных ошибок
-                    if (error.message.includes('fetch') || 
-                        error.message.includes('network') ||
-                        error.message.includes('Failed to fetch')) {
-                        
-                        showError('Проблема с сетью. Попробуйте:<br>1. Переключить сеть (Wi-Fi/4G)<br>2. Отключить VPN<br>3. Проверить настройки APN (IPv4)');
-                    } else {
-                        showError(error.message);
+                    console.error('Firebase Auth Error:', error);
+                    
+                    // Обработка разных кодов ошибок Firebase
+                    let errorMessage = 'Ошибка входа';
+                    
+                    switch (error.code) {
+                        case 'auth/invalid-email':
+                            errorMessage = 'Неверный формат email';
+                            break;
+                        case 'auth/user-disabled':
+                            errorMessage = 'Пользователь заблокирован';
+                            break;
+                        case 'auth/user-not-found':
+                            errorMessage = 'Пользователь не найден';
+                            break;
+                        case 'auth/wrong-password':
+                            errorMessage = 'Неверный пароль';
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage = 'Слишком много попыток. Попробуйте позже';
+                            break;
+                        case 'auth/network-request-failed':
+                            // Сетевая ошибка - пробуем повторить
+                            if (attempt < maxAttempts) {
+                                showStatus(`Повторная попытка ${attempt}/${maxAttempts}...`);
+                                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                                return tryLogin(attempt + 1, maxAttempts);
+                            }
+                            errorMessage = 'Проблема с сетью. Проверьте подключение к интернету';
+                            break;
+                        default:
+                            errorMessage = error.message;
                     }
+                    
+                    showError(errorMessage);
                     
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'Войти';
                     loginBtn.style.opacity = '1';
-                    console.error('Login error:', error);
                 }
             }
             
@@ -249,13 +266,13 @@
         
         function showError(message) {
             const errorEl = document.getElementById('error');
-            errorEl.textContent = message;
+            errorEl.innerHTML = message;
             errorEl.style.display = 'block';
         }
         
         function showStatus(message) {
             const statusEl = document.getElementById('status');
-            statusEl.textContent = message;
+            statusEl.innerHTML = message;
             statusEl.style.display = 'block';
         }
         

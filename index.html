@@ -8,8 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="icon" href="logo.jpeg" type="image/jpeg">
     
-    <!-- SUPABASE КЛИЕНТ -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&display=swap');
@@ -877,7 +880,7 @@
     </style>
 </head>
 <body>
-    <!-- SUPABASE AUTH ПАНЕЛЬ -->
+    <!-- FIREBASE AUTH ПАНЕЛЬ -->
     <div id="authPanel" class="user-auth-panel">
         <div id="userInfo" class="user-info">
             <div style="color: #ffaa00; font-weight: bold;">Загрузка...</div>
@@ -997,7 +1000,7 @@
         </p>
         
         <div class="address">
-            ВНИМАНИЕ!!! В связи с отсутствием доступа к датабазе (у разработчика сайта не загружается сайт датабазы)</br> и её отключением из-за неактивности, авторизация временно недоступна, как и остальные функции датабазы</br>(бронь/лидерборд/админ-панель)
+            ВНИМАНИЕ!!! База данных Firebase успешно подключена! Авторизация работает.
         </div>
 
         <div class="cta-buttons">
@@ -1109,17 +1112,24 @@
     </a>
 
     <script>
-        // ==================== SUPABASE НАСТРОЙКА ====================
-        const SUPABASE_CONFIG = {
-            url: 'https://gdbemyluqtnfytvujfnu.supabase.co',
-            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg'
+        // ==================== FIREBASE ИНИЦИАЛИЗАЦИЯ ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
         };
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const analytics = firebase.analytics();
         
-        // Инициализация Supabase
-        const client = window.supabase.createClient(
-            SUPABASE_CONFIG.url, 
-            SUPABASE_CONFIG.key
-        );
+        console.log("🔥 Firebase успешно подключён!");
         
         // ==================== ФУНКЦИИ АВТОРИЗАЦИИ ====================
         let authPanelVisible = false;
@@ -1151,26 +1161,19 @@
         }
         
         // Проверка авторизации
-        async function checkAuth() {
-            try {
-                const { data: { user }, error } = await client.auth.getUser();
-                
-                if (error) throw error;
-                
+        function checkAuth() {
+            firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
                     // ПОЛЬЗОВАТЕЛЬ ВОШЁЛ
                     showUserPanel(user);
                     
                     // Проверяем, админ ли пользователь
-                    await checkAdminStatus(user.id);
+                    await checkAdminStatus(user.uid);
                 } else {
                     // ПОЛЬЗОВАТЕЛЬ НЕ АВТОРИЗОВАН
                     showLoginPanel();
                 }
-            } catch (error) {
-                console.error('Ошибка проверки авторизации:', error);
-                showLoginPanel();
-            }
+            });
         }
         
         // Показываем панель для авторизованного пользователя
@@ -1187,7 +1190,7 @@
             userInfo.innerHTML = `
                 <div class="user-email">${user.email}</div>
                 <div style="font-size: 12px; color: #8fd493; margin-top: 5px;">
-                    ID: ${user.id.substring(0, 8)}...
+                    ID: ${user.uid.substring(0, 8)}...
                 </div>
             `;
             
@@ -1227,13 +1230,10 @@
         // Проверяем, является ли пользователь админом
         async function checkAdminStatus(userId) {
             try {
-                const { data, error } = await client
-                    .from('profiles')
-                    .select('user_type')
-                    .eq('id', userId)
-                    .single();
-                    
-                if (data && data.user_type === 'admin') {
+                const snapshot = await database.ref(`profiles/${userId}/user_type`).once('value');
+                const userType = snapshot.val();
+                
+                if (userType === 'admin') {
                     // ПОКАЗЫВАЕМ ССЫЛКУ НА АДМИН-ПАНЕЛЬ
                     const adminLink = document.getElementById('adminLink');
                     if (adminLink) {
@@ -1249,10 +1249,7 @@
         // Выход из системы
         async function logout() {
             try {
-                const { error } = await client.auth.signOut();
-                
-                if (error) throw error;
-                
+                await firebase.auth().signOut();
                 // Перезагружаем страницу
                 window.location.reload();
             } catch (error) {
@@ -1265,15 +1262,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Проверяем авторизацию при загрузке
             checkAuth();
-            
-            // Слушаем изменения авторизации (real-time)
-            client.auth.onAuthStateChange((event, session) => {
-                console.log('Статус авторизации изменился:', event);
-                
-                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-                    checkAuth();
-                }
-            });
         });
 
         const successSound = document.getElementById('successSound');

@@ -29,7 +29,11 @@
         .loading { text-align: center; padding: 50px; color: #666; }
         @media (max-width: 768px) { .filters, .period-selector { flex-direction: column; align-items: center; } .filter-btn, .period-btn { width: 200px; } }
     </style>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
 </head>
 <body>
     <div class="container">
@@ -62,15 +66,29 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        // ==================== FIREBASE КОНФИГ ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
+        };
         
-        let supabase = null;
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const analytics = firebase.analytics();
+        
+        console.log("🔥 Firebase подключён!");
+        
         let currentFilter = 'all';
         let currentPeriod = 'overall';
 
         document.addEventListener('DOMContentLoaded', async function() {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             await loadLeaderboard();
             await loadStatsSummary();
         });
@@ -94,39 +112,102 @@
             leaderboardDiv.innerHTML = '<div class="loading">Загрузка таблицы лидеров...</div>';
             
             try {
-                // Теперь загружаем из user_stats
-                let query = supabase
-                    .from('user_stats')
-                    .select('*')
-                    .order('total_points', { ascending: false })
-                    .limit(100); // Можно увеличить
+                // Загружаем все записи из leaderboard
+                const snapshot = await database.ref('leaderboard').once('value');
+                const recordsData = snapshot.val();
                 
-                // Фильтр по периоду (теперь через last_updated)
-                const now = new Date();
-                if (currentPeriod === 'year') {
-                    const yearStart = new Date(now.getFullYear(), 0, 1);
-                    query = query.gte('last_updated', yearStart.toISOString());
-                } else if (currentPeriod === 'month') {
-                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                    query = query.gte('last_updated', monthStart.toISOString());
-                } else if (currentPeriod === 'week') {
-                    const weekStart = new Date(now);
-                    weekStart.setDate(now.getDate() - 7);
-                    query = query.gte('last_updated', weekStart.toISOString());
-                } else if (currentPeriod === 'today') {
-                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    query = query.gte('last_updated', todayStart.toISOString());
+                let allRecords = [];
+                if (recordsData) {
+                    allRecords = Object.keys(recordsData).map(key => ({
+                        id: key,
+                        ...recordsData[key]
+                    }));
                 }
                 
-                const { data: userStats, error } = await query;
-                
-                if (error) throw error;
-                
                 // Если записей нет
-                if (!userStats || userStats.length === 0) {
+                if (!allRecords || allRecords.length === 0) {
                     leaderboardDiv.innerHTML = '<div style="text-align:center; padding:50px; color:#666;">Еще нет записей в таблице лидеров</div>';
                     return;
                 }
+                
+                // Применяем фильтр по периоду
+                let filteredRecords = allRecords;
+                const now = new Date();
+                
+                if (currentPeriod !== 'overall') {
+                    const periodStart = new Date(now);
+                    
+                    if (currentPeriod === 'year') {
+                        periodStart.setMonth(0, 1); // Начало года
+                        periodStart.setHours(0, 0, 0, 0);
+                    } else if (currentPeriod === 'month') {
+                        periodStart.setDate(1); // Начало месяца
+                        periodStart.setHours(0, 0, 0, 0);
+                    } else if (currentPeriod === 'week') {
+                        periodStart.setDate(now.getDate() - 7);
+                    } else if (currentPeriod === 'today') {
+                        periodStart.setHours(0, 0, 0, 0);
+                    }
+                    
+                    filteredRecords = allRecords.filter(r => {
+                        const recordDate = new Date(r.created_at);
+                        return recordDate >= periodStart;
+                    });
+                }
+                
+                // Группируем по пользователям
+                const userStats = {};
+                
+                filteredRecords.forEach(record => {
+                    const userId = record.user_id || 'anonymous';
+                    const username = record.username || record.user_email || 'Аноним';
+                    
+                    if (!userStats[userId]) {
+                        userStats[userId] = {
+                            username: username,
+                            total_brews: 0,
+                            tea_count: 0,
+                            coffee_count: 0,
+                            quantum_count: 0,
+                            total_points: 0,
+                            last_updated: record.created_at
+                        };
+                    }
+                    
+                    userStats[userId].total_brews++;
+                    
+                    if (record.drink === 'tea') {
+                        userStats[userId].tea_count++;
+                        userStats[userId].total_points += record.score || 10;
+                    } else if (record.drink === 'coffee') {
+                        userStats[userId].coffee_count++;
+                        userStats[userId].total_points += record.score || 20;
+                    } else if (record.drink === 'quantum') {
+                        userStats[userId].quantum_count++;
+                        userStats[userId].total_points += record.score || 50;
+                    }
+                    
+                    if (new Date(record.created_at) > new Date(userStats[userId].last_updated)) {
+                        userStats[userId].last_updated = record.created_at;
+                    }
+                });
+                
+                // Применяем фильтр по типу напитка
+                let filteredUsers = Object.values(userStats);
+                
+                if (currentFilter === 'tea') {
+                    filteredUsers = filteredUsers.filter(u => u.tea_count > 0);
+                } else if (currentFilter === 'coffee') {
+                    filteredUsers = filteredUsers.filter(u => u.coffee_count > 0);
+                } else if (currentFilter === 'quantum') {
+                    filteredUsers = filteredUsers.filter(u => u.quantum_count > 0);
+                }
+                
+                // Сортируем по очкам
+                filteredUsers.sort((a, b) => b.total_points - a.total_points);
+                
+                // Ограничиваем топ-100
+                const topUsers = filteredUsers.slice(0, 100);
                 
                 // Отображаем таблицу
                 let html = `<table class="leaderboard-table"><thead><tr>
@@ -141,9 +222,10 @@
                     <th>Обновлено</th>
                 </tr></thead><tbody>`;
                 
-                userStats.forEach((user, index) => {
+                topUsers.forEach((user, index) => {
                     const rankClass = index < 3 ? `rank-${index + 1}` : '';
-                    const lastUpdated = new Date(user.last_updated).toLocaleDateString('ru-RU');
+                    const avgPoints = user.total_brews > 0 ? (user.total_points / user.total_brews).toFixed(1) : '0.0';
+                    const lastUpdated = user.last_updated ? new Date(user.last_updated).toLocaleDateString('ru-RU') : 'Н/Д';
                     
                     html += `<tr class="${rankClass}">
                         <td>${index + 1}</td>
@@ -153,7 +235,7 @@
                         <td>${user.coffee_count}</td>
                         <td>${user.quantum_count}</td>
                         <td><strong>${user.total_points}</strong></td>
-                        <td>${user.avg_points.toFixed(1)}</td>
+                        <td>${avgPoints}</td>
                         <td>${lastUpdated}</td>
                     </tr>`;
                 });
@@ -169,11 +251,16 @@
 
         async function loadStatsSummary() {
             try {
-                const { data: allRecords, error } = await supabase
-                    .from('leaderboard')
-                    .select('user_id, drink, score, created_at');
+                const snapshot = await database.ref('leaderboard').once('value');
+                const recordsData = snapshot.val();
                 
-                if (error) throw error;
+                let allRecords = [];
+                if (recordsData) {
+                    allRecords = Object.keys(recordsData).map(key => ({
+                        id: key,
+                        ...recordsData[key]
+                    }));
+                }
                 
                 // Если нет записей
                 if (!allRecords || allRecords.length === 0) {
@@ -198,7 +285,8 @@
                 // Самый активный пользователь
                 const userBrews = {};
                 allRecords.forEach(record => {
-                    userBrews[record.user_id] = (userBrews[record.user_id] || 0) + 1;
+                    const userId = record.user_id || 'anonymous';
+                    userBrews[userId] = (userBrews[userId] || 0) + 1;
                 });
                 
                 const userIds = Object.keys(userBrews);
@@ -219,7 +307,7 @@
                     <div class="stats-card">
                         <h3>🔥 АКТИВНОСТЬ</h3>
                         <div>За последние 7 дней: <strong>${recentCount} варок</strong></div>
-                        <div>Варок в день: <strong>${Math.round(recentCount / 7)}</strong></div>
+                        <div>Варок в день: <strong>${(recentCount / 7).toFixed(1)}</strong></div>
                         <div>Самый активный: <strong>${mostActiveCount} варок</strong></div>
                         <div>Квантовый шанс: <strong>${totalBrews > 0 ? (totalQuantum/totalBrews*100).toFixed(2) : '0.00'}%</strong></div>
                     </div>

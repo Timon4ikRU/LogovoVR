@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Бронирование - Logovo VR</title>
     
-    <!-- Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -345,7 +348,7 @@
                             <option value="">Выберите время</option>
                             <option value="12:00">12:00</option>
                             <option value="12:30">12:30</option>
-                             <option value="13:00">13:00</option>
+                            <option value="13:00">13:00</option>
                             <option value="13:30">13:30</option>
                             <option value="14:00">14:00</option>
                             <option value="14:30">14:30</option>
@@ -435,19 +438,24 @@
     </div>
 
     <script>
-        // ==================== SUPABASE НАСТРОЙКА ====================
-        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        // ==================== FIREBASE КОНФИГ ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
+        };
         
-        // Инициализация Supabase
-        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: true,
-                storage: localStorage
-            }
-        });
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const analytics = firebase.analytics();
+        
+        console.log("🔥 Firebase подключён!");
         
         // ==================== ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
@@ -564,32 +572,25 @@
             try {
                 console.log('🔐 Проверка авторизации...');
                 
-                const { data: { session }, error } = await client.auth.getSession();
-                
-                if (error) {
-                    console.error('Ошибка получения сессии:', error);
-                    showAuthRequired();
-                    return;
-                }
-                
-                if (session && session.user) {
-                    currentUser = session.user;
-                    console.log('✅ Пользователь авторизован:', currentUser.email);
-                    
-                    document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('authRequired').style.display = 'none';
-                    document.getElementById('bookingForm').style.display = 'block';
-                    
-                    loadUserBookings();
-                    
-                    if (window.location.hash) {
-                        window.history.replaceState(null, null, window.location.pathname);
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        console.log('✅ Пользователь авторизован:', currentUser.email);
+                        
+                        document.getElementById('userEmail').textContent = currentUser.email;
+                        document.getElementById('authRequired').style.display = 'none';
+                        document.getElementById('bookingForm').style.display = 'block';
+                        
+                        await loadUserBookings();
+                        
+                        if (window.location.hash) {
+                            window.history.replaceState(null, null, window.location.pathname);
+                        }
+                    } else {
+                        console.log('❌ Пользователь не авторизован');
+                        showAuthRequired();
                     }
-                    
-                } else {
-                    console.log('❌ Пользователь не авторизован');
-                    showAuthRequired();
-                }
+                });
                 
             } catch (error) {
                 console.error('Ошибка проверки авторизации:', error);
@@ -606,17 +607,10 @@
         
         async function logout() {
             try {
-                const { error } = await client.auth.signOut();
-                if (error) throw error;
-                
-                localStorage.removeItem('supabaseClient.auth.token');
-                localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
-                
+                await firebase.auth().signOut();
                 showAuthRequired();
-                
             } catch (error) {
                 console.error('Ошибка выхода:', error);
-                localStorage.clear();
                 showAuthRequired();
             }
         }
@@ -731,16 +725,22 @@
                 const date = document.getElementById('bookingDate').value;
                 if (!date) return;
                 
-                // Получаем ВСЕ бронирования на эту дату
-                const { data: existingBookings, error } = await client
-                    .from('bookings')
-                    .select('*')
-                    .eq('date', date)
-                    .in('status', ['pending', 'confirmed']);
+                // Получаем ВСЕ бронирования на эту дату из Firebase
+                const snapshot = await database.ref('bookings')
+                    .orderByChild('date')
+                    .equalTo(date)
+                    .once('value');
                 
-                if (error) {
-                    console.error('Ошибка загрузки бронирований:', error);
-                    return;
+                const bookingsData = snapshot.val();
+                let existingBookings = [];
+                
+                if (bookingsData) {
+                    existingBookings = Object.keys(bookingsData)
+                        .map(key => ({
+                            id: key,
+                            ...bookingsData[key]
+                        }))
+                        .filter(b => b.status === 'pending' || b.status === 'confirmed');
                 }
                 
                 // Получаем текущее время
@@ -792,9 +792,11 @@
                         for (const booking of existingBookings) {
                             // Нормализуем время брони
                             let bookingHours = booking.hours;
-                            if (bookingHours.includes(':')) {
+                            if (bookingHours && bookingHours.includes(':')) {
                                 const timeParts = bookingHours.split(':');
                                 bookingHours = `${timeParts[0]}:${timeParts[1]}`;
+                            } else {
+                                continue; // Пропускаем если нет времени
                             }
                             
                             const bookingStart = new Date(`${booking.date}T${bookingHours}`);
@@ -949,16 +951,21 @@
                 }
                 
                 // Проверка конфликтов с учетом времени
-                const { data: existingBookings, error: bookingsError } = await client
-                    .from('bookings')
-                    .select('*')
-                    .eq('date', date)
-                    .in('status', ['pending', 'confirmed']);
+                const snapshot = await database.ref('bookings')
+                    .orderByChild('date')
+                    .equalTo(date)
+                    .once('value');
                 
-                if (bookingsError) {
-                    console.error('Ошибка проверки бронирований:', bookingsError);
-                    showError('Ошибка проверки доступности времени');
-                    return;
+                const bookingsData = snapshot.val();
+                let existingBookings = [];
+                
+                if (bookingsData) {
+                    existingBookings = Object.keys(bookingsData)
+                        .map(key => ({
+                            id: key,
+                            ...bookingsData[key]
+                        }))
+                        .filter(b => b.status === 'pending' || b.status === 'confirmed');
                 }
                 
                 let totalPeople = 0;
@@ -969,6 +976,8 @@
                 
                 if (existingBookings && existingBookings.length > 0) {
                     for (const booking of existingBookings) {
+                        if (!booking.hours) continue;
+                        
                         let bookingHours = booking.hours;
                         if (bookingHours.includes(':')) {
                             const timeParts = bookingHours.split(':');
@@ -1017,38 +1026,30 @@
                 console.log('Люди:', people);
                 console.log('Суммарно людей в это время:', totalAfterBooking);
                 
-                // Создаём бронирование
-                const { data, error } = await client
-                    .from('bookings')
-                    .insert([{
-                        date: date,
-                        hours: time,
-                        people: people,
-                        phone: phone,
-                        notes: notes || null,
-                        status: 'pending',
-                        user_id: currentUser.id,
-                        user_email: currentUser.email,
-                        plan: plan.name, // text поле
-                        ttime: totalTime // int4 поле (минуты)
-                    }])
-                    .select();
+                // Создаём новый ключ для бронирования
+                const newBookingRef = database.ref('bookings').push();
+                const bookingId = newBookingRef.key;
                 
-                if (error) {
-                    console.error('Ошибка создания брони:', error);
-                    
-                    if (error.message.includes('JWT')) {
-                        showError('Сессия истекла. Пожалуйста, войдите снова.');
-                        logout();
-                        return;
-                    }
-                    
-                    throw error;
-                }
+                const bookingData = {
+                    id: bookingId,
+                    date: date,
+                    hours: time,
+                    people: people,
+                    phone: phone,
+                    notes: notes || null,
+                    status: 'pending',
+                    user_id: currentUser.uid,
+                    user_email: currentUser.email,
+                    plan: plan.name,
+                    ttime: totalTime,
+                    created_at: new Date().toISOString()
+                };
+                
+                await newBookingRef.set(bookingData);
                 
                 // Успех
-                console.log('✅ Бронирование создано:', data);
-                showSuccess(`✅ Бронирование #${data[0].id} создано! Мы свяжемся с вами для подтверждения.`);
+                console.log('✅ Бронирование создано:', bookingId);
+                showSuccess(`✅ Бронирование #${bookingId} создано! Мы свяжемся с вами для подтверждения.`);
                 
                 // Сбрасываем форму
                 document.getElementById('bookingFormElement').reset();
@@ -1064,7 +1065,7 @@
                 await updateAvailableTimes();
                 
                 // Обновляем список бронирований
-                loadUserBookings();
+                await loadUserBookings();
                 
             } catch (error) {
                 console.error('❌ Ошибка создания брони:', error);
@@ -1079,25 +1080,33 @@
                 
                 console.log('📋 Загрузка бронирований...');
                 
-                const { data: bookings, error } = await client
-                    .from('bookings')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
+                const snapshot = await database.ref('bookings')
+                    .orderByChild('user_id')
+                    .equalTo(currentUser.uid)
+                    .once('value');
                 
-                if (error) {
-                    console.error('Ошибка загрузки бронирований:', error);
-                    document.getElementById('bookingsList').innerHTML = 
-                        '<p style="color: #ff4444;">Ошибка загрузки бронирований</p>';
-                    return;
+                const bookingsData = snapshot.val();
+                let bookings = [];
+                
+                if (bookingsData) {
+                    bookings = Object.keys(bookingsData)
+                        .map(key => ({
+                            id: key,
+                            ...bookingsData[key]
+                        }))
+                        .sort((a, b) => {
+                            const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+                            const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+                            return dateB - dateA;
+                        });
                 }
                 
-                displayBookings(bookings || []);
+                displayBookings(bookings);
                 
             } catch (error) {
-                console.error('Ошибка:', error);
+                console.error('Ошибка загрузки бронирований:', error);
                 document.getElementById('bookingsList').innerHTML = 
-                    '<p style="color: #ff4444;">Ошибка загрузки</p>';
+                    '<p style="color: #ff4444;">Ошибка загрузки бронирований</p>';
             }
         }
         
@@ -1125,7 +1134,7 @@
                     year: 'numeric'
                 });
                 
-                const created = new Date(booking.created_at);
+                const created = booking.created_at ? new Date(booking.created_at) : new Date();
                 const createdFormatted = created.toLocaleString('ru-RU');
                 
                 // Время окончания (с учетом минут и перехода через полночь)
@@ -1173,7 +1182,7 @@
                             <div style="font-size: 0.8em; color: #8fd493;">
                                 Создано: ${createdFormatted}
                             </div>
-                            ${canCancel ? `<button onclick="cancelBooking(${booking.id})" style="background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8em;">Отменить</button>` : ''}
+                            ${canCancel ? `<button onclick="cancelBooking('${booking.id}')" style="background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8em;">Отменить</button>` : ''}
                         </div>
                     </div>
                 `;
@@ -1186,16 +1195,10 @@
             if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
             
             try {
-                const { error } = await client
-                    .from('bookings')
-                    .update({ status: 'cancelled' })
-                    .eq('id', bookingId)
-                    .eq('user_id', currentUser.id);
-                
-                if (error) throw error;
+                await database.ref('bookings/' + bookingId + '/status').set('cancelled');
                 
                 showSuccess('Бронирование отменено');
-                loadUserBookings();
+                await loadUserBookings();
                 
             } catch (error) {
                 console.error('Ошибка отмены бронирования:', error);
@@ -1252,13 +1255,13 @@
         });
         
         // Слушаем изменения авторизации
-        client.auth.onAuthStateChange((event, session) => {
-            console.log('Auth state changed:', event);
+        firebase.auth().onAuthStateChanged((user) => {
+            console.log('Auth state changed:', user ? 'SIGNED_IN' : 'SIGNED_OUT');
             
-            if (event === 'SIGNED_IN') {
+            if (user) {
                 console.log('Пользователь вошёл');
                 checkAuth();
-            } else if (event === 'SIGNED_OUT') {
+            } else {
                 console.log('Пользователь вышел');
                 showAuthRequired();
             }

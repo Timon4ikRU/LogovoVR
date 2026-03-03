@@ -1,3 +1,6 @@
+А, точно! Исправил:
+
+```markdown
 # Документация для проекта "Logovo VR"
 *Данная документация является неполной, и будет дополняться по мере расширения/улучшения сайта*
 
@@ -34,39 +37,80 @@
 - **HTML5** - структура страницы
 - **CSS3** - стилизация
 - **JavaScript (ES6+)** - интерактивность
-- **Supabase JS Client v2** - система аутентификации и база данных (P.S.: в данный момент у владельца сайта нет доступа к Supabase из-за того что сайт не загружается)
-- **Email JS** - система рассылки для подтверждения регистрации
+- **Firebase SDK v12.10.0** - система аутентификации и база данных (Realtime Database)
+- **Email JS** - система рассылки для приглашений и уведомлений
+
+### Firebase сервисы
+- **Authentication** - управление пользователями
+- **Realtime Database** - хранение данных (профили, бронирования)
+- **Analytics** - статистика посещений
 
 ### Внешние зависимости
 - **Google Fonts** - шрифт Google Sans Code
-- **Supabase** - бэкенд-сервис
+- **Firebase** - бэкенд-сервис
 - **Аудиофайлы** - локальное хранение
 
 ---
 
 ## Система авторизации
 
-### Настройка Supabase
+### Настройка Firebase
 ```javascript
-const SUPABASE_CONFIG = {
-    url: 'https://gdbemyluqtnfytvujfnu.supabase.co',
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+const firebaseConfig = {
+    apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+    authDomain: "logovovr.firebaseapp.com",
+    databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "logovovr",
+    storageBucket: "logovovr.firebasestorage.app",
+    messagingSenderId: "292582907362",
+    appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+    measurementId: "G-C6TSBP2J7P"
 };
 ```
 
 ### Функционал
-1. **Проверка авторизации** - автоматическая при загрузке
+1. **Проверка авторизации** - автоматическая при загрузке через `onAuthStateChanged`
 2. **Регистрация/Вход** - через отдельные страницы
 3. **Панель пользователя** - отображается при клике на индикатор 👤
 4. **Разграничение прав**:
    - Обычные пользователи: бронирование
-   - Администраторы: доступ к админ-панели
+   - Администраторы: доступ к админ-панели (проверка через Realtime Database)
 5. **Выход из системы** - кнопка "Выйти"
 
-### База данных
-Таблица `profiles` с полями:
-- `id` - UUID пользователя
-- `user_type` - тип пользователя ('admin' или 'user')
+### База данных (Realtime Database)
+Структура данных:
+
+#### Таблица `profiles`
+```
+profiles/
+  {userId}/
+    id: string (userId)
+    email: string
+    username: string
+    user_type: 'admin' | 'user'
+    phone: string (optional)
+    created_at: timestamp
+    last_login_at: timestamp
+    invited_by: string (userId или 'local_admin')
+```
+
+#### Таблица `bookings`
+```
+bookings/
+  {bookingId}/
+    id: string
+    date: string (YYYY-MM-DD)
+    hours: string (HH:MM)
+    people: number
+    phone: string
+    notes: string (optional)
+    status: 'pending' | 'confirmed' | 'cancelled'
+    user_id: string
+    user_email: string
+    plan: string
+    ttime: number (длительность в минутах)
+    created_at: timestamp
+```
 
 ---
 
@@ -150,7 +194,7 @@ const SUPABASE_CONFIG = {
 function playStatusSound(type) {
     const sound = type === 'success' ? successSound : errorSound;
     sound.currentTime = 0;
-    sound.play();
+    sound.play().catch(e => console.log('Автовоспроизведение заблокировано:', e));
 }
 ```
 
@@ -175,16 +219,33 @@ function playStatusSound(type) {
 
 ## Конфигурация и настройки
 
-### Переменные окружения
-Проект использует хардкодированные ключи Supabase. Для продакшена рекомендуется:
-1. Вынести ключи в переменные окружения
-2. Использовать .env файл
-3. Настроить CORS в Supabase
-
 ### Безопасность
-- **API ключ** Supabase публичный (anon key)
-- **Нет защиты** от XSS/CSRF (требует доработки)
+- **API ключ** Firebase публичный (безопасно для клиентских приложений)
+- **Правила базы данных** должны быть настроены в Firebase Console
+- **Аутентификация** через Firebase Auth
 - **Локальное хранение** аудиофайлов
+
+### Правила Firebase (рекомендуемые)
+```json
+{
+  "rules": {
+    "profiles": {
+      "$uid": {
+        ".read": "$uid === auth.uid || root.child('profiles').child(auth.uid).child('user_type').val() === 'admin'",
+        ".write": "$uid === auth.uid || root.child('profiles').child(auth.uid).child('user_type').val() === 'admin'"
+      }
+    },
+    "bookings": {
+      ".read": "root.child('profiles').child(auth.uid).child('user_type').val() === 'admin'",
+      ".write": "root.child('profiles').child(auth.uid).child('user_type').val() === 'admin'",
+      "$bookingId": {
+        ".read": "data.child('user_id').val() === auth.uid || root.child('profiles').child(auth.uid).child('user_type').val() === 'admin'",
+        ".write": "data.child('user_id').val() === auth.uid || root.child('profiles').child(auth.uid).child('user_type').val() === 'admin'"
+      }
+    }
+  }
+}
+```
 
 ---
 
@@ -197,7 +258,7 @@ function playStatusSound(type) {
 
 ### Требования
 - Современный браузер с поддержкой ES6
-- Доступ к интернету (для Google Fonts и Supabase)
+- Доступ к интернету (для Google Fonts и Firebase)
 - Разрешение на воспроизведение аудио
 
 ---
@@ -212,7 +273,7 @@ function playStatusSound(type) {
 ### Обработка ошибок
 1. **Аудио** - пропуск проблемных треков
 2. **Изображения** - fallback на черный фон
-3. **Supabase** - консольное логирование ошибок
+3. **Firebase** - консольное логирование ошибок
 
 ### Пользовательский опыт
 - **Прогрессивное появление** элементов
@@ -279,9 +340,9 @@ function playStatusSound(type) {
 ## Контакты и поддержка
 
 ### Техническая информация
-- **Версия**: 1.27.3-2
-- **Дата создания версии**: 9 февраля 2026, 15:50
-- **Изменено в версии**: Потерян доступ к ДБ
+- **Версия**: 2.0.0
+- **Дата создания версии**: 3 марта 2026, 02:11
+- **Изменено в версии**: Полный переход с Supabase на Firebase
 - **Автор**: Timon4ik
 - **Техподдержка**: через форму правок
 
@@ -298,7 +359,7 @@ function playStatusSound(type) {
   - Редизайн 3+ страниц
   - Добавление 10+ новых функций
   - Изменение 4+ страниц
-  - *Пример: смена архитектуры бэкенда*
+  - *Пример: смена архитектуры бэкенда (Supabase → Firebase)*
 
 - **MINOR (XX)** — крупное (не глобальное) обновление:
   - Добавление <10 новых функций
@@ -313,7 +374,7 @@ function playStatusSound(type) {
   - *Пример: исправление вёрстки на мобильных*
 
 - **Суффикс -x** — обновление документации
-  - *Пример: 1.10.0-1*
+  - *Пример: 2.0.0-1*
 
 
 ---
