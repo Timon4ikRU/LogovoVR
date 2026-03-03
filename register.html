@@ -214,6 +214,7 @@
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 
+                // Валидация
                 if (!email || !username || !phone || !password || !confirmPassword) {
                     showError('Заполните все поля');
                     return;
@@ -229,7 +230,9 @@
                     return;
                 }
                 
-                if (phone.replace(/\D/g, '').length < 10) {
+                // Очищаем телефон от лишних символов для проверки
+                const phoneDigits = phone.replace(/\D/g, '');
+                if (phoneDigits.length < 10) {
                     showError('Введите корректный номер телефона');
                     return;
                 }
@@ -253,25 +256,27 @@
                 console.log('✅ Пользователь создан в Auth:', user.uid);
                 showStatus('✅ Аккаунт создан, настраиваем профиль...');
                 
-                // ШАГ 2: Создание профиля в Realtime Database
-                const now = new Date().toISOString();
+                // ТЕКУЩЕЕ ВРЕМЯ В ФОРМАТЕ TIMESTAMP (число) для совместимости с существующей БД
+                const now = Date.now(); // число: 1700000000000
                 
+                // ШАГ 2: Создание профиля в Realtime Database
                 await database.ref('profiles/' + user.uid).set({
                     id: user.uid,
                     email: email,
                     username: username,
-                    phone: phone,
+                    phone: phone, // строка с маской
                     user_type: 'user', // По умолчанию обычный пользователь
-                    created_at: now,
-                    last_login_at: now,
-                    updated_at: now
+                    created_at: now, // число (timestamp)
+                    last_login_at: now, // число
+                    updated_at: now, // число
+                    invited_by: null // или 'registration'
                 });
                 
                 console.log('✅ Профиль создан в Realtime Database');
                 showStatus('✅ Профиль создан, настраиваем статистику...');
                 
                 // ШАГ 3: Создание статистики для чайника
-                await database.ref('user_stats/' + user.uid).set({
+                await database.ref('user_stats/' + user.uid').set({
                     user_id: user.uid,
                     username: username,
                     total_brews: 0,
@@ -279,13 +284,16 @@
                     coffee_count: 0,
                     quantum_count: 0,
                     total_points: 0,
-                    last_updated: now
+                    last_updated: now // число
                 });
                 
                 console.log('✅ Статистика создана');
                 showStatus('✅ Статистика создана, отправляем подтверждение...');
                 
-                // ШАГ 4: Отправка письма с подтверждением email
+                // ШАГ 4: Создание записи в leaderboard (опционально, можно создать позже)
+                // Пропускаем, создастся при первой варке
+                
+                // ШАГ 5: Отправка письма с подтверждением email
                 await user.sendEmailVerification({
                     url: 'https://timon4ikru.github.io/LogovoVR/login.html'
                 });
@@ -296,11 +304,13 @@
                 showSuccess(`
                     ✅ Регистрация успешна!<br>
                     📧 Проверьте email для подтверждения<br>
-                    🔄 Все данные синхронизированы
+                    🔄 Все данные синхронизированы<br>
+                    👤 ID: ${user.uid.substring(0, 8)}...
                 `);
                 
                 document.getElementById('registerForm').reset();
                 
+                // Перенаправление на страницу входа через 5 секунд
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 5000);
@@ -367,7 +377,7 @@
             document.getElementById('successMessage').style.display = 'none';
         }
         
-        // Маска для телефона
+        // Маска для телефона (форматирование +7 (999) 123-45-67)
         document.getElementById('phone').addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             
