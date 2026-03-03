@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -91,16 +90,6 @@
             background: #00cc66;
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(0, 255, 136, 0.4);
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
         }
         
         .error-message {
@@ -205,14 +194,12 @@
             projectId: "logovovr",
             storageBucket: "logovovr.firebasestorage.app",
             messagingSenderId: "292582907362",
-            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
-            measurementId: "G-C6TSBP2J7P"
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb"
         };
         
         // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const analytics = firebase.analytics();
         
         console.log("🔥 Firebase подключён!");
         
@@ -257,38 +244,60 @@
                     return;
                 }
                 
-                console.log('Регистрация пользователя:', email, username, phone);
+                console.log('📝 Регистрация пользователя:', email, username, phone);
                 
-                // Регистрация в Firebase Auth
+                // ШАГ 1: Регистрация в Firebase Auth
                 const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
                 console.log('✅ Пользователь создан в Auth:', user.uid);
+                showStatus('✅ Аккаунт создан, настраиваем профиль...');
                 
-                // Создание профиля в Realtime Database
-                // ВАЖНО: пишем в profiles/[uid], а не в profiles/
+                // ШАГ 2: Создание профиля в Realtime Database
+                const now = new Date().toISOString();
+                
                 await database.ref('profiles/' + user.uid).set({
                     id: user.uid,
                     email: email,
                     username: username,
                     phone: phone,
-                    user_type: 'user',
-                    created_at: new Date().toISOString(),
-                    last_login_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    user_type: 'user', // По умолчанию обычный пользователь
+                    created_at: now,
+                    last_login_at: now,
+                    updated_at: now
                 });
                 
                 console.log('✅ Профиль создан в Realtime Database');
+                showStatus('✅ Профиль создан, настраиваем статистику...');
                 
-                // Отправка письма с подтверждением email
+                // ШАГ 3: Создание статистики для чайника
+                await database.ref('user_stats/' + user.uid).set({
+                    user_id: user.uid,
+                    username: username,
+                    total_brews: 0,
+                    tea_count: 0,
+                    coffee_count: 0,
+                    quantum_count: 0,
+                    total_points: 0,
+                    last_updated: now
+                });
+                
+                console.log('✅ Статистика создана');
+                showStatus('✅ Статистика создана, отправляем подтверждение...');
+                
+                // ШАГ 4: Отправка письма с подтверждением email
                 await user.sendEmailVerification({
                     url: 'https://timon4ikru.github.io/LogovoVR/login.html'
                 });
                 
                 console.log('✅ Письмо подтверждения отправлено');
                 
-                // Успех
-                showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
+                // Успех - всё синхронизировано!
+                showSuccess(`
+                    ✅ Регистрация успешна!<br>
+                    📧 Проверьте email для подтверждения<br>
+                    🔄 Все данные синхронизированы
+                `);
                 
                 document.getElementById('registerForm').reset();
                 
@@ -329,7 +338,7 @@
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
         function showError(message) {
             const errorEl = document.getElementById('errorMessage');
-            errorEl.textContent = message;
+            errorEl.innerHTML = message;
             errorEl.style.display = 'block';
             
             setTimeout(() => {
@@ -345,6 +354,12 @@
             setTimeout(() => {
                 successEl.style.display = 'none';
             }, 5000);
+        }
+
+        function showStatus(message) {
+            const statusEl = document.getElementById('successMessage');
+            statusEl.innerHTML = message;
+            statusEl.style.display = 'block';
         }
         
         function hideMessages() {
