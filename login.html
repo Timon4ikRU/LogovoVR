@@ -192,8 +192,6 @@
         // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        
-        console.log("🔥 Firebase подключён!");
 
         // ==================== ВХОД С EMAIL ====================
         async function loginWithEmail() {
@@ -234,15 +232,8 @@
                 provider.addScope('profile');
                 provider.addScope('email');
                 
-                // Добавляем параметры для кастомного домена
-                provider.setCustomParameters({
-                    'hd': 'logovo.com'  // если хотите ограничить конкретным доменом
-                });
-                
                 const result = await firebase.auth().signInWithPopup(provider);
                 const user = result.user;
-                
-                console.log('✅ Google вход:', user);
                 
                 // Проверяем, есть ли профиль
                 const profileSnap = await database.ref('profiles/' + user.uid).once('value');
@@ -272,8 +263,6 @@
                         total_points: 0,
                         last_updated: now
                     });
-                    
-                    console.log('✅ Профиль создан для Google пользователя');
                 } else {
                     // Обновляем last_login
                     await database.ref('profiles/' + user.uid + '/last_login_at').set(Date.now());
@@ -288,7 +277,7 @@
                 if (error.code === 'auth/popup-closed-by-user') {
                     showError('Вход отменён');
                 } else if (error.code === 'auth/unauthorized-domain') {
-                    showError('Домен не авторизован. Добавь в Firebase Console: timon4ikru.github.io');
+                    showError('Домен не авторизован');
                 } else {
                     handleAuthError(error);
                 }

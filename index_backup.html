@@ -508,6 +508,294 @@
             background: rgba(255, 255, 255, 0.25);
         }
 
+        .snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+            overflow: hidden;
+        }
+        
+        .snowflake {
+            position: absolute;
+            top: -20px;
+            color: white;
+            font-size: 1.2em;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            user-select: none;
+            pointer-events: none;
+            opacity: 0;
+            filter: blur(0.5px);
+        }
+
+        .snowflake:nth-child(1) {
+            left: 5%;
+            animation: fall1 15s linear infinite;
+            animation-delay: 0s;
+        }
+        
+        .snowflake:nth-child(2) {
+            left: 15%;
+            animation: fall2 18s linear infinite;
+            animation-delay: 2s;
+        }
+        
+        .snowflake:nth-child(3) {
+            left: 25%;
+            animation: fall3 12s linear infinite;
+            animation-delay: 5s;
+        }
+        
+        .snowflake:nth-child(4) {
+            left: 35%;
+            animation: fall4 20s linear infinite;
+            animation-delay: 1s;
+        }
+        
+        .snowflake:nth-child(5) {
+            left: 45%;
+            animation: fall5 16s linear infinite;
+            animation-delay: 8s;
+        }
+        
+        .snowflake:nth-child(6) {
+            left: 55%;
+            animation: fall6 14s linear infinite;
+            animation-delay: 3s;
+        }
+        
+        .snowflake:nth-child(7) {
+            left: 65%;
+            animation: fall7 19s linear infinite;
+            animation-delay: 6s;
+        }
+        
+        .snowflake:nth-child(8) {
+            left: 75%;
+            animation: fall8 13s linear infinite;
+            animation-delay: 9s;
+        }
+        
+        .snowflake:nth-child(9) {
+            left: 85%;
+            animation: fall9 17s linear infinite;
+            animation-delay: 4s;
+        }
+        
+        .snowflake:nth-child(10) {
+            left: 95%;
+            animation: fall10 11s linear infinite;
+            animation-delay: 7s;
+        }
+
+        @keyframes fall1 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.8;
+            }
+            95% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) translateX(30px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall2 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.7;
+            }
+            95% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(100vh) translateX(-20px) rotate(-360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall3 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.9;
+            }
+            95% {
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(100vh) translateX(15px) rotate(180deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall4 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.6;
+            }
+            95% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(100vh) translateX(-25px) rotate(270deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall5 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.85;
+            }
+            95% {
+                opacity: 0.85;
+            }
+            100% {
+                transform: translateY(100vh) translateX(10px) rotate(90deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall6 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.75;
+            }
+            95% {
+                opacity: 0.75;
+            }
+            100% {
+                transform: translateY(100vh) translateX(-15px) rotate(450deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall7 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.65;
+            }
+            95% {
+                opacity: 0.65;
+            }
+            100% {
+                transform: translateY(100vh) translateX(25px) rotate(-180deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall8 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.8;
+            }
+            95% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) translateX(-10px) rotate(315deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall9 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.7;
+            }
+            95% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(100vh) translateX(20px) rotate(-90deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fall10 {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.9;
+            }
+            95% {
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(100vh) translateX(-30px) rotate(180deg);
+                opacity: 0;
+            }
+        }
+
+        .snowflake:nth-child(11) {
+            left: 10%;
+            animation: fall1 14s linear infinite;
+            animation-delay: 10s;
+            font-size: 1em;
+        }
+        
+        .snowflake:nth-child(12) {
+            left: 20%;
+            animation: fall2 16s linear infinite;
+            animation-delay: 12s;
+            font-size: 1.1em;
+        }
+        
+        .snowflake:nth-child(13) {
+            left: 30%;
+            animation: fall3 13s linear infinite;
+            animation-delay: 15s;
+            font-size: 0.9em;
+        }
+        
+        .snowflake:nth-child(14) {
+            left: 40%;
+            animation: fall4 19s linear infinite;
+            animation-delay: 11s;
+            font-size: 1.3em;
+        }
+        
+        .snowflake:nth-child(15) {
+            left: 50%;
+            animation: fall5 17s linear infinite;
+            animation-delay: 18s;
+            font-size: 1em;
+        }
+
         @media (max-width: 768px) {
             .top-panel {
                 position: relative;
@@ -573,6 +861,21 @@
                 flex-direction: column;
                 align-items: center;
             }
+            
+            .snowflake {
+                font-size: 1em;
+            }
+            
+            .snowflake:nth-child(1) { left: 5%; animation: fall 8s linear infinite; }
+            .snowflake:nth-child(2) { left: 15%; animation: fall 10s linear infinite; }
+            .snowflake:nth-child(3) { left: 25%; animation: fall 12s linear infinite; }
+            .snowflake:nth-child(4) { left: 35%; animation: fall 9s linear infinite; }
+            .snowflake:nth-child(5) { left: 45%; animation: fall 11s linear infinite; }
+            .snowflake:nth-child(6) { left: 55%; animation: fall 10s linear infinite; }
+            .snowflake:nth-child(7) { left: 65%; animation: fall 13s linear infinite; }
+            .snowflake:nth-child(8) { left: 75%; animation: fall 7s linear infinite; }
+            .snowflake:nth-child(9) { left: 85%; animation: fall 10s linear infinite; }
+            .snowflake:nth-child(10) { left: 90%; animation: fall 14s linear infinite; }
         }
     </style>
 </head>
@@ -600,6 +903,25 @@
     <audio id="errorSound">
         <source src="err_snds/HTML502.mp3" type="audio/mpeg">
     </audio>
+
+    <!-- Snowflakes Container -->
+    <div class="snowflakes">
+        <div class="snowflake">❄</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❄</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❄</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❄</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❄</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
 
     <div class="top-panel">
         <a href="tel:+73466490070" class="phone-top">📞 +7 (3466) 49-00-70</a>
@@ -676,6 +998,10 @@
             Погрузись в виртуальную реальность с нами! Самые крутые VR-приключения, 
             современное оборудование и незабываемые эмоции ждут тебя в нашем клубе.
         </p>
+        
+        <div class="address">
+            ВНИМАНИЕ!!! База данных Firebase успешно подключена! Авторизация работает.
+        </div>
 
         <div class="cta-buttons">
             <a href="tel:+73466490070" class="cta-button">Забронировать сеанс!</a>
@@ -802,6 +1128,8 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const analytics = firebase.analytics();
+        
+        console.log("🔥 Firebase успешно подключён!");
         
         // ==================== ФУНКЦИИ АВТОРИЗАЦИИ ====================
         let authPanelVisible = false;
@@ -1201,6 +1529,14 @@
                         element.style.transform = 'translateY(0)';
                     }, index * 150);
                 });
+                
+                // Animate snowflakes
+                const snowflakes = document.querySelectorAll('.snowflake');
+                snowflakes.forEach((flake, index) => {
+                    setTimeout(() => {
+                        flake.style.opacity = '0.8';
+                    }, index * 100);
+                });
             };
             
             preloadImage.onerror = function() {
@@ -1217,6 +1553,14 @@
                         element.style.opacity = '1';
                         element.style.transform = 'translateY(0)';
                     }, index * 150);
+                });
+                
+                // Animate snowflakes even if background fails
+                const snowflakes = document.querySelectorAll('.snowflake');
+                snowflakes.forEach((flake, index) => {
+                    setTimeout(() => {
+                        flake.style.opacity = '0.8';
+                    }, index * 100);
                 });
             };
         };
