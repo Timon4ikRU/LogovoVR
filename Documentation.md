@@ -130,7 +130,7 @@ bookings/
 - **Громкость** - регулируемый слайдер
 
 ### Формат треков
-```html
+```htmlWelcome to Firebase! You're now part of a large community of professional developers, from innovative startups to global businesses, using Firebase to build and run modern, AI-powered apps. Congrats on creating your first project! 
 <div class="track-item" 
      data-track="music/Artist-Track.mp3" 
      data-name="Artist - Track">
@@ -340,7 +340,7 @@ function playStatusSound(type) {
 ## Контакты и поддержка
 
 ### Техническая информация
-- **Версия**: 2.0.0
+- **Версия**: 2.1.0
 - **Дата создания версии**: 3 марта 2026, 02:11
 - **Изменено в версии**: Полный переход с Supabase на Firebase
 - **Автор**: Timon4ik

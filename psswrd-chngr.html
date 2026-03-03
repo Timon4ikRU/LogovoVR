@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Changer - Logovo VR Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+    
+    <!-- EmailJS (оставляем для уведомлений) -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'JetBrains Mono', monospace; }
         body { background: linear-gradient(to bottom, #000000, #00ff00c9); color: #00ff00; min-height: 100vh; padding: 20px; }
@@ -127,14 +134,25 @@
     </div>
 
     <script>
-        // ==================== КОНФИГУРАЦИЯ ====================
-        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        // ==================== FIREBASE КОНФИГ ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
+        };
+        
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
         
         const EMAILJS_PUBLIC_KEY = 'qsXC8gCcga_7pNr1w';
         const EMAILJS_SERVICE_ID = 'LVR_Inviter';
         const EMAILJS_TEMPLATE_ID = 'template_odnburo';
-        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let currentUser = null;
         let selectedUserId = null;
@@ -157,50 +175,39 @@
         // ==================== ПРОВЕРКА АДМИНА ====================
         async function checkAdminAuth() {
             try {
-                // 1. Получаем сессию
-                const { data: { session }, error: sessionError } = await client.auth.getSession();
-                
-                if (sessionError) {
-                    showError('Ошибка проверки сессии: ' + sessionError.message);
-                    redirectToLogin();
-                    return;
-                }
-                
-                if (!session || !session.user) {
-                    showError('Требуется авторизация');
-                    redirectToLogin();
-                    return;
-                }
-                
-                currentUser = session.user;
-                
-                // 2. Проверяем, есть ли профиль и является ли пользователь админом
-                const { data: profile, error: profileError } = await client
-                    .from('profiles')
-                    .select('user_type, username')
-                    .eq('id', currentUser.id)
-                    .single();
-                
-                // Если профиль не найден ИЛИ user_type не 'admin' — доступ запрещён
-                if (profileError || !profile || profile.user_type !== 'admin') {
-                    console.warn('Доступ запрещён. Профиль:', profile, 'Ошибка:', profileError);
-                    showError('❌ Доступ разрешён только администраторам');
-                    
-                    // Даём 3 секунды на чтение сообщения, затем редирект
-                    setTimeout(() => {
-                        window.location.href = '403.html'; // Или на index.html
-                    }, 3000);
-                    return;
-                }
-                
-                // 3. Если дошёл сюда — пользователь админ
-                console.log('✅ Админ авторизован:', currentUser.email);
-                document.getElementById('userEmail').textContent = `Админ: ${profile.username || currentUser.email}`;
-                document.getElementById('userInfo').style.display = 'block';
-                
-                // 4. Загружаем данные
-                loadBookingsTable();
-                loadUsers();
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        
+                        // Проверяем, есть ли профиль и является ли пользователь админом
+                        const profileSnapshot = await database.ref('profiles/' + currentUser.uid).once('value');
+                        const profile = profileSnapshot.val();
+                        
+                        // Если профиль не найден ИЛИ user_type не 'admin' — доступ запрещён
+                        if (!profile || profile.user_type !== 'admin') {
+                            console.warn('Доступ запрещён. Профиль:', profile);
+                            showError('❌ Доступ разрешён только администраторам');
+                            
+                            // Даём 3 секунды на чтение сообщения, затем редирект
+                            setTimeout(() => {
+                                window.location.href = '403.html';
+                            }, 3000);
+                            return;
+                        }
+                        
+                        // Если дошёл сюда — пользователь админ
+                        console.log('✅ Админ авторизован:', currentUser.email);
+                        document.getElementById('userEmail').textContent = `Админ: ${profile.username || currentUser.email}`;
+                        document.getElementById('userInfo').style.display = 'block';
+                        
+                        // Загружаем пользователей
+                        loadUsers();
+                        
+                    } else {
+                        showError('Требуется авторизация');
+                        redirectToLogin();
+                    }
+                });
                 
             } catch (error) {
                 console.error('Критическая ошибка авторизации:', error);
@@ -208,21 +215,30 @@
                 setTimeout(() => window.location.href = 'index.html', 3000);
             }
         }
+
         // ==================== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ====================
         async function loadUsers() {
             try {
-                const { data: profiles, error } = await client
-                    .from('profiles')
-                    .select('id, email, username, user_type')
-                    .order('email');
+                const snapshot = await database.ref('profiles').once('value');
+                const profilesData = snapshot.val();
                 
-                if (error) {
-                    console.warn('Не удалось загрузить профили:', error);
+                if (!profilesData) {
                     showUsersFallback();
                     return;
                 }
                 
-                displayUsers(profiles || []);
+                // Преобразуем в массив
+                const profiles = Object.keys(profilesData).map(userId => ({
+                    id: userId,
+                    email: profilesData[userId].email || 'Нет email',
+                    username: profilesData[userId].username || '',
+                    user_type: profilesData[userId].user_type || 'user'
+                }));
+                
+                // Сортируем по email
+                profiles.sort((a, b) => a.email.localeCompare(b.email));
+                
+                displayUsers(profiles);
                 
             } catch (error) {
                 console.error('Ошибка загрузки пользователей:', error);
@@ -400,23 +416,18 @@
             document.getElementById('changeBtn').innerHTML = '🔄 ОБРАБОТКА...';
             
             try {
-                // Отправляем ссылку для сброса пароля
-                const { error } = await client.auth.resetPasswordForEmail(selectedUserEmail, {
-                    redirectTo: 'https://timon4ikru.github.io/LogovoVR/reset-password.html'
-                });
-                
-                if (error) throw error;
+                // В Firebase нельзя напрямую сменить пароль другого пользователя
+                // Отправляем ссылку для сброса пароля на email
+                await firebase.auth().sendPasswordResetEmail(selectedUserEmail);
                 
                 // Если пользователь существует в profiles, обновляем запись
                 if (selectedUserId) {
-                    await client
-                        .from('profiles')
-                        .update({
-                            password_changed_by_admin: true,
-                            password_changed_at: new Date().toISOString(),
-                            password_hint: passwordHint || null
-                        })
-                        .eq('id', selectedUserId);
+                    await database.ref('profiles/' + selectedUserId).update({
+                        password_changed_by_admin: true,
+                        password_changed_at: new Date().toISOString(),
+                        password_hint: passwordHint || null,
+                        updated_at: new Date().toISOString()
+                    });
                 }
                 
                 showSuccess(`✅ Ссылка для смены пароля отправлена на ${selectedUserEmail}`);
@@ -435,7 +446,24 @@
                 
             } catch (error) {
                 console.error('Ошибка смены пароля:', error);
-                showError(`Ошибка: ${error.message}`);
+                
+                let errorMessage = 'Ошибка при отправке ссылки';
+                
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'Пользователь с таким email не найден';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Неверный формат email';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Слишком много попыток. Попробуйте позже';
+                        break;
+                    default:
+                        errorMessage = error.message;
+                }
+                
+                showError(`Ошибка: ${errorMessage}`);
                 document.getElementById('changeBtn').disabled = false;
                 document.getElementById('changeBtn').innerHTML = '⚡ ИЗМЕНИТЬ ПАРОЛЬ';
             }
@@ -511,8 +539,9 @@
         }
 
         function logout() {
-            localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
-            window.location.href = 'login.html';
+            firebase.auth().signOut().then(() => {
+                window.location.href = 'login.html';
+            });
         }
 
         function redirectToLogin() {

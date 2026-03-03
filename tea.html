@@ -268,7 +268,11 @@
             .leaderboard-table { font-size: 0.9em; }
         }
     </style>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <div class="container">
@@ -378,7 +382,7 @@
         <!-- Приглашение войти -->
         <div class="login-prompt" id="loginPrompt">
             <div style="color: #ffaa00; margin-bottom: 15px; font-size: 1.1em;">Войдите для участия в рейтинге</div>
-            <button class="login-btn" onclick="window.location.href='login.html'">Войти через Supabase</button>
+            <button class="login-btn" onclick="window.location.href='login.html'">Войти через Firebase</button>
             <div style="margin-top: 15px; color: #666; font-size: 0.9em;">
                 Нет аккаунта? <a href="register.html" style="color: #00ff88;">Зарегистрируйтесь</a>
             </div>
@@ -386,15 +390,28 @@
     </div>
 
     <script>
-        // ==================== КОНФИГУРАЦИЯ ====================
-        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        // ==================== FIREBASE КОНФИГ ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
+        };
+        
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        console.log("🔥 Firebase подключён!");
         
         let currentUser = null;
         let currentStats = { tea: 0, coffee: 0, quantum: 0, totalScore: 0 };
         let gambleInterval = null;
         let isGamblingActive = false;
-        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
@@ -439,18 +456,23 @@
         // ==================== АВТОРИЗАЦИЯ ====================
         async function checkAuth() {
             try {
-                const { data: { session } } = await client.auth.getSession();
-                
-                if (session?.user) {
-                    currentUser = session.user;
-                    document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('userInfo').style.display = 'block';
-                    document.getElementById('loginPrompt').style.display = 'none';
-                    document.getElementById('statsSection').style.display = 'block';
-                    
-                    await loadUserStats();
-                    await loadGlobalLeaderboard();
-                }
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('userEmail').textContent = currentUser.email;
+                        document.getElementById('userInfo').style.display = 'block';
+                        document.getElementById('loginPrompt').style.display = 'none';
+                        document.getElementById('statsSection').style.display = 'block';
+                        
+                        await loadUserStats();
+                        await loadGlobalLeaderboard();
+                    } else {
+                        console.log('Пользователь не авторизован');
+                        document.getElementById('userInfo').style.display = 'none';
+                        document.getElementById('loginPrompt').style.display = 'block';
+                        document.getElementById('statsSection').style.display = 'none';
+                    }
+                });
             } catch (error) {
                 console.error('Ошибка авторизации:', error);
             }
@@ -459,28 +481,29 @@
         // ==================== ЗАГРУЗКА СТАТИСТИКИ ====================
         async function loadUserStats() {
             try {
-                // Теперь получаем из user_stats
-                const { data: userStat, error } = await client
-                    .from('user_stats')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .single();
+                if (!currentUser) return;
                 
-                if (error && error.code !== 'PGRST116') throw error;
+                // Получаем статистику пользователя из Firebase
+                const snapshot = await database.ref('user_stats/' + currentUser.uid).once('value');
+                const userStat = snapshot.val();
                 
                 if (userStat) {
                     currentStats = { 
-                        tea: userStat.tea_count, 
-                        coffee: userStat.coffee_count, 
-                        quantum: userStat.quantum_count, 
-                        totalScore: userStat.total_points 
+                        tea: userStat.tea_count || 0, 
+                        coffee: userStat.coffee_count || 0, 
+                        quantum: userStat.quantum_count || 0, 
+                        totalScore: userStat.total_points || 0 
                     };
                     
-                    document.getElementById('teaCount').textContent = userStat.tea_count;
-                    document.getElementById('coffeeCount').textContent = userStat.coffee_count;
-                    document.getElementById('quantumCount').textContent = userStat.quantum_count;
-                    document.getElementById('totalScore').textContent = userStat.total_points;
-                    document.getElementById('avgScore').textContent = userStat.avg_points.toFixed(1);
+                    document.getElementById('teaCount').textContent = userStat.tea_count || 0;
+                    document.getElementById('coffeeCount').textContent = userStat.coffee_count || 0;
+                    document.getElementById('quantumCount').textContent = userStat.quantum_count || 0;
+                    document.getElementById('totalScore').textContent = userStat.total_points || 0;
+                    
+                    const avgPoints = userStat.total_brews > 0 
+                        ? (userStat.total_points / userStat.total_brews).toFixed(1) 
+                        : 0;
+                    document.getElementById('avgScore').textContent = avgPoints;
                 } else {
                     // Если запись еще не создана
                     document.getElementById('teaCount').textContent = '0';
@@ -498,16 +521,11 @@
         // ==================== ЗАГРУЗКА ГЛОБАЛЬНОГО РЕЙТИНГА ====================
         async function loadGlobalLeaderboard() {
             try {
-                // Теперь загружаем из user_stats (агрегированные данные)
-                const { data: userStats, error } = await client
-                    .from('user_stats')
-                    .select('user_id, username, tea_count, coffee_count, quantum_count, total_points')
-                    .order('total_points', { ascending: false })
-                    .limit(10);
+                // Получаем всех пользователей из user_stats
+                const snapshot = await database.ref('user_stats').once('value');
+                const statsData = snapshot.val();
                 
-                if (error) {
-                    console.error('Ошибка загрузки из user_stats:', error);
-                    // Если user_stats пустая, покажем сообщение
+                if (!statsData) {
                     document.getElementById('leaderboardLoading').textContent = 'Рейтинг формируется...';
                     document.getElementById('leaderboardBody').innerHTML = `
                         <tr>
@@ -520,30 +538,30 @@
                     return;
                 }
                 
-                // Если данных нет
-                if (!userStats || userStats.length === 0) {
-                    displayLeaderboard([]);
-                    return;
-                }
-                
-                // Преобразуем данные в нужный формат
-                const leaderboardArray = userStats.map(stats => ({
-                    userId: stats.user_id,
-                    username: stats.username,
-                    tea: stats.tea_count || 0,
-                    coffee: stats.coffee_count || 0,
-                    quantum: stats.quantum_count || 0,
-                    totalScore: stats.total_points || 0
+                // Преобразуем в массив и сортируем по очкам
+                const userStatsArray = Object.keys(statsData).map(userId => ({
+                    userId: userId,
+                    username: statsData[userId].username || 'Аноним',
+                    tea: statsData[userId].tea_count || 0,
+                    coffee: statsData[userId].coffee_count || 0,
+                    quantum: statsData[userId].quantum_count || 0,
+                    totalScore: statsData[userId].total_points || 0
                 }));
                 
+                userStatsArray.sort((a, b) => b.totalScore - a.totalScore);
+                
+                // Берем топ-10
+                const topUsers = userStatsArray.slice(0, 10);
+                
                 // Отображаем
-                displayLeaderboard(leaderboardArray);
+                displayLeaderboard(topUsers);
                 
             } catch (error) {
                 console.error('Ошибка загрузки рейтинга:', error);
                 document.getElementById('leaderboardLoading').textContent = 'Ошибка загрузки рейтинга';
             }
         }
+        
         function displayLeaderboard(data) {
             const tbody = document.getElementById('leaderboardBody');
             tbody.innerHTML = '';
@@ -557,7 +575,7 @@
                 const row = document.createElement('tr');
                 
                 // Определяем класс для текущего пользователя
-                const isCurrentUser = currentUser && user.userId === currentUser.id;
+                const isCurrentUser = currentUser && user.userId === currentUser.uid;
                 if (isCurrentUser) {
                     row.className = 'user-rank';
                 }
@@ -667,7 +685,7 @@
                     // Кофе
                     await addToLeaderboard('coffee', 20);
                     playSound('successSound');
-                    showStatus(`☕ Кофе сварено! +12 очков (${randomValue.toFixed(4)})`, true);
+                    showStatus(`☕ Кофе сварено! +20 очков (${randomValue.toFixed(4)})`, true);
                 } else {
                     // КВАНТОВЫЙ НАПИТОК!
                     await addToLeaderboard('quantum', 50);
@@ -769,7 +787,7 @@
                     score = 10;
                 } else if (randomValue > 0.505) {
                     drink = 'coffee';
-                    score = 15;
+                    score = 20;
                 } else {
                     drink = 'quantum';
                     score = 50;
@@ -798,78 +816,56 @@
         // ==================== РАБОТА С БАЗОЙ ДАННЫХ ====================
         async function addToLeaderboard(drink, score) {
             try {
+                if (!currentUser) return;
+                
                 let username = currentUser.email.split('@')[0];
                 
                 // Получаем username из profiles
-                const { data: profile, error: profileError } = await client
-                    .from('profiles')
-                    .select('username')
-                    .eq('id', currentUser.id)
-                    .maybeSingle();
+                const profileSnapshot = await database.ref('profiles/' + currentUser.uid + '/username').once('value');
+                const profileUsername = profileSnapshot.val();
                 
-                if (!profileError && profile?.username) {
-                    username = profile.username;
+                if (profileUsername) {
+                    username = profileUsername;
                 }
                 
-                // 1. ВСТАВЛЯЕМ в историю варок (для логов - опционально)
-                const { error: historyError } = await client
-                    .from('brewing_history')  // можно оставить для истории
-                    .insert({
-                        user_id: currentUser.id,
-                        username: username,
-                        drink: drink,
-                        score: score,
-                        created_at: new Date().toISOString()
-                    });
-                
-                // 2. ОБНОВЛЯЕМ сводную статистику
-                // Сначала получаем текущие данные пользователя
-                const { data: currentStats, error: fetchError } = await client
-                    .from('user_stats')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .single();
-                
-                if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = не найдено
-                    console.error('Ошибка получения статистики:', fetchError);
-                }
-                
-                // Рассчитываем новые значения
-                const current = currentStats || {
+                // Получаем текущую статистику пользователя
+                const statsSnapshot = await database.ref('user_stats/' + currentUser.uid).once('value');
+                const currentStats = statsSnapshot.val() || {
                     total_brews: 0,
                     tea_count: 0,
                     coffee_count: 0,
                     quantum_count: 0,
-                    total_points: 0,
-                    avg_points: 0
+                    total_points: 0
                 };
                 
-                const newTotalBrews = current.total_brews + 1;
-                const newTeaCount = current.tea_count + (drink === 'tea' ? 1 : 0);
-                const newCoffeeCount = current.coffee_count + (drink === 'coffee' ? 1 : 0);
-                const newQuantumCount = current.quantum_count + (drink === 'quantum' ? 1 : 0);
-                const newTotalPoints = current.total_points + score;
-                const newAvgPoints = newTotalBrews > 0 ? newTotalPoints / newTotalBrews : 0;
+                // Рассчитываем новые значения
+                const newTotalBrews = (currentStats.total_brews || 0) + 1;
+                const newTeaCount = (currentStats.tea_count || 0) + (drink === 'tea' ? 1 : 0);
+                const newCoffeeCount = (currentStats.coffee_count || 0) + (drink === 'coffee' ? 1 : 0);
+                const newQuantumCount = (currentStats.quantum_count || 0) + (drink === 'quantum' ? 1 : 0);
+                const newTotalPoints = (currentStats.total_points || 0) + score;
                 
-                // Обновляем или создаем запись
-                const { error: upsertError } = await client
-                    .from('user_stats')
-                    .upsert({
-                        user_id: currentUser.id,
-                        username: username,
-                        total_brews: newTotalBrews,
-                        tea_count: newTeaCount,
-                        coffee_count: newCoffeeCount,
-                        quantum_count: newQuantumCount,
-                        total_points: newTotalPoints,
-                        avg_points: newAvgPoints,
-                        last_updated: new Date().toISOString()
-                    }, {
-                        onConflict: 'user_id',
-                        ignoreDuplicates: false
-                    });
+                // Обновляем статистику
+                await database.ref('user_stats/' + currentUser.uid).set({
+                    user_id: currentUser.uid,
+                    username: username,
+                    total_brews: newTotalBrews,
+                    tea_count: newTeaCount,
+                    coffee_count: newCoffeeCount,
+                    quantum_count: newQuantumCount,
+                    total_points: newTotalPoints,
+                    last_updated: new Date().toISOString()
+                });
                 
-                if (upsertError) throw upsertError;
+                // Сохраняем в историю варок (опционально)
+                const historyRef = database.ref('brewing_history').push();
+                await historyRef.set({
+                    user_id: currentUser.uid,
+                    username: username,
+                    drink: drink,
+                    score: score,
+                    created_at: new Date().toISOString()
+                });
                 
             } catch (error) {
                 console.error('Ошибка добавления в статистику:', error);
@@ -881,9 +877,9 @@
             if (isGamblingActive) {
                 clearInterval(gambleInterval);
             }
-            localStorage.removeItem('client.auth.token');
-            localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token');
-            window.location.reload();
+            firebase.auth().signOut().then(() => {
+                window.location.reload();
+            });
         }
     </script>
 </body>
