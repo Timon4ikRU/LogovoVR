@@ -92,6 +92,47 @@
             box-shadow: 0 10px 20px rgba(0, 255, 136, 0.4);
         }
         
+        .google-btn {
+            background: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .google-btn:hover {
+            background: #f1f1f1;
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        .google-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .separator {
+            margin: 20px 0;
+            text-align: center;
+            color: #666;
+            position: relative;
+        }
+        
+        .separator::before,
+        .separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #333;
+        }
+        
+        .separator::before { left: 0; }
+        .separator::after { right: 0; }
+        
         .error-message {
             color: #ff4444;
             margin-top: 15px;
@@ -148,31 +189,43 @@
         <form id="registerForm">
             <div class="form-group">
                 <label for="email">📧 Email</label>
-                <input type="email" id="email" placeholder="your@email.com" required>
+                <input type="email" id="email" placeholder="your@email.com">
             </div>
             
             <div class="form-group">
                 <label for="username">👤 Имя пользователя</label>
-                <input type="text" id="username" placeholder="username" required minlength="3">
+                <input type="text" id="username" placeholder="username" minlength="3">
             </div>
             
             <div class="form-group">
                 <label for="phone">📱 Телефон (обязательно)</label>
-                <input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required>
+                <input type="tel" id="phone" placeholder="+7 (999) 123-45-67">
             </div>
             
             <div class="form-group">
                 <label for="password">🔑 Пароль</label>
-                <input type="password" id="password" placeholder="Минимум 6 символов" required minlength="6">
+                <input type="password" id="password" placeholder="Минимум 6 символов" minlength="6">
             </div>
             
             <div class="form-group">
                 <label for="confirmPassword">🔑 Подтвердите пароль</label>
-                <input type="password" id="confirmPassword" placeholder="Повторите пароль" required minlength="6">
+                <input type="password" id="confirmPassword" placeholder="Повторите пароль" minlength="6">
             </div>
             
-            <button type="button" onclick="register()" class="btn">
-                🚀 Зарегистрироваться
+            <button type="button" onclick="registerWithEmail()" class="btn">
+                📧 Зарегистрироваться с email
+            </button>
+            
+            <div class="separator">или</div>
+            
+            <button type="button" onclick="registerWithGoogle()" class="btn google-btn">
+                <svg viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Зарегистрироваться с Google
             </button>
             
             <div id="errorMessage" class="error-message"></div>
@@ -202,9 +255,9 @@
         const database = firebase.database();
         
         console.log("🔥 Firebase подключён!");
-        
-        // ==================== РЕГИСТРАЦИЯ ====================
-        async function register() {
+
+        // ==================== РЕГИСТРАЦИЯ С EMAIL ====================
+        async function registerWithEmail() {
             try {
                 hideMessages();
                 
@@ -230,9 +283,7 @@
                     return;
                 }
                 
-                // Очищаем телефон от лишних символов для проверки
-                const phoneDigits = phone.replace(/\D/g, '');
-                if (phoneDigits.length < 10) {
+                if (phone.replace(/\D/g, '').length < 10) {
                     showError('Введите корректный номер телефона');
                     return;
                 }
@@ -247,129 +298,155 @@
                     return;
                 }
                 
-                console.log('📝 Регистрация пользователя:', email, username, phone);
+                showStatus('Регистрация...');
                 
-                // ШАГ 1: Регистрация в Firebase Auth
+                // Регистрация в Firebase Auth
                 const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
-                console.log('✅ Пользователь создан в Auth:', user.uid);
-                showStatus('✅ Аккаунт создан, настраиваем профиль...');
+                // Создаем профиль
+                await createUserProfile(user, username, phone);
                 
-                // ТЕКУЩЕЕ ВРЕМЯ В ФОРМАТЕ TIMESTAMP (число) для совместимости с существующей БД
-                const now = Date.now(); // число: 1700000000000
+                showSuccess('✅ Регистрация успешна! Проверьте email для подтверждения.');
                 
-                // ШАГ 2: Создание профиля в Realtime Database
-                await database.ref('profiles/' + user.uid).set({
-                    id: user.uid,
-                    email: email,
-                    username: username,
-                    phone: phone, // строка с маской
-                    user_type: 'user', // По умолчанию обычный пользователь
-                    created_at: now, // число (timestamp)
-                    last_login_at: now, // число
-                    updated_at: now, // число
-                    invited_by: null // или 'registration'
-                });
+                setTimeout(() => window.location.href = 'login.html', 3000);
                 
-                console.log('✅ Профиль создан в Realtime Database');
-                showStatus('✅ Профиль создан, настраиваем статистику...');
+            } catch (error) {
+                handleError(error);
+            }
+        }
+
+        // ==================== РЕГИСТРАЦИЯ С GOOGLE ====================
+        async function registerWithGoogle() {
+            try {
+                hideMessages();
+                showStatus('Регистрация через Google...');
                 
-                // ШАГ 3: Создание статистики для чайника
-                await database.ref('user_stats/' + user.uid').set({
-                    user_id: user.uid,
-                    username: username,
-                    total_brews: 0,
-                    tea_count: 0,
-                    coffee_count: 0,
-                    quantum_count: 0,
-                    total_points: 0,
-                    last_updated: now // число
-                });
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.addScope('profile');
+                provider.addScope('email');
                 
-                console.log('✅ Статистика создана');
-                showStatus('✅ Статистика создана, отправляем подтверждение...');
+                const result = await firebase.auth().signInWithPopup(provider);
+                const user = result.user;
                 
-                // ШАГ 4: Создание записи в leaderboard (опционально, можно создать позже)
-                // Пропускаем, создастся при первой варке
+                console.log('✅ Google пользователь:', user);
                 
-                // ШАГ 5: Отправка письма с подтверждением email
+                // Проверяем, есть ли уже профиль
+                const profileSnap = await database.ref('profiles/' + user.uid).once('value');
+                
+                if (!profileSnap.exists()) {
+                    // Запрашиваем дополнительные данные
+                    const username = prompt('Введите имя пользователя (будет отображаться в рейтинге):', user.displayName || user.email.split('@')[0]);
+                    const phone = prompt('Введите номер телефона для связи:', '');
+                    
+                    if (!username || username.length < 3) {
+                        showError('Имя пользователя обязательно (мин. 3 символа)');
+                        await user.delete(); // Удаляем пользователя если не дал данные
+                        return;
+                    }
+                    
+                    // Создаем профиль
+                    await createUserProfile(user, username, phone || '');
+                    
+                    showSuccess('✅ Регистрация через Google завершена!');
+                } else {
+                    showSuccess('✅ Вы уже зарегистрированы! Входим...');
+                }
+                
+                setTimeout(() => window.location.href = 'index.html', 2000);
+                
+            } catch (error) {
+                console.error('Google registration error:', error);
+                
+                if (error.code === 'auth/popup-closed-by-user') {
+                    showError('Регистрация отменена');
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    showError('Домен не авторизован');
+                } else {
+                    handleError(error);
+                }
+            }
+        }
+
+        // ==================== СОЗДАНИЕ ПРОФИЛЯ ====================
+        async function createUserProfile(user, username, phone) {
+            const now = Date.now();
+            
+            // Создаем профиль
+            await database.ref('profiles/' + user.uid).set({
+                id: user.uid,
+                email: user.email,
+                username: username,
+                phone: phone,
+                user_type: 'user',
+                created_at: now,
+                last_login_at: now,
+                updated_at: now,
+                invited_by: null
+            });
+            
+            // Создаем статистику
+            await database.ref('user_stats/' + user.uid).set({
+                user_id: user.uid,
+                username: username,
+                total_brews: 0,
+                tea_count: 0,
+                coffee_count: 0,
+                quantum_count: 0,
+                total_points: 0,
+                last_updated: now
+            });
+            
+            // Отправляем подтверждение email (если не Google)
+            if (!user.emailVerified) {
                 await user.sendEmailVerification({
                     url: 'https://timon4ikru.github.io/LogovoVR/login.html'
                 });
-                
-                console.log('✅ Письмо подтверждения отправлено');
-                
-                // Успех - всё синхронизировано!
-                showSuccess(`
-                    ✅ Регистрация успешна!<br>
-                    📧 Проверьте email для подтверждения<br>
-                    🔄 Все данные синхронизированы<br>
-                    👤 ID: ${user.uid.substring(0, 8)}...
-                `);
-                
-                document.getElementById('registerForm').reset();
-                
-                // Перенаправление на страницу входа через 5 секунд
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 5000);
-                
-            } catch (error) {
-                console.error('❌ Ошибка регистрации:', error);
-                
-                // Обработка ошибок Firebase
-                let errorMessage = 'Ошибка регистрации';
-                
-                switch (error.code) {
-                    case 'auth/email-already-in-use':
-                        errorMessage = 'Пользователь с таким email уже существует';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Неверный формат email';
-                        break;
-                    case 'auth/weak-password':
-                        errorMessage = 'Слишком слабый пароль. Используйте минимум 6 символов';
-                        break;
-                    case 'auth/network-request-failed':
-                        errorMessage = 'Проблема с сетью. Проверьте подключение';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Слишком много попыток. Попробуйте позже';
-                        break;
-                    default:
-                        errorMessage = error.message;
-                }
-                
-                showError(errorMessage);
             }
+            
+            console.log('✅ Профиль создан для:', user.email);
+        }
+
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
+        function handleError(error) {
+            console.error('Error:', error);
+            
+            let message = 'Ошибка регистрации';
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    message = 'Пользователь с таким email уже существует';
+                    break;
+                case 'auth/invalid-email':
+                    message = 'Неверный формат email';
+                    break;
+                case 'auth/weak-password':
+                    message = 'Слишком слабый пароль';
+                    break;
+                case 'auth/network-request-failed':
+                    message = 'Проблема с сетью';
+                    break;
+                default:
+                    message = error.message;
+            }
+            showError(message);
         }
         
-        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
         function showError(message) {
-            const errorEl = document.getElementById('errorMessage');
-            errorEl.innerHTML = message;
-            errorEl.style.display = 'block';
-            
-            setTimeout(() => {
-                errorEl.style.display = 'none';
-            }, 5000);
+            document.getElementById('errorMessage').innerHTML = message;
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
         }
         
         function showSuccess(message) {
-            const successEl = document.getElementById('successMessage');
-            successEl.innerHTML = message;
-            successEl.style.display = 'block';
-            
-            setTimeout(() => {
-                successEl.style.display = 'none';
-            }, 5000);
+            document.getElementById('successMessage').innerHTML = message;
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
         }
 
         function showStatus(message) {
-            const statusEl = document.getElementById('successMessage');
-            statusEl.innerHTML = message;
-            statusEl.style.display = 'block';
+            document.getElementById('successMessage').innerHTML = '⏳ ' + message;
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
         }
         
         function hideMessages() {
@@ -377,7 +454,7 @@
             document.getElementById('successMessage').style.display = 'none';
         }
         
-        // Маска для телефона (форматирование +7 (999) 123-45-67)
+        // Маска для телефона
         document.getElementById('phone').addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             
@@ -398,22 +475,12 @@
                 e.target.value = formatted;
             }
         });
-        
-        // Авто-ввод при нажатии Enter
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                register();
+
+        // Проверка авторизации
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Уже авторизован:', user.email);
             }
-        });
-        
-        // Проверяем, если пользователь уже авторизован, перенаправляем
-        document.addEventListener('DOMContentLoaded', async function() {
-            firebase.auth().onAuthStateChanged((user) => {
-                if (user) {
-                    console.log('Пользователь уже авторизован, перенаправляем...');
-                    window.location.href = 'booking.html';
-                }
-            });
         });
     </script>
 </body>
