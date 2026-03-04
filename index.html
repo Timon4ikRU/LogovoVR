@@ -50,6 +50,21 @@
             text-align: center;
         }
         
+        .phone {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        
         /* Верхняя панель с телефоном и музыкой */
         .top-panel {
             position: fixed;
@@ -77,14 +92,14 @@
         }
         
         .music-trigger {
-            background: rgba(136, 0, 255, 0.2);
+            background: rgba(0, 255, 13, 0.2);
             padding: 10px 15px;
             border-radius: 10px;
             color: white;
             text-decoration: none;
             font-weight: bold;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(136, 0, 255, 0.3);
+            border: 1px solid rgba(0, 255, 34, 0.3);
             opacity: 0;
             transform: translateY(-20px);
             transition: all 0.3s ease;
@@ -98,7 +113,7 @@
         }
         
         .music-trigger:hover {
-            background: rgba(136, 0, 255, 0.3);
+            background: rgba(39, 221, 63, 0.74);
             transform: translateY(-23px);
         }
         
@@ -213,7 +228,7 @@
             width: 320px;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(136, 0, 255, 0.4);
+            border: 1px solid rgba(0, 212, 18, 0.4);
             border-radius: 15px;
             padding: 20px;
             color: white;
@@ -238,7 +253,7 @@
             align-items: center;
             margin-bottom: 15px;
             font-weight: bold;
-            color: #8800ff;
+            color: #3bdf1a;
         }
         
         .close-btn {
