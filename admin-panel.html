@@ -18,8 +18,8 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'JetBrains Mono', monospace; }
         body { background: linear-gradient(to bottom, #000000, #00ff00c9); color: #00ff00; min-height: 100vh; transition: background 0.3s ease; }
-        .supabase-login-section { padding: 20px; text-align: center; background: rgba(0, 0, 0, 0.7); margin-bottom: 20px; display: none; }
-        .supabase-login-section button { background: #00c200; color: #000; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-weight: bold; }
+        .firebase-login-section { padding: 20px; text-align: center; background: rgba(0, 0, 0, 0.7); margin-bottom: 20px; display: none; }
+        .firebase-login-section button { background: #00c200; color: #000; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-weight: bold; }
         .login-section { padding: 20px; text-align: center; background: rgba(0, 0, 0, 0.7); margin-bottom: 20px; }
         .login-form { display: inline-block; background: rgba(0, 255, 0, 0.1); padding: 20px; border-radius: 10px; border: 1px solid #00ff00; }
         .login-form input { background: #008800; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; }
@@ -33,28 +33,40 @@
             border-radius: 10px; 
             padding: 20px; 
             margin-bottom: 20px;
-            overflow: hidden; /* Предотвращает вылезание содержимого */
+            overflow: hidden;
         }
         .section h2 { color: #00ff00; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #00ff00; padding-bottom: 10px; }
         
-        /* НОВЫЙ СТИЛЬ ДЛЯ КОНТЕЙНЕРА ТАБЛИЦЫ */
+        /* КОНТЕЙНЕР ТАБЛИЦЫ С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ */
         .table-container {
             width: 100%;
             overflow-x: auto;
             overflow-y: visible;
             border-radius: 5px;
             margin-bottom: 15px;
-            -webkit-overflow-scrolling: touch; /* Плавный скролл на мобильных */
+            -webkit-overflow-scrolling: touch;
         }
         
-        /* НОВЫЙ СТИЛЬ ДЛЯ ТАБЛИЦЫ */
+        /* ТАБЛИЦА С ФИКСИРОВАННОЙ ШИРИНОЙ ЯЧЕЕК */
         .data-table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 900px; /* Минимальная ширина для всех колонок */
-            table-layout: auto;
-            white-space: nowrap; /* Запрещаем перенос текста в ячейках */
+            table-layout: fixed; /* Фиксированная таблица */
+            min-width: 900px;
         }
+        
+        /* ФИКСИРОВАННАЯ ШИРИНА ДЛЯ КАЖДОЙ КОЛОНКИ */
+        .data-table th:nth-child(1), .data-table td:nth-child(1) { width: 150px; } /* ID */
+        .data-table th:nth-child(2), .data-table td:nth-child(2) { width: 100px; } /* Дата */
+        .data-table th:nth-child(3), .data-table td:nth-child(3) { width: 100px; } /* Время */
+        .data-table th:nth-child(4), .data-table td:nth-child(4) { width: 60px; } /* Людей */
+        .data-table th:nth-child(5), .data-table td:nth-child(5) { width: 200px; } /* Телефон */
+        .data-table th:nth-child(6), .data-table td:nth-child(6) { width: 300px; } /* Пользователь */
+        .data-table th:nth-child(7), .data-table td:nth-child(7) { width: 150px; } /* Статус */
+        .data-table th:nth-child(8), .data-table td:nth-child(8) { width: 110px; } /* Создано */
+        .data-table th:nth-child(9), .data-table td:nth-child(9) { width: 100px; } /* Длительность */
+        .data-table th:nth-child(10), .data-table td:nth-child(10) { width: 150px; } /* План */
+        .data-table th:nth-child(11), .data-table td:nth-child(11) { width: 100px; } /* Действия */
         
         .data-table th { 
             background: rgba(0, 255, 0, 0.2); 
@@ -62,33 +74,27 @@
             padding: 10px; 
             text-align: left; 
             border: 1px solid #00ff00;
-            font-size: 0.9em;
-        }
-        
-        .data-table td { 
-            padding: 8px 10px; 
-            border: 1px solid rgba(0, 255, 0, 0.3); 
-            color: #8fd493;
-            font-size: 0.9em;
-            max-width: 200px; /* Максимальная ширина ячейки */
-            overflow: hidden;
-            text-overflow: ellipsis; /* Добавляем многоточие для длинного текста */
+            font-size: 0.85em;
             white-space: nowrap;
         }
         
-        /* Стиль для ID и коротких полей */
-        .data-table td:first-child {
-            max-width: 100px;
+        .data-table td { 
+            padding: 8px 5px; 
+            border: 1px solid rgba(0, 255, 0, 0.3); 
+            color: #8fd493;
+            font-size: 0.85em;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Многоточие для длинного текста */
+            white-space: nowrap; /* Запрещаем перенос */
+            max-width: 300px; /* Максимум 300px */
         }
         
-        /* Ховер для показа полного содержимого */
+        /* Убираем разворачивание по наведению */
         .data-table td:hover {
-            overflow: visible;
-            white-space: normal;
-            word-break: break-all;
-            background: rgba(0, 0, 0, 0.9);
-            position: relative;
-            z-index: 10;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            background: transparent;
         }
         
         .data-table tr:hover { background: rgba(0, 255, 0, 0.1); }
@@ -97,11 +103,11 @@
             background: #000; 
             color: #00ff00; 
             border: 1px solid #00ff00; 
-            padding: 5px 10px; 
-            margin: 2px; 
+            padding: 3px 6px; 
+            margin: 1px; 
             border-radius: 3px; 
             cursor: pointer; 
-            font-size: 0.8em;
+            font-size: 0.75em;
             display: inline-block;
         }
         
@@ -126,7 +132,7 @@
             justify-content: center; 
             gap: 10px; 
             margin-top: 20px;
-            flex-wrap: wrap; /* Для мобильных */
+            flex-wrap: wrap;
         }
         
         .pagination button { 
@@ -174,7 +180,7 @@
             display: flex; 
             gap: 10px; 
             margin-top: 10px; 
-            flex-wrap: wrap; /* Для мобильных */
+            flex-wrap: wrap;
         }
         
         .invite-form input { 
@@ -280,15 +286,21 @@
             font-style: italic; 
         }
         
-        /* Адаптивность для мобильных */
+        /* Адаптивность */
         @media (max-width: 768px) {
             .container { padding: 10px; }
             .section { padding: 15px; }
-            .data-table { min-width: 800px; } /* Чуть меньше на мобильных */
             .user-info { 
                 position: static; 
                 text-align: center; 
                 margin-bottom: 10px;
+            }
+            .data-table th, .data-table td {
+                font-size: 0.75em;
+            }
+            .action-btn {
+                padding: 2px 4px;
+                font-size: 0.7em;
             }
         }
     </style>
@@ -297,7 +309,7 @@
 <body>
     <div class="status-message" id="statusMessage">Работает!</div>
     <div class="user-info" id="userInfo" style="display: none;"><span id="userEmail"></span><button onclick="logoutFirebase()" class="logout-btn">Выйти</button></div>
-    <div class="supabase-login-section" id="firebaseLoginSection"><h3>Для доступа к админ-панели требуется авторизация через Firebase</h3><button onclick="window.location.href='login.html'">Войти через Firebase</button></div>
+    <div class="firebase-login-section" id="firebaseLoginSection"><h3>Для доступа к админ-панели требуется авторизация через Firebase</h3><button onclick="window.location.href='login.html'">Войти через Firebase</button></div>
     <div class="login-section" id="adminLoginSection">
         <div class="login-form">
             <h3>Аутентификация администратора</h3>
