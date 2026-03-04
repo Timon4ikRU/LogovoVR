@@ -5,8 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Логово Админа</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
+    
+    <!-- EMAILJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'JetBrains Mono', monospace; }
         body { background: linear-gradient(to bottom, #000000, #00ff00c9); color: #00ff00; min-height: 100vh; transition: background 0.3s ease; }
@@ -59,8 +67,8 @@
 </head>
 <body>
     <div class="status-message" id="statusMessage">Работает!</div>
-    <div class="user-info" id="userInfo" style="display: none;"><span id="userEmail"></span><button onclick="logoutSupabase()" class="logout-btn">Выйти</button></div>
-    <div class="supabase-login-section" id="supabaseLoginSection"><h3>Для доступа к админ-панели требуется авторизация</h3><button onclick="window.location.href='login.html'">Войти через Supabase</button></div>
+    <div class="user-info" id="userInfo" style="display: none;"><span id="userEmail"></span><button onclick="logoutFirebase()" class="logout-btn">Выйти</button></div>
+    <div class="supabase-login-section" id="firebaseLoginSection"><h3>Для доступа к админ-панели требуется авторизация через Firebase</h3><button onclick="window.location.href='login.html'">Войти через Firebase</button></div>
     <div class="login-section" id="adminLoginSection">
         <div class="login-form">
             <h3>Аутентификация администратора</h3>
@@ -72,7 +80,7 @@
     </div>
     <div class="container" id="content" style="display: none;">
         <div class="section">
-            <h2>📊 Управление таблицами Supabase</h2>
+            <h2>📊 Управление таблицами Firebase</h2>
             <div class="invite-section">
                 <h3>📨 Пригласить нового пользователя</h3>
                 <p style="color: #8fd493; margin-bottom: 10px;">Отправьте приглашение на email. Пользователь получит ссылку для регистрации.</p>
@@ -197,18 +205,33 @@
     </div>
 
     <script>
-        // ==================== КОНФИГ ====================
-        const SUPABASE_URL = 'https://gdbemyluqtnfytvujfnu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkYmVteWx1cXRuZnl0dnVqZm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODIwMDAsImV4cCI6MjA4MTM1ODAwMH0.tpEicR_8Bt2R_CIn_kpAZlcXcX8o9CIWXt7mtnAuejg';
+        // ==================== FIREBASE КОНФИГ ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVF9ofJRXi39nF3n3wguSAG5EO5ZxyiCg",
+            authDomain: "logovovr.firebaseapp.com",
+            databaseURL: "https://logovovr-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "logovovr",
+            storageBucket: "logovovr.firebasestorage.app",
+            messagingSenderId: "292582907362",
+            appId: "1:292582907362:web:399e38ee37f4b20ab52dbb",
+            measurementId: "G-C6TSBP2J7P"
+        };
+        
         const EMAILJS_PUBLIC_KEY = 'qsXC8gCcga_7pNr1w';
         const EMAILJS_SERVICE_ID = 'LVR_Inviter';
         const EMAILJS_TEMPLATE_ID = 'template_odnburo';
+        
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const analytics = firebase.analytics();
+        
+        console.log("🔥 Firebase подключён!");
         
         let currentUser = null;
         let isAdmin = false;
         let isLocalAdmin = false;
         const passwordHashes = [
-            //"2db556f27d28be05fc9745c5513f57fc47e59a8eeda5339a6c3b5bce5258b03e", он слишком слабый и его можно подобрать за ~50 минут
             "ea613b6918aef7b32e7a875e649c92309eb3a6e0cae10289dc721d74ad2613a5",
             "590ab3a941c688f46e6aba6826f60aa7357d744ad41c2c801264cdc0a3a15806",
             "238146fd103e82c4ff2072c8038193432fc09f376b02642f9eadefa2d5a8203c"
@@ -222,40 +245,78 @@
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 Инициализация админ-панели...');
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth: {autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, storage: localStorage}});
-            if (typeof emailjs !== 'undefined') {emailjs.init(EMAILJS_PUBLIC_KEY); console.log('✅ EmailJS инициализирован');}
-            await checkSupabaseAuth();
-            document.querySelectorAll('.track-item').forEach(item => {item.addEventListener('click', function() {const track = this.getAttribute('data-track'); const name = this.getAttribute('data-name'); playTrack(track, name);});});
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init(EMAILJS_PUBLIC_KEY); 
+                console.log('✅ EmailJS инициализирован');
+            }
+            await checkFirebaseAuth();
+            document.querySelectorAll('.track-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const track = this.getAttribute('data-track'); 
+                    const name = this.getAttribute('data-name'); 
+                    playTrack(track, name);
+                });
+            });
         });
 
-        // ==================== АВТОРИЗАЦИЯ ====================
-        async function checkSupabaseAuth() {
+        // ==================== АВТОРИЗАЦИЯ FIREBASE ====================
+        async function checkFirebaseAuth() {
             try {
-                console.log('🔐 Проверка Supabase авторизации...');
-                const { data: { session }, error } = await supabase.auth.getSession();
-                if (error) {console.error('Ошибка проверки сессии:', error); showLocalAdminLogin(); return;}
-                if (session && session.user) {currentUser = session.user; console.log('✅ Supabase пользователь:', currentUser.email); await checkIfAdmin();} 
-                else {console.log('❌ Supabase: Нет сессии'); showLocalAdminLogin();}
-            } catch (error) {console.error('❌ Ошибка Supabase авторизации:', error); showLocalAdminLogin();}
+                console.log('🔐 Проверка Firebase авторизации...');
+                
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        console.log('✅ Firebase пользователь:', user.email);
+                        await checkIfAdmin();
+                    } else {
+                        console.log('❌ Firebase: Нет сессии');
+                        showLocalAdminLogin();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Ошибка Firebase авторизации:', error);
+                showLocalAdminLogin();
+            }
         }
 
         async function checkIfAdmin() {
             try {
-                const { data: profile, error } = await supabase.from('profiles').select('user_type, username').eq('id', currentUser.id).single();
-                if (error) {
-                    console.log('Профиль не найден. Создаем...');
-                    const { error: createError } = await supabase.from('profiles').insert({id: currentUser.id, email: currentUser.email, username: currentUser.email.split('@')[0] || 'user', user_type: 'admin', created_at: new Date().toISOString()});
-                    if (createError) {console.error('Ошибка создания профиля:', createError); showLocalAdminLogin(); return;}
-                    isAdmin = true; showAdminInterface(); return;
+                // Проверяем в Realtime Database
+                const snapshot = await database.ref(`profiles/${currentUser.uid}/user_type`).once('value');
+                const userType = snapshot.val();
+                
+                if (userType === 'admin') {
+                    isAdmin = true;
+                    showAdminInterface();
+                } else {
+                    // Проверяем, есть ли профиль, если нет - создаем
+                    const profileSnapshot = await database.ref(`profiles/${currentUser.uid}`).once('value');
+                    
+                    if (!profileSnapshot.exists()) {
+                        // Создаем профиль
+                        await database.ref(`profiles/${currentUser.uid}`).set({
+                            email: currentUser.email,
+                            username: currentUser.email.split('@')[0] || 'user',
+                            user_type: 'admin', // Делаем админом при первом входе
+                            created_at: new Date().toISOString()
+                        });
+                        isAdmin = true;
+                        showAdminInterface();
+                    } else {
+                        show403Error();
+                    }
                 }
-                if (profile && profile.user_type === 'admin') {isAdmin = true; showAdminInterface();} 
-                else {show403Error();}
-            } catch (error) {console.error('Ошибка проверки админ-прав:', error); showLocalAdminLogin();}
+            } catch (error) {
+                console.error('Ошибка проверки админ-прав:', error);
+                showLocalAdminLogin();
+            }
         }
 
         function showLocalAdminLogin() {
             console.log('👨‍💼 Показываем локальную админку');
-            document.getElementById('supabaseLoginSection').style.display = 'none';
+            document.getElementById('firebaseLoginSection').style.display = 'none';
             document.getElementById('adminLoginSection').style.display = 'block';
             document.getElementById('content').style.display = 'none';
             document.getElementById('userInfo').style.display = 'none';
@@ -279,6 +340,7 @@
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
             const content = document.getElementById('content');
+            
             if (username === 'Admin') {
                 const passwordHash = await sha256(password);
                 if (passwordHashes.includes(passwordHash)) {
@@ -287,8 +349,10 @@
                     errorMessage.style.display = 'none';
                     document.getElementById('adminLoginSection').style.display = 'none';
                     showStatus('Добро пожаловать, Администратор!');
-                    loadBookingsTable();
-                    loadUsersTable();
+                    
+                    // Загружаем данные
+                    loadBookingsFromFirebase();
+                    loadUsersFromFirebase();
                     return;
                 }
             }
@@ -299,151 +363,56 @@
 
         function showAdminInterface() {
             console.log('🛠️ Показываем админ интерфейс');
-            document.getElementById('supabaseLoginSection').style.display = 'none';
+            document.getElementById('firebaseLoginSection').style.display = 'none';
             document.getElementById('adminLoginSection').style.display = 'none';
             document.getElementById('content').style.display = 'block';
             document.getElementById('userInfo').style.display = 'block';
             document.getElementById('userEmail').textContent = currentUser.email;
-            loadBookingsTable();
-            loadUsersTable();
+            
+            // Загружаем данные
+            loadBookingsFromFirebase();
+            loadUsersFromFirebase();
         }
 
-        // ==================== EMAILJS ПРИГЛАШЕНИЕ ====================
-        async function inviteUser() {
-            const emailInput = document.getElementById('inviteEmail');
-            const inviteButton = document.getElementById('inviteButton');
-            const inviteStatus = document.getElementById('inviteStatus');
-            const email = emailInput.value.trim();
-            if (!email || !email.includes('@')) {showStatus('Введите корректный email', true); return;}
-            if (!confirm('Отправить приглашение на ' + email + '?\n\nПользователь получит логин и пароль в хакерском стиле.')) return;
-            inviteButton.disabled = true;
-            inviteButton.textContent = 'Отправка...';
-            inviteStatus.style.display = 'block';
-            inviteStatus.style.color = '#8fd493';
-            inviteStatus.innerHTML = '🔄 Генерация данных и отправка...';
-            try {
-                const userLogin = email.split('@')[0] || 'user';
-                const userPassword = generateTemporaryPassword();
-                const messageId = 'LOGOVO-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-                const { data: supabaseData, error: supabaseError } = await supabase.auth.signUp({email: email, password: userPassword, options: {emailRedirectTo: 'https://timon4ikru.github.io/LogovoVR/login.html', data: {is_invited: true, invited_at: new Date().toISOString(), invited_by: currentUser ? currentUser.id : 'local_admin'}}});
-                if (supabaseError && !supabaseError.message.includes('already registered')) {throw new Error('Supabase: ' + supabaseError.message);}
-                if (supabaseData && supabaseData.user) {
-                    await supabase.from('profiles').upsert({id: supabaseData.user.id, email: email, username: userLogin, user_type: 'user', invited_by: currentUser ? currentUser.id : 'local_admin', created_at: new Date().toISOString()});
-                }
-                const templateParams = {to_email: email, to_name: userLogin, email: email, login: userLogin, password: userPassword, website_url: 'https://timon4ikru.github.io/LogovoVR', login_url: 'https://timon4ikru.github.io/LogovoVR/login.html', current_year: new Date().getFullYear(), timestamp: new Date().toLocaleString('ru-RU', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}), message_id: messageId};
-                if (typeof emailjs === 'undefined') {throw new Error('EmailJS не загружен. Проверьте подключение скрипта.');}
-                const emailResult = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-                console.log('EmailJS результат:', emailResult);
-                showStatus('✅ Приглашение отправлено на ' + email);
-                inviteStatus.style.color = '#00ff00';
-                inviteStatus.innerHTML = '✅ <strong>Приглашение отправлено!</strong><br>' +
-                    '📧 Email: ' + email + '<br>' +
-                    '👤 Логин: ' + userLogin + '<br>' +
-                    '🔑 Пароль: <span style="color:#ff4444">' + userPassword + '</span><br>' +
-                    '📝 Сообщите пароль пользователю!';
-                emailInput.value = '';
-                loadUsersTable(currentUsersPage);
-            } catch (error) {
-                console.error('❌ Ошибка отправки приглашения:', error);
-                let errorMessage = 'Ошибка отправки: ';
-                if (error.message.includes('already registered')) {
-                    errorMessage = 'Пользователь уже существует. ';
-                    try {
-                        const userLogin = email.split('@')[0] || 'user';
-                        const userPassword = generateTemporaryPassword();
-                        const templateParams = {to_email: email, to_name: userLogin, email: email, login: userLogin, password: userPassword, website_url: 'https://timon4ikru.github.io/LogovoVR', login_url: 'https://timon4ikru.github.io/LogovoVR/login.html', current_year: new Date().getFullYear(), timestamp: new Date().toLocaleString('ru-RU'), message_id: 'LOGOVO-' + Date.now()};
-                        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-                        inviteStatus.style.color = '#ffc107';
-                        inviteStatus.innerHTML = '⚠️ <strong>Пользователь уже существует</strong><br>' +
-                            '📧 Данные отправлены повторно на ' + email + '<br>' +
-                            '👤 Логин: ' + userLogin + '<br>' +
-                            '🔑 Новый пароль: <span style="color:#ff4444">' + userPassword + '</span><br>' +
-                            '💡 Пользователю нужно использовать новый пароль!';
-                        showStatus('Данные отправлены повторно');
-                        emailInput.value = '';
-                        return;
-                    } catch (emailError) {errorMessage += 'Не удалось отправить письмо.';}
-                } else if (error.message.includes('EmailJS')) {errorMessage += 'Проблема с EmailJS. Проверьте ключи.';} 
-                else {errorMessage += error.message;}
-                showStatus(errorMessage, true);
-                inviteStatus.style.color = '#ff4444';
-                inviteStatus.innerHTML = '❌ ' + errorMessage;
-            } finally {
-                inviteButton.disabled = false;
-                inviteButton.textContent = 'Отправить приглашение';
-            }
-        }
-
-        function generateTemporaryPassword() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let password = '';
-            for (let i = 0; i < 10; i++) {password += chars.charAt(Math.floor(Math.random() * chars.length));}
-            return password + '!';
-        }
-
-        // ==================== АДМИНСКИЕ ОПЕРАЦИИ ====================
-        async function sendPasswordReset(userId, userEmail) {
-            if (!confirm('Отправить ссылку для сброса пароля на ' + userEmail + '?')) return;
-            try {
-                const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {redirectTo: 'https://timon4ikru.github.io/LogovoVR/reset-password.html'});
-                if (error) throw error;
-                showStatus('Ссылка для сброса пароля отправлена на ' + userEmail);
-            } catch (error) {console.error('Ошибка отправки ссылки:', error); showStatus('Ошибка отправки ссылки', true);}
-        }
-
-        async function makeAdmin(userId, userEmail) {
-            if (!confirm('Назначить пользователя ' + userEmail + ' администратором?')) return;
-            try {
-                const { error } = await supabase.from('profiles').update({ user_type: 'admin' }).eq('id', userId);
-                if (error) throw error;
-                showStatus('Пользователь ' + userEmail + ' назначен администратором');
-                loadUsersTable(currentUsersPage);
-            } catch (error) {console.error('Ошибка назначения админа:', error); showStatus('Ошибка назначения админа', true);}
-        }
-
-        async function makeUser(userId, userEmail) {
-            if (!confirm('Сделать пользователя ' + userEmail + ' обычным пользователем?')) return;
-            try {
-                const { error } = await supabase.from('profiles').update({ user_type: 'user' }).eq('id', userId);
-                if (error) throw error;
-                showStatus('Пользователь ' + userEmail + ' стал обычным пользователем');
-                loadUsersTable(currentUsersPage);
-            } catch (error) {console.error('Ошибка изменения типа:', error); showStatus('Ошибка изменения типа', true);}
-        }
-
-        async function changeUsername(userId, userEmail) {
-            const newUsername = prompt('Введите новый username для ' + userEmail + ':', 'user');
-            if (!newUsername || newUsername.trim().length < 2) {alert('Username должен быть не менее 2 символов'); return;}
-            try {
-                const { error } = await supabase.from('profiles').update({ username: newUsername.trim() }).eq('id', userId);
-                if (error) throw error;
-                showStatus('Username для ' + userEmail + ' изменен на "' + newUsername + '"');
-                loadUsersTable(currentUsersPage);
-            } catch (error) {console.error('Ошибка смены username:', error); showStatus('Ошибка смены username', true);}
-        }
-
-        async function deleteProfile(userId, userEmail) {
-            if (!confirm('Удалить профиль ' + userEmail + '?\n\nЭто удалит только профиль из таблицы profiles. Пользователь останется в системе.')) return;
-            try {
-                const { error } = await supabase.from('profiles').delete().eq('id', userId);
-                if (error) throw error;
-                showStatus('Профиль ' + userEmail + ' удален');
-                loadUsersTable(currentUsersPage);
-            } catch (error) {console.error('Ошибка удаления профиля:', error); showStatus('Ошибка удаления профиля', true);}
-        }
-
-        // ==================== БРОНИРОВАНИЯ ====================
-        async function loadBookingsTable(page = 1, search = '') {
+        // ==================== ЗАГРУЗКА ДАННЫХ ИЗ FIREBASE ====================
+        async function loadBookingsFromFirebase(search = '') {
             try {
                 document.getElementById('bookingsTable').innerHTML = '<div class="loading">Загрузка бронирований...</div>';
-                let query = supabase.from('bookings').select('*', { count: 'exact' });
-                if (search) {query = query.or('phone.ilike.%' + search + '%,user_email.ilike.%' + search + '%,id.eq.' + (parseInt(search) || 0));}
-                const { data: bookings, error, count } = await query.order('created_at', { ascending: false }).range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
-                if (error) {console.error('Ошибка загрузки бронирований:', error); document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>'; return;}
-                currentBookingsPage = page;
-                displayBookingsTable(bookings || []);
-                createPagination('bookingsPagination', count || 0, page, 'loadBookingsTable');
-            } catch (error) {console.error('Ошибка загрузки бронирований:', error); document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>';}
+                
+                const snapshot = await database.ref('bookings').once('value');
+                const bookingsData = snapshot.val();
+                
+                let bookings = [];
+                if (bookingsData) {
+                    bookings = Object.keys(bookingsData).map(key => ({
+                        id: key,
+                        ...bookingsData[key]
+                    }));
+                }
+                
+                // Фильтрация по поиску
+                if (search) {
+                    const searchLower = search.toLowerCase();
+                    bookings = bookings.filter(b => 
+                        (b.phone && b.phone.toLowerCase().includes(searchLower)) ||
+                        (b.user_email && b.user_email.toLowerCase().includes(searchLower)) ||
+                        b.id.toLowerCase().includes(searchLower)
+                    );
+                }
+                
+                // Сортировка по дате создания
+                bookings.sort((a, b) => {
+                    const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+                    const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                displayBookingsTable(bookings);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки бронирований:', error);
+                document.getElementById('bookingsTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки бронирований</div>';
+            }
         }
         
         function displayBookingsTable(bookings) {
@@ -452,9 +421,14 @@
                 return;
             }
             
+            // Пагинация
+            const start = (currentBookingsPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedBookings = bookings.slice(start, end);
+            
             let html = '<table class="data-table"><thead><tr><th>ID</th><th>Дата</th><th>Время</th><th>Людей</th><th>Телефон</th><th>Пользователь</th><th>Статус</th><th>Создано</th><th>Длительность</th><th>План</th><th>Действия</th></tr></thead><tbody>';
             
-            bookings.forEach(booking => {
+            paginatedBookings.forEach(booking => {
                 let dateStr = booking.date || booking.formatted_date || 'Нет даты';
                 let userEmail = booking.user_email || booking.email || 'Нет email';
                 let createdStr = booking.created_at ? new Date(booking.created_at).toLocaleString('ru-RU') : 'Нет данных';
@@ -474,96 +448,78 @@
                     '<td>' + (booking.ttime || 'N/A') + '</td>'+
                     '<td>' + (booking.plan || 'N/A') + '</td>'+
                     '<td>' +
-                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'confirmed\')">✅</button>' +
-                        '<button class="action-btn" onclick="updateBookingStatus(' + booking.id + ', \'cancelled\')">❌</button>' +
-                        '<button class="action-btn delete" onclick="deleteBooking(' + booking.id + ')">🗑️</button>' +
+                        '<button class="action-btn" onclick="updateBookingStatus(\'' + booking.id + '\', \'confirmed\')">✅</button>' +
+                        '<button class="action-btn" onclick="updateBookingStatus(\'' + booking.id + '\', \'cancelled\')">❌</button>' +
+                        '<button class="action-btn delete" onclick="deleteBooking(\'' + booking.id + '\')">🗑️</button>' +
                     '</td>' +
                 '</tr>';
             });
             
             html += '</tbody></table>';
             document.getElementById('bookingsTable').innerHTML = html;
-        }
-
-        async function updateBookingStatus(bookingId, status) {
-            const client = window.supabase || supabase;
-            if (!client) {
-                console.error('❌ Нет клиента Supabase');
-                showStatus('Ошибка: клиент базы не загружен', true);
-                return;
-            }
             
-            // Преобразуем ID к строке для точного сравнения с int8
-            const idStr = String(bookingId);
-            if (!confirm(`Изменить статус брони #${idStr} на "${status}"?`)) return;
-            
-            try {
-                console.log(`🔄 Запрос: bookingId=${idStr} (как строка), status=${status}`);
-                
-                // Используем строку для сравнения
-                const { data, error } = await client
-                    .from('bookings')
-                    .update({ status: status })
-                    .eq('id', idStr) // ← Сравниваем как строку!
-                    .select();
-                
-                if (error) {
-                    console.error('❌ Ошибка Supabase:', error);
-                    throw error;
-                }
-                
-                console.log('✅ Ответ:', data);
-                
-                // Если data пустой, возможно, ID не найден или статус уже такой
-                if (!data || data.length === 0) {
-                    console.warn('⚠️ Пустой ответ. Проверь ID в базе:', idStr);
-                    showStatus(`Бронь #${idStr} не найдена или статус уже "${status}"`, true);
-                } else {
-                    showStatus(`✅ Статус брони #${idStr} изменён`);
-                }
-                
-                // Всегда обновляем таблицу
-                setTimeout(() => loadBookingsTable(currentBookingsPage), 300);
-                
-            } catch (error) {
-                console.error('❌ Ошибка:', error);
-                showStatus('Ошибка: ' + error.message, true);
-            }
+            // Пагинация
+            createPagination('bookingsPagination', bookings.length, currentBookingsPage, 'changeBookingsPage');
         }
 
-        async function deleteBooking(bookingId) {
-            if (!confirm('Удалить бронирование #' + bookingId + '?')) return;
-            try {
-                const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
-                if (error) throw error;
-                showStatus('Бронирование #' + bookingId + ' удалено');
-                loadBookingsTable(currentBookingsPage);
-            } catch (error) {console.error('Ошибка удаления:', error); showStatus('Ошибка удаления', true);}
+        function changeBookingsPage(page) {
+            currentBookingsPage = page;
+            loadBookingsFromFirebase(document.getElementById('searchBookings').value);
         }
 
-        // ==================== ПОЛЬЗОВАТЕЛИ ====================
-        async function loadUsersTable(page = 1, search = '') {
+        async function loadUsersFromFirebase(search = '') {
             try {
                 document.getElementById('usersTable').innerHTML = '<div class="loading">Загрузка пользователей...</div>';
-                let query = supabase.from('profiles').select('*', { count: 'exact' });
-                if (search) {query = query.or('email.ilike.%' + search + '%,username.ilike.%' + search + '%');}
-                const { data: profiles, error, count } = await query.order('created_at', { ascending: false }).range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
-                if (error) {console.error('Ошибка загрузки пользователей:', error); document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Таблица profiles не существует или ошибка загрузки.<br>Запустите SQL для создания таблицы в Supabase SQL Editor.</div>'; return;}
-                currentUsersPage = page;
-                displayUsersTable(profiles || [], count || 0);
-                createPagination('usersPagination', count || 0, page, 'loadUsersTable');
-            } catch (error) {console.error('Ошибка загрузки пользователей:', error); document.getElementById('usersTable').innerHTML = '<div style="color: #ff4444;">Ошибка загрузки пользователей</div>';}
+                
+                const snapshot = await database.ref('profiles').once('value');
+                const profilesData = snapshot.val();
+                
+                let profiles = [];
+                if (profilesData) {
+                    profiles = Object.keys(profilesData).map(key => ({
+                        id: key,
+                        ...profilesData[key]
+                    }));
+                }
+                
+                // Фильтрация по поиску
+                if (search) {
+                    const searchLower = search.toLowerCase();
+                    profiles = profiles.filter(p => 
+                        (p.email && p.email.toLowerCase().includes(searchLower)) ||
+                        (p.username && p.username.toLowerCase().includes(searchLower))
+                    );
+                }
+                
+                // Сортировка по дате создания
+                profiles.sort((a, b) => {
+                    const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+                    const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                displayUsersTable(profiles);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Таблица profiles не существует или ошибка загрузки.</div>';
+            }
         }
 
-        function displayUsersTable(profiles, totalCount) {
+        function displayUsersTable(profiles) {
             if (!profiles || profiles.length === 0) {
                 document.getElementById('usersTable').innerHTML = '<div style="color: #666; text-align: center;">Нет пользователей в таблице profiles</div>';
                 return;
             }
             
+            // Пагинация
+            const start = (currentUsersPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedProfiles = profiles.slice(start, end);
+            
             let html = '<table class="data-table"><thead><tr><th>Почта</th><th>Телефон</th><th>Имя пользователя</th><th>Тип</th><th>Создан</th><th>Последний логин</th><th>Действия</th></tr></thead><tbody>';
             
-            profiles.forEach(profile => {
+            paginatedProfiles.forEach(profile => {
                 const email = profile.email || 'N/A';
                 const phone = profile.phone || 'N/A';
                 const username = profile.username || (profile.email ? profile.email.split('@')[0] : 'user') || 'user';
@@ -571,9 +527,8 @@
                 const userTypeColor = userType === 'admin' ? '#00ff00' : '#8fd493';
                 const created = profile.created_at ? new Date(profile.created_at).toLocaleString('ru-RU') : 'Нет данных';
                 const emailForAttr = (profile.email || username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const lastLogin = profile.last_login_at || profile.last_sign_in_at || 'Never';
-                const usernameForAttr = username.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const lastLoginFormatted  = lastLogin !== 'Never' ? new Date(lastLogin).toLocaleString('ru-RU'): 'Никогда';
+                const lastLogin = profile.last_login_at || 'Never';
+                const lastLoginFormatted = lastLogin !== 'Never' ? new Date(lastLogin).toLocaleString('ru-RU') : 'Никогда';
                 
                 html += '<tr>' +
                     '<td>' + email + '</td>' +
@@ -594,20 +549,243 @@
             
             html += '</tbody></table>';
             document.getElementById('usersTable').innerHTML = html;
+            
+            // Пагинация
+            createPagination('usersPagination', profiles.length, currentUsersPage, 'changeUsersPage');
         }
 
-        function searchBookings() {const search = document.getElementById('searchBookings').value; loadBookingsTable(1, search);}
-        function searchUsers() {const search = document.getElementById('searchUsers').value; loadUsersTable(1, search);}
+        function changeUsersPage(page) {
+            currentUsersPage = page;
+            loadUsersFromFirebase(document.getElementById('searchUsers').value);
+        }
+
+        function searchBookings() {
+            currentBookingsPage = 1;
+            const search = document.getElementById('searchBookings').value; 
+            loadBookingsFromFirebase(search);
+        }
+        
+        function searchUsers() {
+            currentUsersPage = 1;
+            const search = document.getElementById('searchUsers').value; 
+            loadUsersFromFirebase(search);
+        }
 
         function createPagination(elementId, totalCount, currentPage, callbackFunction) {
             const totalPages = Math.ceil(totalCount / itemsPerPage);
-            if (totalPages <= 1) {document.getElementById(elementId).innerHTML = ''; return;}
+            if (totalPages <= 1) {
+                document.getElementById(elementId).innerHTML = ''; 
+                return;
+            }
             let html = '';
             for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="' + callbackFunction + '(' + i + ')">' + i + '</button>';}
-                else if (i === currentPage - 3 || i === currentPage + 3) {html += '<span>...</span>';}
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="' + callbackFunction + '(' + i + ')">' + i + '</button>';
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span>...</span>';
+                }
             }
             document.getElementById(elementId).innerHTML = html;
+        }
+
+        // ==================== EMAILJS ПРИГЛАШЕНИЕ ====================
+        async function inviteUser() {
+            const emailInput = document.getElementById('inviteEmail');
+            const inviteButton = document.getElementById('inviteButton');
+            const inviteStatus = document.getElementById('inviteStatus');
+            const email = emailInput.value.trim();
+            
+            if (!email || !email.includes('@')) {
+                showStatus('Введите корректный email', true); 
+                return;
+            }
+            
+            if (!confirm('Отправить приглашение на ' + email + '?\n\nПользователь получит логин и пароль в хакерском стиле.')) return;
+            
+            inviteButton.disabled = true;
+            inviteButton.textContent = 'Отправка...';
+            inviteStatus.style.display = 'block';
+            inviteStatus.style.color = '#8fd493';
+            inviteStatus.innerHTML = '🔄 Генерация данных и отправка...';
+            
+            try {
+                const userLogin = email.split('@')[0] || 'user';
+                const userPassword = generateTemporaryPassword();
+                const messageId = 'LOGOVO-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+                
+                // Создаем пользователя в Firebase
+                try {
+                    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, userPassword);
+                    const user = userCredential.user;
+                    
+                    // Создаем профиль
+                    await database.ref('profiles/' + user.uid).set({
+                        id: user.uid,
+                        email: email,
+                        username: userLogin,
+                        user_type: 'user',
+                        invited_by: currentUser ? currentUser.uid : 'local_admin',
+                        created_at: new Date().toISOString()
+                    });
+                    
+                } catch (authError) {
+                    if (authError.code === 'auth/email-already-in-use') {
+                        console.log('Пользователь уже существует, отправляем только email');
+                    } else {
+                        throw authError;
+                    }
+                }
+                
+                const templateParams = {
+                    to_email: email, 
+                    to_name: userLogin, 
+                    email: email, 
+                    login: userLogin, 
+                    password: userPassword, 
+                    website_url: 'https://timon4ikru.github.io/LogovoVR', 
+                    login_url: 'https://timon4ikru.github.io/LogovoVR/login.html', 
+                    current_year: new Date().getFullYear(), 
+                    timestamp: new Date().toLocaleString('ru-RU', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}), 
+                    message_id: messageId
+                };
+                
+                if (typeof emailjs === 'undefined') {
+                    throw new Error('EmailJS не загружен. Проверьте подключение скрипта.');
+                }
+                
+                const emailResult = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+                console.log('EmailJS результат:', emailResult);
+                
+                showStatus('✅ Приглашение отправлено на ' + email);
+                inviteStatus.style.color = '#00ff00';
+                inviteStatus.innerHTML = '✅ <strong>Приглашение отправлено!</strong><br>' +
+                    '📧 Email: ' + email + '<br>' +
+                    '👤 Логин: ' + userLogin + '<br>' +
+                    '🔑 Пароль: <span style="color:#ff4444">' + userPassword + '</span><br>' +
+                    '📝 Сообщите пароль пользователю!';
+                
+                emailInput.value = '';
+                loadUsersFromFirebase();
+                
+            } catch (error) {
+                console.error('❌ Ошибка отправки приглашения:', error);
+                let errorMessage = 'Ошибка отправки: ' + error.message;
+                
+                showStatus(errorMessage, true);
+                inviteStatus.style.color = '#ff4444';
+                inviteStatus.innerHTML = '❌ ' + errorMessage;
+            } finally {
+                inviteButton.disabled = false;
+                inviteButton.textContent = 'Отправить приглашение';
+            }
+        }
+
+        function generateTemporaryPassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let password = '';
+            for (let i = 0; i < 10; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password + '!';
+        }
+
+        // ==================== АДМИНСКИЕ ОПЕРАЦИИ ====================
+        async function sendPasswordReset(userId, userEmail) {
+            if (!confirm('Отправить ссылку для сброса пароля на ' + userEmail + '?')) return;
+            
+            try {
+                await firebase.auth().sendPasswordResetEmail(userEmail);
+                showStatus('Ссылка для сброса пароля отправлена на ' + userEmail);
+            } catch (error) {
+                console.error('Ошибка отправки ссылки:', error); 
+                showStatus('Ошибка отправки ссылки', true);
+            }
+        }
+
+        async function makeAdmin(userId, userEmail) {
+            if (!confirm('Назначить пользователя ' + userEmail + ' администратором?')) return;
+            
+            try {
+                await database.ref('profiles/' + userId + '/user_type').set('admin');
+                showStatus('Пользователь ' + userEmail + ' назначен администратором');
+                loadUsersFromFirebase(document.getElementById('searchUsers').value);
+            } catch (error) {
+                console.error('Ошибка назначения админа:', error); 
+                showStatus('Ошибка назначения админа', true);
+            }
+        }
+
+        async function makeUser(userId, userEmail) {
+            if (!confirm('Сделать пользователя ' + userEmail + ' обычным пользователем?')) return;
+            
+            try {
+                await database.ref('profiles/' + userId + '/user_type').set('user');
+                showStatus('Пользователь ' + userEmail + ' стал обычным пользователем');
+                loadUsersFromFirebase(document.getElementById('searchUsers').value);
+            } catch (error) {
+                console.error('Ошибка изменения типа:', error); 
+                showStatus('Ошибка изменения типа', true);
+            }
+        }
+
+        async function changeUsername(userId, userEmail) {
+            const newUsername = prompt('Введите новый username для ' + userEmail + ':', 'user');
+            if (!newUsername || newUsername.trim().length < 2) {
+                alert('Username должен быть не менее 2 символов'); 
+                return;
+            }
+            
+            try {
+                await database.ref('profiles/' + userId + '/username').set(newUsername.trim());
+                showStatus('Username для ' + userEmail + ' изменен на "' + newUsername + '"');
+                loadUsersFromFirebase(document.getElementById('searchUsers').value);
+            } catch (error) {
+                console.error('Ошибка смены username:', error); 
+                showStatus('Ошибка смены username', true);
+            }
+        }
+
+        async function deleteProfile(userId, userEmail) {
+            if (!confirm('Удалить профиль ' + userEmail + '?\n\nЭто удалит только профиль из базы данных. Пользователь останется в системе Firebase Authentication.')) return;
+            
+            try {
+                await database.ref('profiles/' + userId).remove();
+                showStatus('Профиль ' + userEmail + ' удален');
+                loadUsersFromFirebase(document.getElementById('searchUsers').value);
+            } catch (error) {
+                console.error('Ошибка удаления профиля:', error); 
+                showStatus('Ошибка удаления профиля', true);
+            }
+        }
+
+        async function updateBookingStatus(bookingId, status) {
+            if (!confirm(`Изменить статус брони #${bookingId} на "${status}"?`)) return;
+            
+            try {
+                console.log(`🔄 Запрос: bookingId=${bookingId}, status=${status}`);
+                
+                await database.ref('bookings/' + bookingId + '/status').set(status);
+                
+                showStatus(`✅ Статус брони #${bookingId} изменён`);
+                loadBookingsFromFirebase(document.getElementById('searchBookings').value);
+                
+            } catch (error) {
+                console.error('❌ Ошибка:', error);
+                showStatus('Ошибка: ' + error.message, true);
+            }
+        }
+
+        async function deleteBooking(bookingId) {
+            if (!confirm('Удалить бронирование #' + bookingId + '?')) return;
+            
+            try {
+                await database.ref('bookings/' + bookingId).remove();
+                showStatus('Бронирование #' + bookingId + ' удалено');
+                loadBookingsFromFirebase(document.getElementById('searchBookings').value);
+            } catch (error) {
+                console.error('Ошибка удаления:', error); 
+                showStatus('Ошибка удаления', true);
+            }
         }
 
         // ==================== ОСТАЛЬНЫЕ ФУНКЦИИ ====================
@@ -621,43 +799,99 @@
 
         function playSound(soundPath) {
             const audio = new Audio(soundPath);
-            audio.onerror = function() {document.body.classList.add('error-bg'); setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);};
-            audio.oncanplaythrough = function() {showStatus('Работает!'); audio.play();};
+            audio.onerror = function() {
+                document.body.classList.add('error-bg'); 
+                setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);
+            };
+            audio.oncanplaythrough = function() {
+                showStatus('Работает!'); 
+                audio.play();
+            };
             audio.load();
         }
 
         function checkPage(pagePath) {
-            fetch(pagePath, { method: 'HEAD' }).then(response => {if (response.ok) {showStatus('Работает!');} else {throw new Error('File not found');}}).catch(error => {document.body.classList.add('error-bg'); setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);});
+            fetch(pagePath, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        showStatus('Работает!');
+                    } else {
+                        throw new Error('File not found');
+                    }
+                })
+                .catch(error => {
+                    document.body.classList.add('error-bg'); 
+                    setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);
+                });
         }
 
         function checkBackground(bgPath) {
             const img = new Image();
-            img.onload = function() {showStatus('Работает!');};
-            img.onerror = function() {document.body.classList.add('error-bg'); setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);};
+            img.onload = function() {
+                showStatus('Работает!');
+            };
+            img.onerror = function() {
+                document.body.classList.add('error-bg'); 
+                setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);
+            };
             img.src = bgPath;
         }
 
         function playTrack(track, name) {
             if (audio) {audio.pause();}
             audio = new Audio(track);
-            audio.onerror = function() {document.body.classList.add('error-bg'); setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);};
-            audio.oncanplaythrough = function() {showStatus('Работает!'); audio.play(); document.getElementById('nowPlaying').textContent = 'Сейчас играет: ' + name;};
-            audio.load(); currentTrack = { track, name };
+            audio.onerror = function() {
+                document.body.classList.add('error-bg'); 
+                setTimeout(() => {document.body.classList.remove('error-bg');}, 1000);
+            };
+            audio.oncanplaythrough = function() {
+                showStatus('Работает!'); 
+                audio.play(); 
+                document.getElementById('nowPlaying').textContent = 'Сейчас играет: ' + name;
+            };
+            audio.load(); 
+            currentTrack = { track, name };
         }
 
-        function playMusic() {if (audio && currentTrack) {audio.play(); document.getElementById('nowPlaying').textContent = 'Сейчас играет: ' + currentTrack.name;}}
-        function pauseMusic() {if (audio) {audio.pause(); document.getElementById('nowPlaying').textContent = 'Пауза';}}
-        function stopMusic() {if (audio) {audio.pause(); audio.currentTime = 0; document.getElementById('nowPlaying').textContent = '';}}
+        function playMusic() {
+            if (audio && currentTrack) {
+                audio.play(); 
+                document.getElementById('nowPlaying').textContent = 'Сейчас играет: ' + currentTrack.name;
+            }
+        }
+        
+        function pauseMusic() {
+            if (audio) {
+                audio.pause(); 
+                document.getElementById('nowPlaying').textContent = 'Пауза';
+            }
+        }
+        
+        function stopMusic() {
+            if (audio) {
+                audio.pause(); 
+                audio.currentTime = 0; 
+                document.getElementById('nowPlaying').textContent = '';
+            }
+        }
 
-        async function logoutSupabase() {
-            try {if (supabase && currentUser) {await supabase.auth.signOut();}
-                localStorage.removeItem('supabase.auth.token'); localStorage.removeItem('sb-gdbemyluqtnfytvujfnu-auth-token'); window.location.reload();
-            } catch (error) {console.error('Ошибка выхода:', error); window.location.reload();}
+        async function logoutFirebase() {
+            try {
+                await firebase.auth().signOut();
+                window.location.reload();
+            } catch (error) {
+                console.error('Ошибка выхода:', error); 
+                window.location.reload();
+            }
         }
 
         document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && document.getElementById('adminLoginSection').style.display === 'block') {checkLogin();}
-            if (e.key === 'Enter' && document.getElementById('inviteEmail') && document.getElementById('inviteEmail').value) {inviteUser();}
+            if (e.key === 'Enter' && document.getElementById('adminLoginSection').style.display === 'block') {
+                checkLogin();
+            }
+            if (e.key === 'Enter' && document.getElementById('inviteEmail') && document.getElementById('inviteEmail').value) {
+                inviteUser();
+            }
         });
     </script>
 </body>
