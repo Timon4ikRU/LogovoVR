@@ -381,7 +381,9 @@
                             <option value="3">3 человека</option>
                             <option value="4">4 человека</option>
                             <option value="5">5 человек</option>
-                            <option value="6">6 человек (макс.)</option>
+                            <option value="6">6 человек</option>
+                            <option value="7">7 человек</option>
+                            <option value="8">8 человек</option>
                         </select>
                     </div>
                     
@@ -460,7 +462,7 @@
         
         // ==================== ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
-        const MAX_TOTAL_PEOPLE = 6;
+        const MAX_TOTAL_PEOPLE = 8;
         const MIN_HOURS_BEFORE = 2;
         const CLOSING_TIME_START = 21; // Начало до 21:00 для онлайн-бронирования
         const CLOSING_TIME_END = 22; // Окончание до 22:00 (время закрытия)
@@ -540,7 +542,7 @@
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                console.log('🚀 Инициализация бронирования...');
+                console.log('Инициализация бронирования...');
                 
                 // Устанавливаем минимальную дату (сегодня)
                 const today = new Date().toISOString().split('T')[0];
@@ -588,7 +590,7 @@
                             window.history.replaceState(null, null, window.location.pathname);
                         }
                     } else {
-                        console.log('❌ Пользователь не авторизован');
+                        console.log('Иди отсюда, ты не авторизован');
                         showAuthRequired();
                     }
                 });
