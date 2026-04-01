@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logovo VR</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="icon" href="favicon.ico">
     
@@ -15,13 +14,20 @@
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&display=swap');
+
+        @font-face {
+            font-family: 'Google Sans Code';
+            src: url('/fonts/GoogleSansCode-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Google Sans Code', monospace;
+            font-family: 'Google Sans Code';
         }
         
         body {

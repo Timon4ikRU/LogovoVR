@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Логово Админа</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
@@ -17,6 +16,22 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <style>
+        @font-face {
+            font-family: 'JetBrains Mono';
+            src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        @font-face {
+            font-family: 'JetBrains Mono';
+            src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'JetBrains Mono', monospace; }
         body { background: linear-gradient(to bottom, #000000, #00ff00c9); color: #00ff00; min-height: 100vh; transition: background 0.3s ease; }
         .supabase-login-section { padding: 20px; text-align: center; background: rgba(0, 0, 0, 0.7); margin-bottom: 20px; display: none; }
@@ -61,8 +76,8 @@
         .logout-btn { background: rgba(255, 68, 68, 0.2); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.3); padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 10px; font-size: 0.8em; }
         .invite-section { margin-bottom: 20px; padding: 15px; background: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; border-radius: 10px; }
         .invite-form { display: flex; gap: 10px; margin-top: 10px; }
-        .invite-form input { flex: 1; padding: 10px; background: #008800; color: #00ff00; border: 1px solid #00ff00; border-radius: 5px; }
-        .invite-form button { background: #00c200; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .invite-form input { flex: 1; padding: 10px; background: #008800; color: #00ff00; border: 1px solid #00ff00; border-radius: 5px; font-family: 'JetBrains Mono', monospace; }
+        .invite-form button { background: #00c200; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: 'JetBrains Mono', monospace; }
         .invite-form button:disabled { background: #666; cursor: not-allowed; }
     </style>
 </head>
