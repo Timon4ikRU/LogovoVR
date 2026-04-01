@@ -4,40 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Логово Админа</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.ico">
     
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
-    <link rel="icon" href="favicon.ico">
     
     <!-- EMAILJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <style>
-        @font-face {
-            font-family: 'JetBrains Mono';
-            src: url('/LogovoVR/fonts/JetBrainsMono-Regular.woff2') format('woff2');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'JetBrains Mono'; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'JetBrains Mono', monospace; }
         body { background: linear-gradient(to bottom, #000000, #00ff00c9); color: #00ff00; min-height: 100vh; transition: background 0.3s ease; }
         .supabase-login-section { padding: 20px; text-align: center; background: rgba(0, 0, 0, 0.7); margin-bottom: 20px; display: none; }
-        .supabase-login-section button { background: #00c200; color: #000; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono'; font-weight: bold; }
+        .supabase-login-section button { background: #00c200; color: #000; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-weight: bold; }
         .login-section { padding: 20px; text-align: center; background: rgba(0, 0, 0, 0.7); margin-bottom: 20px; }
         .login-form { display: inline-block; background: rgba(0, 255, 0, 0.1); padding: 20px; border-radius: 10px; border: 1px solid #00ff00; }
-        .login-form input { background: #008800; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; border-radius: 5px; font-family: 'JetBrains Mono'; }
-        .login-form button { background: #00c200; color: #000; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono'; font-weight: bold; }
+        .login-form input { background: #008800; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; }
+        .login-form button { background: #00c200; color: #000; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-weight: bold; }
         .login-form button:hover { background: #00f000; }
         .error-message { color: #ff0000; margin-top: 10px; display: none; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .section { background: rgba(0, 0, 0, 0.8); border: 1px solid #00ff00; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
         .section h2 { color: #00ff00; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #00ff00; padding-bottom: 10px; }
         .buttons-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px; }
-        .btn { background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 12px 8px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.3s ease; font-family: 'JetBrains Mono'; }
+        .btn { background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 12px 8px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.3s ease; font-family: 'JetBrains Mono', monospace; }
         .btn:hover { background: #00ff00; color: #000; }
         .status-message { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 255, 0, 0.9); color: #000; padding: 15px 30px; border-radius: 5px; font-weight: bold; z-index: 1000; display: none; }
         .error-bg { background: linear-gradient(to bottom, #000000, #ff0000) !important; }
@@ -45,7 +39,7 @@
         .track-item { padding: 10px; margin: 5px 0; background: rgba(0, 255, 0, 0.1); border-radius: 5px; cursor: pointer; transition: background 0.3s ease; }
         .track-item:hover { background: rgba(0, 255, 0, 0.3); }
         .music-controls { margin-top: 15px; text-align: center; }
-        .music-controls button { background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono'; }
+        .music-controls button { background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono', monospace; }
         .music-controls button:hover { background: #00ff00; color: #000; }
         .now-playing { margin-top: 10px; text-align: center; font-style: italic; }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -197,7 +191,7 @@
                 <div class="track-item" data-track="music/ReLogic-Overworld_Day.mp3" data-name="Re-Logic - Overworld Day">Overworld Day (Re-Logic, Terraria)</div>
                 <div class="track-item" data-track="music/ReLogic-Overworld_Night.mp3" data-name="Re-Logic - Overworld Night">Overworld Night (Re-Logic, Terraria)</div>
                 <div class="track-item" data-track="music/ReLogic-Title_Screen.mp3" data-name="Re-Logic - Title Screen">Title Screen (Re-Logic, Terraria)</div>
-                <div class="track-item" data-track="music/Sheet_Music_Boss-Rush_E.mp3" data-name="Sheet Music Boss - RUSH E">RUSH E (Sheet Music Boss)</div>
+                <div class="track-item" data-track="music/Sheet_Music_Boss-RUSH_E.mp3" data-name="Sheet Music Boss - RUSH E">RUSH E (Sheet Music Boss)</div>
                 <div class="track-item" data-track="music/Star_Wars-The_Imperial_March.mp3" data-name="Star Wars - The Imperial March">The Imperial March (Star Wars)</div>
                 <div class="track-item" data-track="music/WW-OIIA_Cat.mp3" data-name="W&W - OIIA Cat">OIIA Cat (W&W)</div>
             </div>
