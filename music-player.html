@@ -195,6 +195,27 @@
             background: rgba(3, 231, 22, 0.493);
             border-left: 4px solid #00ff00;
         }
+
+        /* Скрыть стандартный скроллбар, но оставить возможность скроллить */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        /* Цвет дорожки (фон, где бегает ползунок) — сделать тёмным, как фон сайта */
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a; 
+        }
+
+        /* Цвет самого ползунка — сделать его незаметным, но читаемым */
+        ::-webkit-scrollbar-thumb {
+            background: #444; 
+            border-radius: 10px; /* Закруглить края, чтобы было мягче */
+        }
+
+        /* Когда наводишь мышь, ползунок становится чуть светлее */
+        ::-webkit-scrollbar-thumb:hover {
+            background: #666; 
+        }
         
         @media (max-width: 768px) {
             .music-container {
