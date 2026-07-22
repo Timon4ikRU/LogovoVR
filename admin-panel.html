@@ -64,6 +64,10 @@
         .invite-form input { flex: 1; padding: 10px; background: #008800; color: #00ff00; border: 1px solid #00ff00; border-radius: 5px; }
         .invite-form button { background: #00c200; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .invite-form button:disabled { background: #666; cursor: not-allowed; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
     </style>
 </head>
 <body>
@@ -101,7 +105,6 @@
                 <button class="btn" onclick="playSound('err_snds/HTML420.mp3')">HTML420</button>
                 <button class="btn" onclick="playSound('err_snds/HTML451.mp3')">HTML451</button>
                 <button class="btn" onclick="playSound('err_snds/HTML500.mp3')">HTML500</button>
-                <button class="btn" onclick="playSound('err_snds/HTML502.mp3')">HTML502</button>
                 <button class="btn" onclick="playSound('sounds/boil.mp3')">boil</button>
                 <button class="btn" onclick="playSound('sounds/quantum.mp3')">quantum</button>
                 <button class="btn" onclick="playSound('sounds/success.mp3')">success</button>
