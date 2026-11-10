@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Логово Админа</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="favicon.ico">
     
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics-compat.js"></script>
+    <link rel="icon" href="favicon.ico">
     
     <!-- EMAILJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -64,6 +64,11 @@
         .invite-form input { flex: 1; padding: 10px; background: #008800; color: #00ff00; border: 1px solid #00ff00; border-radius: 5px; }
         .invite-form button { background: #00c200; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .invite-form button:disabled { background: #666; cursor: not-allowed; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+        html {scrollbar-width: thin; scrollbar-color: #444 #1a1a1a;}
     </style>
 </head>
 <body>
@@ -101,7 +106,6 @@
                 <button class="btn" onclick="playSound('err_snds/HTML420.mp3')">HTML420</button>
                 <button class="btn" onclick="playSound('err_snds/HTML451.mp3')">HTML451</button>
                 <button class="btn" onclick="playSound('err_snds/HTML500.mp3')">HTML500</button>
-                <button class="btn" onclick="playSound('err_snds/HTML502.mp3')">HTML502</button>
                 <button class="btn" onclick="playSound('sounds/boil.mp3')">boil</button>
                 <button class="btn" onclick="playSound('sounds/quantum.mp3')">quantum</button>
                 <button class="btn" onclick="playSound('sounds/success.mp3')">success</button>
@@ -191,7 +195,7 @@
                 <div class="track-item" data-track="music/ReLogic-Overworld_Day.mp3" data-name="Re-Logic - Overworld Day">Overworld Day (Re-Logic, Terraria)</div>
                 <div class="track-item" data-track="music/ReLogic-Overworld_Night.mp3" data-name="Re-Logic - Overworld Night">Overworld Night (Re-Logic, Terraria)</div>
                 <div class="track-item" data-track="music/ReLogic-Title_Screen.mp3" data-name="Re-Logic - Title Screen">Title Screen (Re-Logic, Terraria)</div>
-                <div class="track-item" data-track="music/Sheet_Music_Boss-RUSH_E.mp3" data-name="Sheet Music Boss - RUSH E">RUSH E (Sheet Music Boss)</div>
+                <div class="track-item" data-track="music/Sheet_Music_Boss-Rush_E.mp3" data-name="Sheet Music Boss - RUSH E">RUSH E (Sheet Music Boss)</div>
                 <div class="track-item" data-track="music/Star_Wars-The_Imperial_March.mp3" data-name="Star Wars - The Imperial March">The Imperial March (Star Wars)</div>
                 <div class="track-item" data-track="music/WW-OIIA_Cat.mp3" data-name="W&W - OIIA Cat">OIIA Cat (W&W)</div>
             </div>
