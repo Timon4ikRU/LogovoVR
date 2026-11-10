@@ -1,0 +1,6 @@
+User-Agent: *
+Disallow: /
+Allow: /LogovoVR/index.html
+Allow: /LogovoVR/news.html
+Allow: /LogovoVR/rules.html
+Allow: /LogovoVR/sitemap.xml
